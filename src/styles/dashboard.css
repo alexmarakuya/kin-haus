@@ -121,7 +121,10 @@
 
 .b-right { text-align:right; }
 .b-nights { font-family:'JetBrains Mono',monospace; font-size:11px; color:#7d7d77; }
-.b-amount { font-family:'DM Serif Display',serif; font-size:15px; }
+.b-amount { font-family:'DM Serif Display',serif; font-size:15px; cursor:pointer; border-radius:4px; padding:1px 4px; transition:background 0.1s; }
+.b-amount:hover { background:var(--warm); }
+.b-amount-input { font-family:'JetBrains Mono',monospace; font-size:13px; width:90px; padding:3px 6px; border:1px solid var(--accent); border-radius:4px; outline:none; text-align:right; }
+.b-amount-empty { color:#b5b3ad; font-size:13px; font-family:'JetBrains Mono',monospace; }
 
 .b-delete { color:#b5b3ad; font-size:16px; cursor:pointer; padding:4px; transition:color 0.12s; border:none; background:none; flex-shrink:0; }
 .b-delete:hover { color:#e05a5a; }

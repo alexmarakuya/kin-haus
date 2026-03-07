@@ -349,7 +349,8 @@ import '../styles/dashboard.css';
     const label = {airbnb:'Airbnb',direct:'Direct',friend:'Friend',blocked:'Blocked'}[b.type] || b.type;
     const badgeCls = b.conflict ? 'badge-conflict' : `badge-${b.type}`;
     const rowCls = b.conflict ? 'booking-row has-conflict' : 'booking-row';
-    const est = b.amount > 0 ? `\u0E3F${b.amount.toLocaleString()}` :
+    const rawAmt = b.amount > 0 ? b.amount : 0;
+    const est = rawAmt > 0 ? `\u0E3F${rawAmt.toLocaleString()}` :
       (b.type==='friend'||b.type==='blocked') ? '' : `~\u0E3F${(n*(RATES[b.room]||3200)).toLocaleString()}`;
     const canDelete = b.source === 'manual';
     const deleteBtn = canDelete ? `<button class="b-delete" onclick="deleteBooking('${b.id}')" title="Delete">\u00D7</button>` : '';
@@ -368,7 +369,7 @@ import '../styles/dashboard.css';
         </div>
         <div class="b-right">
           <div class="b-nights">${n}n</div>
-          ${est ? `<div class="b-amount">${est}</div>` : ''}
+          ${est ? `<div class="b-amount" onclick="editAmount(this,'${b.id}',${rawAmt})" title="Click to edit">${est}</div>` : `<div class="b-amount b-amount-empty" onclick="editAmount(this,'${b.id}',0)" title="Click to add amount">+</div>`}
         </div>
         ${deleteBtn}
       </div>`;
@@ -432,6 +433,41 @@ import '../styles/dashboard.css';
       <div class="stat-line"><span class="stat-line-label">Direct</span><span class="stat-line-val">${bks.filter(b=>b.type==='direct').length}</span></div>
       <div class="stat-line"><span class="stat-line-label">Friends</span><span class="stat-line-val">${bks.filter(b=>b.type==='friend').length}</span></div>
       <div class="stat-line"><span class="stat-line-label">Conflicts</span><span class="stat-line-val" style="color:${allBookings.filter(b=>b.conflict).length>0?'var(--conflict)':'inherit'}">${allBookings.filter(b=>b.conflict).length}</span></div>`;
+  }
+
+  // ─── INLINE AMOUNT EDITING ──────────────────────────────────────────────────
+  function editAmount(el, id, currentAmt) {
+    if (el.querySelector('input')) return; // already editing
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'b-amount-input';
+    input.value = currentAmt || '';
+    input.placeholder = '0';
+    input.min = '0';
+    el.textContent = '';
+    el.appendChild(input);
+    input.focus();
+    input.select();
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); saveAmount(id, input.value); }
+      if (e.key === 'Escape') { e.preventDefault(); loadBookings(); }
+    });
+    input.addEventListener('blur', () => { saveAmount(id, input.value); });
+  }
+
+  async function saveAmount(id, value) {
+    const amount = parseFloat(value) || 0;
+    try {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+    } catch (err) {
+      console.error('[amount] save error:', err);
+    }
+    loadBookings();
   }
 
   // ─── TOOLTIP ─────────────────────────────────────────────────────────────────

@@ -20,3 +20,19 @@ export function readManualBookings(): Booking[] {
 export function writeManualBookings(bookings: Booking[]): void {
   fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf8');
 }
+
+const PRICING_FILE = path.join(__dirname, '..', '..', 'data', 'pricing.json');
+
+export function readPricing(): Record<string, number> {
+  try {
+    if (!fs.existsSync(PRICING_FILE)) return {};
+    const raw = fs.readFileSync(PRICING_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+export function writePricing(pricing: Record<string, number>): void {
+  fs.writeFileSync(PRICING_FILE, JSON.stringify(pricing, null, 2), 'utf8');
+}
