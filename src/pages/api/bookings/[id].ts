@@ -1,12 +1,13 @@
 import type { APIRoute } from 'astro';
-import { readManualBookings, writeManualBookings, readPricing, writePricing } from '../../../lib/bookings.ts';
+import { readManualBookings, writeManualBookings, readOverrides, writeOverrides } from '../../../lib/bookings.ts';
 
 export const PATCH: APIRoute = async ({ params, request }) => {
   const { id } = params;
   const body = await request.json();
-  const amount = parseFloat(body.amount);
+  const amount = body.amount !== undefined ? parseFloat(body.amount) : undefined;
+  const guest = body.guest !== undefined ? String(body.guest).trim() : undefined;
 
-  if (isNaN(amount) || amount < 0) {
+  if (amount !== undefined && (isNaN(amount) || amount < 0)) {
     return new Response(JSON.stringify({ error: 'Invalid amount' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -18,17 +19,20 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   const manual = bookings.find((b) => b.id === id);
 
   if (manual) {
-    manual.amount = amount;
+    if (amount !== undefined) manual.amount = amount;
+    if (guest !== undefined) manual.guest = guest;
     writeManualBookings(bookings);
   } else {
-    // iCal booking -- store in pricing.json
-    const pricing = readPricing();
-    pricing[id!] = amount;
-    writePricing(pricing);
+    // iCal booking -- store overrides in pricing.json
+    const overrides = readOverrides();
+    if (!overrides[id!]) overrides[id!] = {};
+    if (amount !== undefined) overrides[id!].amount = amount;
+    if (guest !== undefined) overrides[id!].guest = guest;
+    writeOverrides(overrides);
   }
 
-  console.log(`[bookings] updated amount: ${id} = ${amount}`);
-  return new Response(JSON.stringify({ updated: true, id, amount }), {
+  console.log(`[bookings] updated: ${id} — amount=${amount}, guest=${guest}`);
+  return new Response(JSON.stringify({ updated: true, id, amount, guest }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };

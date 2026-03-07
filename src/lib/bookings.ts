@@ -1,10 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Booking } from './types.ts';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BOOKINGS_FILE = path.join(__dirname, '..', '..', 'data', 'bookings.json');
+const DATA_DIR = path.join(process.cwd(), 'data');
+const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 
 export function readManualBookings(): Booking[] {
   try {
@@ -21,18 +20,46 @@ export function writeManualBookings(bookings: Booking[]): void {
   fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf8');
 }
 
-const PRICING_FILE = path.join(__dirname, '..', '..', 'data', 'pricing.json');
+const PRICING_FILE = path.join(DATA_DIR, 'pricing.json');
 
-export function readPricing(): Record<string, number> {
+export interface BookingOverrides {
+  [id: string]: { amount?: number; guest?: string };
+}
+
+export function readOverrides(): BookingOverrides {
   try {
     if (!fs.existsSync(PRICING_FILE)) return {};
     const raw = fs.readFileSync(PRICING_FILE, 'utf8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    // Migrate old format ({id: number}) to new ({id: {amount, guest}})
+    const result: BookingOverrides = {};
+    for (const [k, v] of Object.entries(data)) {
+      result[k] = typeof v === 'number' ? { amount: v } : (v as any);
+    }
+    return result;
   } catch {
     return {};
   }
 }
 
+export function writeOverrides(overrides: BookingOverrides): void {
+  fs.writeFileSync(PRICING_FILE, JSON.stringify(overrides, null, 2), 'utf8');
+}
+
+// Keep old helpers for backward compat
+export function readPricing(): Record<string, number> {
+  const ov = readOverrides();
+  const result: Record<string, number> = {};
+  for (const [k, v] of Object.entries(ov)) {
+    if (v.amount !== undefined) result[k] = v.amount;
+  }
+  return result;
+}
+
 export function writePricing(pricing: Record<string, number>): void {
-  fs.writeFileSync(PRICING_FILE, JSON.stringify(pricing, null, 2), 'utf8');
+  const ov = readOverrides();
+  for (const [k, v] of Object.entries(pricing)) {
+    ov[k] = { ...ov[k], amount: v };
+  }
+  writeOverrides(ov);
 }

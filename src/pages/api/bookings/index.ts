@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { fetchAllIcalBookings } from '../../../lib/ical.ts';
-import { readManualBookings, writeManualBookings, readPricing } from '../../../lib/bookings.ts';
+import { readManualBookings, writeManualBookings, readOverrides } from '../../../lib/bookings.ts';
 import { detectConflicts } from '../../../lib/conflicts.ts';
 import { filterByDateRange } from '../../../lib/dates.ts';
 import { getLastSyncTimes } from '../../../lib/cache.ts';
@@ -14,11 +14,16 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const icalBookings = await fetchAllIcalBookings(forceRefresh);
     const manualBookings = readManualBookings().map((b) => ({ ...b, source: 'manual' as const }));
-    const pricing = readPricing();
-    const allBookings = [...icalBookings, ...manualBookings].map((b) => ({
-      ...b,
-      amount: pricing[b.id] !== undefined ? pricing[b.id] : b.amount,
-    }));
+    const overrides = readOverrides();
+    const allBookings = [...icalBookings, ...manualBookings].map((b) => {
+      const ov = overrides[b.id];
+      if (!ov) return b;
+      return {
+        ...b,
+        amount: ov.amount !== undefined ? ov.amount : b.amount,
+        guest: ov.guest || b.guest,
+      };
+    });
 
     const filtered = filterByDateRange(allBookings, from, to);
     const withConflicts = detectConflicts(filtered);

@@ -122,6 +122,10 @@ import '../styles/dashboard.css';
       <div class="detail-row"><span class="detail-label">Nights</span><span class="detail-value" id="dm-nights"></span></div>
       <div id="dm-notes-row" class="detail-row"><span class="detail-label">Notes</span><span class="detail-value" id="dm-notes"></span></div>
       <div class="fg" style="margin-top:16px">
+        <label>Guest Name</label>
+        <input id="dm-guest" type="text" placeholder="e.g. John Smith">
+      </div>
+      <div class="fg">
         <label>Total Amount (THB)</label>
         <input id="dm-amount" type="number" placeholder="e.g. 22400" min="0">
       </div>
@@ -476,9 +480,10 @@ import '../styles/dashboard.css';
     const notesRow = document.getElementById('dm-notes-row');
     if (b.notes) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
     else { notesRow.style.display = 'none'; }
+    document.getElementById('dm-guest').value = b.guest || '';
     document.getElementById('dm-amount').value = b.amount > 0 ? b.amount : '';
     document.getElementById('detail-modal').classList.add('open');
-    document.getElementById('dm-amount').focus();
+    document.getElementById('dm-guest').focus();
   }
 
   function closeDetailModal() {
@@ -488,17 +493,18 @@ import '../styles/dashboard.css';
 
   async function saveBookingAmount() {
     if (!detailBookingId) return;
+    const guest = document.getElementById('dm-guest').value.trim();
     const amount = parseFloat(document.getElementById('dm-amount').value) || 0;
     try {
       const res = await fetch(`/api/bookings/${encodeURIComponent(detailBookingId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, guest }),
       });
       if (!res.ok) throw new Error('Save failed');
     } catch (err) {
-      console.error('[amount] save error:', err);
-      showError('Failed to save amount.');
+      console.error('[save] error:', err);
+      showError('Failed to save.');
     }
     closeDetailModal();
     loadBookings();
