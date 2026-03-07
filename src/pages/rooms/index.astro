@@ -1,0 +1,71 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+
+const rooms = [
+  {
+    name: 'The Nest',
+    slug: 'the-nest',
+    rate: { high: 5000, low: 3500 },
+    description: 'A private retreat perched above the treetops with panoramic views, a king-size bed, and its own balcony. The most spacious room at Kin Haus.',
+    features: ['King-size bed', 'Private balcony', 'Panoramic views', 'Ensuite bathroom', 'Air conditioning', 'Work desk'],
+  },
+  {
+    name: 'Master Suite',
+    slug: 'master-suite',
+    rate: { high: 3200, low: 2240 },
+    description: 'Spacious ground-floor suite with an ensuite bathroom and direct garden access. Quiet and private with natural light.',
+    features: ['Queen-size bed', 'Ensuite bathroom', 'Garden access', 'Air conditioning', 'Work desk', 'Wardrobe'],
+  },
+  {
+    name: 'Nomad Room',
+    slug: 'nomad-room',
+    rate: { high: 2400, low: 1680 },
+    description: 'A cozy, workspace-ready room ideal for digital nomads looking for a longer stay. Compact but thoughtfully designed.',
+    features: ['Double bed', 'Dedicated workspace', 'Fast WiFi', 'Air conditioning', 'Shared bathroom', 'Storage'],
+  },
+];
+---
+
+<MarketingLayout title="Rooms — Kin Haus">
+  <style>
+    .rooms-page { padding: 60px 40px; max-width: 900px; margin: 0 auto; }
+    .rooms-page h1 { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 8px; }
+    .rooms-intro { font-size: 15px; color: #64645f; margin-bottom: 40px; line-height: 1.6; }
+
+    .room-block { border: 1px solid #e4e2de; border-radius: 12px; background: white; margin-bottom: 24px; overflow: hidden; }
+    .room-block-img { height: 220px; background: var(--warm); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 28px; color: #8b8b85; }
+    .room-block-body { padding: 28px; }
+    .room-block-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .room-block-name { font-family: 'DM Serif Display', serif; font-size: 22px; }
+    .room-block-rate { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); }
+    .room-block-desc { font-size: 14px; color: #52524e; line-height: 1.6; margin-bottom: 16px; }
+
+    .room-features { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .room-feature { padding: 4px 10px; background: var(--paper); border: 1px solid #e4e2de; border-radius: 4px; font-size: 11px; color: #64645f; }
+
+    .room-block-link { display: inline-block; font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .room-block-link:hover { text-decoration: underline; }
+  </style>
+
+  <div class="rooms-page">
+    <h1>Our Rooms</h1>
+    <p class="rooms-intro">Three distinct rooms, each with its own character. All guests share the kitchen, living area, and pool.</p>
+
+    {rooms.map((room) => (
+      <div class="room-block">
+        <div class="room-block-img">{room.name}</div>
+        <div class="room-block-body">
+          <div class="room-block-header">
+            <div class="room-block-name">{room.name}</div>
+            <div class="room-block-rate">&#x0E3F;{room.rate.low.toLocaleString()} - &#x0E3F;{room.rate.high.toLocaleString()} / night</div>
+          </div>
+          <p class="room-block-desc">{room.description}</p>
+          <div class="room-features">
+            {room.features.map((f) => <span class="room-feature">{f}</span>)}
+          </div>
+          <a href={`/rooms/${room.slug}`} class="room-block-link">View details &#x2192;</a>
+        </div>
+      </div>
+    ))}
+  </div>
+</MarketingLayout>

@@ -1,0 +1,501 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/dashboard.css';
+---
+
+<BaseLayout title="Kin Haus — Occupancy Hub">
+  <div class="loading-bar" id="loading-bar"></div>
+
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">Kin Haus</div>
+      <div class="header-sub">Occupancy Hub</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-status">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-label">Loading...</span>
+      </div>
+      <button class="btn btn-sm" id="btn-refresh">&#x21bb; Refresh</button>
+      <button class="btn btn-primary btn-sm" id="btn-add">+ Add Booking</button>
+    </div>
+  </div>
+
+  <div class="alerts" id="alerts"></div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div>
+        <div class="sidebar-title">Rooms</div>
+        <div class="room-item"><div class="room-dot" style="background:var(--nest)"></div><div><div class="room-name">The Nest</div><div class="room-rate">&#x0E3F;5,000 / night</div></div></div>
+        <div class="room-item"><div class="room-dot" style="background:var(--master)"></div><div><div class="room-name">Master Suite</div><div class="room-rate">&#x0E3F;3,200 / night</div></div></div>
+        <div class="room-item"><div class="room-dot" style="background:var(--nomad)"></div><div><div class="room-name">Nomad Room</div><div class="room-rate">&#x0E3F;2,400 / night</div></div></div>
+      </div>
+      <div>
+        <div class="sidebar-title">Legend</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--airbnb)"></div>Airbnb</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--direct)"></div>Direct</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--friend)"></div>Friend / Personal</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--blocked)"></div>Blocked</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--conflict)"></div>&#x26A0; Conflict</div>
+      </div>
+      <div>
+        <div class="sidebar-title">This Month</div>
+        <div id="sidebar-stats"></div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="tab-bar">
+        <div class="tab active" data-tab="calendar">Calendar</div>
+        <div class="tab" data-tab="list">Bookings</div>
+        <div class="tab-spacer"></div>
+      </div>
+
+      <!-- CALENDAR TAB -->
+      <div id="tab-calendar" class="cal-pane">
+        <div class="cal-nav">
+          <button class="month-btn" id="month-prev">&#x2039;</button>
+          <div class="month-title" id="month-title"></div>
+          <button class="month-btn" id="month-next">&#x203A;</button>
+          <div class="season-tag" id="season-tag"></div>
+        </div>
+        <div class="cal-scroll">
+          <div class="cal-grid-header" id="cal-header"></div>
+          <div class="cal-rows" id="cal-rows"></div>
+        </div>
+      </div>
+
+      <!-- LIST TAB -->
+      <div id="tab-list" class="list-pane" style="display:none">
+        <div id="list-content"></div>
+      </div>
+
+      <div class="stats-footer" id="stats-footer"></div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <!-- ADD BOOKING MODAL -->
+  <div class="overlay" id="modal">
+    <div class="modal">
+      <div class="modal-title">Add Booking</div>
+      <div class="fg"><label>Guest / Name</label><input id="f-guest" type="text" placeholder="e.g. Nad, John Smith"></div>
+      <div class="fg">
+        <label>Type</label>
+        <select id="f-type">
+          <option value="direct">Direct Booking</option>
+          <option value="friend">Friend / Personal</option>
+          <option value="blocked">Blocked</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Room</label>
+        <select id="f-room">
+          <option value="nest">The Nest</option>
+          <option value="master">Master Suite</option>
+          <option value="nomad">Nomad Room</option>
+          <option value="full">Full House</option>
+        </select>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>Check-in</label><input id="f-checkin" type="date"></div>
+        <div class="fg"><label>Check-out</label><input id="f-checkout" type="date"></div>
+      </div>
+      <div class="fg"><label>Amount (THB) -- optional</label><input id="f-amount" type="number" placeholder="e.g. 22400"></div>
+      <div class="fg"><label>Notes</label><input id="f-notes" type="text" placeholder="Optional note"></div>
+      <div class="modal-actions">
+        <button class="btn" id="btn-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-save">Save Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+  // ─── STATE ──────────────────────────────────────────────────────────────────
+  let allBookings = [];
+  let currentYear = new Date().getFullYear();
+  let currentMonth = new Date().getMonth();
+  let currentTab = 'calendar';
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const ROOMS = ['nest','master','nomad'];
+  const ROOM_LABELS = { nest:'The Nest', master:'Master Suite', nomad:'Nomad Room', full:'Full House' };
+  const ROOM_COLORS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)', full:'#8a6f9e' };
+  const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked' };
+  const RATES = { nest:5000, master:3200, nomad:2400, full:10600 };
+
+  // ─── EVENT LISTENERS ──────────────────────────────────────────────────────
+  document.getElementById('btn-refresh').addEventListener('click', refreshData);
+  document.getElementById('btn-add').addEventListener('click', openModal);
+  document.getElementById('btn-cancel').addEventListener('click', closeModal);
+  document.getElementById('btn-save').addEventListener('click', saveBooking);
+  document.getElementById('month-prev').addEventListener('click', () => changeMonth(-1));
+  document.getElementById('month-next').addEventListener('click', () => changeMonth(1));
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      setTab(this.dataset.tab, this);
+    });
+  });
+
+  // ─── API ────────────────────────────────────────────────────────────────────
+  async function loadBookings(forceRefresh = false) {
+    setLoading(true);
+    try {
+      const url = forceRefresh ? '/api/bookings?refresh=true' : '/api/bookings';
+      const res = await fetch(url);
+      const data = await res.json();
+      allBookings = data.bookings || [];
+      updateSyncStatus(data.meta, true);
+      showConflictAlerts(allBookings);
+      render();
+    } catch (err) {
+      updateSyncStatus(null, false);
+      showError('Could not connect to server.');
+    }
+    setLoading(false);
+  }
+
+  async function refreshData() { await loadBookings(true); }
+
+  async function deleteBooking(id) {
+    try {
+      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+      if (res.ok) await loadBookings();
+    } catch (err) {
+      showError('Failed to delete booking.');
+    }
+  }
+
+  async function saveBooking() {
+    const body = {
+      guest: document.getElementById('f-guest').value || 'Guest',
+      type: document.getElementById('f-type').value,
+      room: document.getElementById('f-room').value,
+      checkin: document.getElementById('f-checkin').value,
+      checkout: document.getElementById('f-checkout').value,
+      amount: document.getElementById('f-amount').value,
+      notes: document.getElementById('f-notes').value,
+    };
+    if (!body.checkin || !body.checkout || body.checkin >= body.checkout) {
+      alert('Please set valid check-in and check-out dates.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        closeModal();
+        await loadBookings();
+      } else {
+        const err = await res.json();
+        alert('Error: ' + err.error);
+      }
+    } catch (err) {
+      showError('Failed to save booking.');
+    }
+  }
+
+  // ─── STATUS ─────────────────────────────────────────────────────────────────
+  function setLoading(on) {
+    document.getElementById('loading-bar').className = on ? 'loading-bar active' : 'loading-bar';
+  }
+
+  function updateSyncStatus(meta, ok) {
+    const dot = document.getElementById('sync-dot');
+    const label = document.getElementById('sync-label');
+    if (!ok) { dot.className = 'sync-dot error'; label.textContent = 'Server offline'; return; }
+    dot.className = 'sync-dot live';
+    const conflicts = meta?.conflicts || 0;
+    const lastSync = meta?.lastSync?.nest ? new Date(meta.lastSync.nest) : null;
+    const age = lastSync ? Math.round((Date.now() - lastSync) / 60000) : null;
+    label.textContent = age !== null ? `Synced ${age}m ago` : 'Live';
+    if (conflicts > 0) {
+      dot.style.background = 'var(--conflict)';
+      label.textContent += ` · ${conflicts} conflict${conflicts>1?'s':''}`;
+    }
+  }
+
+  function showConflictAlerts(bookings) {
+    const alerts = document.getElementById('alerts');
+    const conflicts = bookings.filter(b => b.conflict);
+    if (conflicts.length === 0) { alerts.innerHTML = ''; return; }
+    alerts.innerHTML = `<div class="alert alert-conflict">&#x26A0; ${conflicts.length} booking conflict${conflicts.length>1?'s':''} detected -- check the calendar or bookings list for details.</div>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('alerts').innerHTML += `<div class="alert alert-error">&#x2715; ${msg}</div>`;
+  }
+
+  // ─── RENDER ─────────────────────────────────────────────────────────────────
+  function render() {
+    if (currentTab === 'calendar') renderCalendar();
+    else renderList();
+    renderStats();
+    renderSidebar();
+  }
+
+  // ─── CALENDAR ───────────────────────────────────────────────────────────────
+  function renderCalendar() {
+    const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = ds(today.getFullYear(), today.getMonth(), today.getDate());
+
+    document.getElementById('month-title').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+    const isLow = currentMonth >= 3 && currentMonth <= 9;
+    document.getElementById('season-tag').textContent = isLow ? 'Low season (-30%)' : 'High season';
+
+    const hdr = document.getElementById('cal-header');
+    hdr.innerHTML = '<div class="grid-room-lbl"></div>';
+    for (let d = 1; d <= 31; d++) {
+      if (d <= numDays) {
+        const dStr = ds(currentYear, currentMonth, d);
+        const dow = new Date(currentYear, currentMonth, d).getDay();
+        const cls = dStr === todayStr ? 'today' : (dow===0||dow===6 ? 'wknd' : '');
+        hdr.innerHTML += `<div class="day-hdr ${cls}">${d}</div>`;
+      } else {
+        hdr.innerHTML += `<div class="day-hdr" style="visibility:hidden">${d}</div>`;
+      }
+    }
+
+    const rows = document.getElementById('cal-rows');
+    rows.innerHTML = '';
+
+    ROOMS.forEach(room => {
+      const row = document.createElement('div');
+      row.className = 'cal-row';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'row-lbl';
+      const shortName = {nest:'Nest',master:'Master',nomad:'Nomad'}[room];
+      lbl.innerHTML = `<div class="row-lbl-dot" style="background:${ROOM_COLORS[room]}"></div>${shortName}`;
+      row.appendChild(lbl);
+
+      for (let d = 1; d <= 31; d++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+
+        if (d <= numDays) {
+          const dStr = ds(currentYear, currentMonth, d);
+          if (dStr === todayStr) cell.classList.add('today-outline');
+
+          const bk = bookingOnDay(room, dStr);
+          if (bk) {
+            const typeClass = bk.conflict ? 'c-conflict' : (TYPE_CLASS[bk.type] || 'c-airbnb');
+            cell.classList.add(typeClass);
+            if (bk.checkin === dStr) {
+              const init = document.createElement('div');
+              init.className = 'cell-initial';
+              init.textContent = (bk.guest || '?').charAt(0).toUpperCase();
+              cell.appendChild(init);
+            }
+            cell.addEventListener('mouseenter', e => showTooltip(e, bk));
+            cell.addEventListener('mousemove', moveTooltip);
+            cell.addEventListener('mouseleave', hideTooltip);
+          } else {
+            cell.classList.add('empty');
+            cell.addEventListener('click', () => openModalWithDate(dStr, room));
+          }
+        } else {
+          cell.classList.add('inactive');
+        }
+        row.appendChild(cell);
+      }
+      rows.appendChild(row);
+    });
+  }
+
+  function bookingOnDay(room, dStr) {
+    return allBookings.find(b => {
+      if (b.room !== room && b.room !== 'full') return false;
+      return dStr >= b.checkin && dStr < b.checkout;
+    });
+  }
+
+  function ds(y, m, d) {
+    return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+
+  // ─── LIST ────────────────────────────────────────────────────────────────────
+  function renderList() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const sorted = [...allBookings].sort((a,b) => a.checkin.localeCompare(b.checkin));
+    const upcoming = sorted.filter(b => b.checkout >= todayStr);
+    const past = sorted.filter(b => b.checkout < todayStr);
+
+    let html = '';
+    if (upcoming.length === 0 && past.length === 0) {
+      html = `<div class="empty-state"><div class="empty-state-title">No bookings yet</div><div>Click "+ Add Booking" to get started</div></div>`;
+    } else {
+      if (upcoming.length > 0) {
+        html += '<div class="list-section-title">Upcoming & Active</div>';
+        upcoming.forEach(b => { html += bookingCard(b); });
+      }
+      if (past.length > 0) {
+        html += '<div class="list-section-title">Past</div>';
+        past.forEach(b => { html += bookingCard(b); });
+      }
+    }
+    document.getElementById('list-content').innerHTML = html;
+  }
+
+  function bookingCard(b) {
+    const n = nightCount(b);
+    const label = {airbnb:'Airbnb',direct:'Direct',friend:'Friend',blocked:'Blocked'}[b.type] || b.type;
+    const badgeCls = b.conflict ? 'badge-conflict' : `badge-${b.type}`;
+    const rowCls = b.conflict ? 'booking-row has-conflict' : 'booking-row';
+    const est = b.amount > 0 ? `\u0E3F${b.amount.toLocaleString()}` :
+      (b.type==='friend'||b.type==='blocked') ? '' : `~\u0E3F${(n*(RATES[b.room]||3200)).toLocaleString()}`;
+    const canDelete = b.source === 'manual';
+    const deleteBtn = canDelete ? `<button class="b-delete" onclick="deleteBooking('${b.id}')" title="Delete">\u00D7</button>` : '';
+    const conflictNote = b.conflict ? `<div class="b-conflict-note">&#x26A0; Conflict detected</div>` : '';
+    const checkinFmt = fmtDate(b.checkin);
+    const checkoutFmt = fmtDate(b.checkout);
+
+    return `
+      <div class="${rowCls}">
+        <div class="b-badge ${badgeCls}">${b.conflict ? '&#x26A0; Conflict' : label}</div>
+        <div class="b-info">
+          <div class="b-name">${b.guest || label}</div>
+          <div class="b-dates">${checkinFmt} &#x2192; ${checkoutFmt}</div>
+          <div class="b-room">${ROOM_LABELS[b.room]||b.room}${b.notes ? ' \u00B7 ' + b.notes : ''}</div>
+          ${conflictNote}
+        </div>
+        <div class="b-right">
+          <div class="b-nights">${n}n</div>
+          ${est ? `<div class="b-amount">${est}</div>` : ''}
+        </div>
+        ${deleteBtn}
+      </div>`;
+  }
+
+  function nightCount(b) {
+    return Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000);
+  }
+
+  function fmtDate(str) {
+    return new Date(str + 'T12:00:00').toLocaleDateString('en-GB', {day:'numeric',month:'short'});
+  }
+
+  // ─── STATS ───────────────────────────────────────────────────────────────────
+  function renderStats() {
+    const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const totalRoomNights = numDays * 3;
+    let bookedNights = 0, friendNights = 0, revenue = 0;
+
+    ROOMS.forEach(room => {
+      for (let d = 1; d <= numDays; d++) {
+        const dStr = ds(currentYear, currentMonth, d);
+        const bk = bookingOnDay(room, dStr);
+        if (bk) {
+          bookedNights++;
+          if (bk.type === 'friend' || bk.type === 'blocked') friendNights++;
+        }
+      }
+    });
+
+    allBookings.filter(b => {
+      const y = parseInt(b.checkin.split('-')[0]);
+      const m = parseInt(b.checkin.split('-')[1]) - 1;
+      return y === currentYear && m === currentMonth && b.type !== 'friend' && b.type !== 'blocked';
+    }).forEach(b => {
+      revenue += b.amount > 0 ? b.amount : nightCount(b) * (RATES[b.room] || 3200);
+    });
+
+    const occ = Math.round((bookedNights / totalRoomNights) * 100);
+
+    document.getElementById('stats-footer').innerHTML = `
+      <div class="sf-block"><div class="sf-label">Occupancy</div><div class="sf-value">${occ}%</div><div class="sf-sub">${bookedNights}/${totalRoomNights} room-nights</div></div>
+      <div class="sf-block"><div class="sf-label">Available</div><div class="sf-value">${totalRoomNights - bookedNights}</div><div class="sf-sub">room-nights open</div></div>
+      <div class="sf-block"><div class="sf-label">Friend / Blocked</div><div class="sf-value">${friendNights}</div><div class="sf-sub">off-market nights</div></div>
+      <div class="sf-block"><div class="sf-label">Est. Revenue</div><div class="sf-value">\u0E3F${revenue.toLocaleString()}</div><div class="sf-sub">${MONTHS[currentMonth]}</div></div>
+      <div class="occ-track">
+        <div class="sf-label">Occupancy bar</div>
+        <div class="occ-bar"><div class="occ-fill" style="width:${occ}%"></div></div>
+        <div class="occ-pct"><span>0%</span><span style="color:var(--accent)">${occ}%</span><span>100%</span></div>
+      </div>`;
+  }
+
+  function renderSidebar() {
+    const bks = allBookings.filter(b => {
+      const y = parseInt(b.checkin.split('-')[0]);
+      const m = parseInt(b.checkin.split('-')[1]) - 1;
+      return y === currentYear && m === currentMonth;
+    });
+    document.getElementById('sidebar-stats').innerHTML = `
+      <div class="stat-line"><span class="stat-line-label">Airbnb</span><span class="stat-line-val">${bks.filter(b=>b.type==='airbnb').length}</span></div>
+      <div class="stat-line"><span class="stat-line-label">Direct</span><span class="stat-line-val">${bks.filter(b=>b.type==='direct').length}</span></div>
+      <div class="stat-line"><span class="stat-line-label">Friends</span><span class="stat-line-val">${bks.filter(b=>b.type==='friend').length}</span></div>
+      <div class="stat-line"><span class="stat-line-label">Conflicts</span><span class="stat-line-val" style="color:${allBookings.filter(b=>b.conflict).length>0?'var(--conflict)':'inherit'}">${allBookings.filter(b=>b.conflict).length}</span></div>`;
+  }
+
+  // ─── TOOLTIP ─────────────────────────────────────────────────────────────────
+  function showTooltip(e, b) {
+    const tt = document.getElementById('tooltip');
+    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked'}[b.type]||b.type;
+    const typeColor = {airbnb:'var(--airbnb)',direct:'var(--direct)',friend:'var(--friend)',blocked:'var(--blocked)'}[b.type]||'#8a8070';
+    const n = nightCount(b);
+    tt.innerHTML = `
+      <div class="tt-name">${b.guest||typeLabel}</div>
+      <div class="tt-detail">${fmtDate(b.checkin)} &#x2192; ${fmtDate(b.checkout)} (${n}n)</div>
+      <div class="tt-detail">${ROOM_LABELS[b.room]||b.room}</div>
+      ${b.notes ? `<div class="tt-detail" style="margin-top:3px">${b.notes}</div>` : ''}
+      <div class="tt-badge" style="background:${typeColor}22;color:${typeColor}">${typeLabel}</div>
+      ${b.conflict ? `<div class="tt-conflict">&#x26A0; Booking conflict</div>` : ''}`;
+    tt.style.display = 'block';
+    moveTooltip(e);
+  }
+  function moveTooltip(e) {
+    const tt = document.getElementById('tooltip');
+    tt.style.left = (e.clientX + 14) + 'px';
+    tt.style.top = (e.clientY + 14) + 'px';
+  }
+  function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+
+  // ─── MODAL ───────────────────────────────────────────────────────────────────
+  function openModal() {
+    document.getElementById('modal').classList.add('open');
+    const y = currentYear, m = String(currentMonth + 1).padStart(2, '0');
+    document.getElementById('f-checkin').value = `${y}-${m}-01`;
+    document.getElementById('f-checkout').value = `${y}-${m}-07`;
+  }
+  function openModalWithDate(dStr, room) {
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f-checkin').value = dStr;
+    const d = new Date(dStr + 'T12:00:00');
+    d.setDate(d.getDate() + 5);
+    document.getElementById('f-checkout').value = d.toISOString().split('T')[0];
+    if (room) document.getElementById('f-room').value = room;
+  }
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    ['f-guest','f-amount','f-notes'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  // ─── NAV ─────────────────────────────────────────────────────────────────────
+  function changeMonth(dir) {
+    currentMonth += dir;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    render();
+  }
+
+  function setTab(tab, el) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'flex' : 'none';
+    document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
+    render();
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────────────────────
+  loadBookings();
+  setInterval(() => loadBookings(), 30 * 60 * 1000);
+  </script>
+</BaseLayout>

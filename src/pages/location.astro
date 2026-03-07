@@ -1,0 +1,85 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+---
+
+<MarketingLayout title="Location — Kin Haus" description="Find Kin Haus in Thongsala, Koh Phangan, Thailand">
+  <style>
+    .location-page { padding: 60px 40px; max-width: 800px; margin: 0 auto; }
+    .location-page h1 { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 8px; }
+    .location-intro { font-size: 15px; color: #64645f; line-height: 1.6; margin-bottom: 32px; }
+
+    .location-map {
+      width: 100%;
+      height: 360px;
+      border-radius: 12px;
+      border: 1px solid #e4e2de;
+      margin-bottom: 40px;
+      background: var(--warm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8b8b85;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    .location-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+    .location-block h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .location-block p, .location-block li {
+      font-size: 14px;
+      color: #52524e;
+      line-height: 1.6;
+    }
+    .location-block ul {
+      list-style: none;
+      padding: 0;
+    }
+    .location-block li { padding: 4px 0; }
+    .location-block li::before {
+      content: '\2192';
+      margin-right: 8px;
+      color: var(--accent);
+    }
+
+    @media (max-width: 768px) {
+      .location-details { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <div class="location-page">
+    <h1>Location</h1>
+    <p class="location-intro">Kin Haus is located in Thongsala, the main town of Koh Phangan. We're walking distance from shops, restaurants, and the ferry pier -- close to everything but tucked away enough to feel peaceful.</p>
+
+    <div class="location-map">Map placeholder -- add Google Maps embed here</div>
+
+    <div class="location-details">
+      <div class="location-block">
+        <h3>Getting Here</h3>
+        <ul>
+          <li>Ferry from Koh Samui: ~30 min</li>
+          <li>Ferry from Surat Thani: ~2.5 hours</li>
+          <li>From Thongsala Pier: 5 min by scooter</li>
+          <li>Airport: fly to Koh Samui (USM), then ferry</li>
+        </ul>
+      </div>
+      <div class="location-block">
+        <h3>Nearby</h3>
+        <ul>
+          <li>Thongsala Walking Street: 5 min walk</li>
+          <li>Pantip Food Market: 3 min walk</li>
+          <li>7-Eleven & ATMs: 2 min walk</li>
+          <li>Zen Beach: 10 min scooter ride</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</MarketingLayout>

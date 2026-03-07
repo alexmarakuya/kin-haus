@@ -1,0 +1,51 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Kin Haus — boutique co-living villa in Thongsala, Koh Phangan' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content={description}>
+  <title>{title}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style is:global>
+    :root {
+      --ink: #0f1419;
+      --paper: #fafaf8;
+      --warm: #f0eeeb;
+      --accent: #2c6e49;
+      --airbnb: #e05a5a;
+      --airbnb-light: #fde8e8;
+      --direct: #4a8f6f;
+      --direct-light: #d4ede3;
+      --friend: #6b7fc4;
+      --friend-light: #dde3f5;
+      --blocked: #9a9080;
+      --blocked-light: #eeebe4;
+      --conflict: #e07a30;
+      --conflict-light: #fdebd8;
+      --nest: #c4773a;
+      --master: #4a8f6f;
+      --nomad: #6b7fc4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body>
+  <slot />
+</body>
+</html>

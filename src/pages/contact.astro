@@ -1,0 +1,96 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+---
+
+<MarketingLayout title="Contact — Kin Haus" description="Get in touch with Kin Haus, Koh Phangan">
+  <style>
+    .contact-page { padding: 60px 40px; max-width: 600px; margin: 0 auto; }
+    .contact-page h1 { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 8px; }
+    .contact-intro { font-size: 15px; color: #64645f; line-height: 1.6; margin-bottom: 32px; }
+
+    .contact-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .contact-method {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      background: white;
+      border: 1px solid #e4e2de;
+      border-radius: 10px;
+    }
+    .contact-method-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--warm);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .contact-method-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b8b85;
+      margin-bottom: 2px;
+    }
+    .contact-method-value {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .contact-method-value a {
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .contact-method-value a:hover { color: var(--accent); }
+
+    .contact-note {
+      font-size: 13px;
+      color: #8b8b85;
+      text-align: center;
+      padding: 20px;
+      border-top: 1px solid #e4e2de;
+    }
+  </style>
+
+  <div class="contact-page">
+    <h1>Get in Touch</h1>
+    <p class="contact-intro">Interested in booking a room or have questions about Kin Haus? We'd love to hear from you.</p>
+
+    <div class="contact-methods">
+      <div class="contact-method">
+        <div class="contact-method-icon">&#x2709;</div>
+        <div>
+          <div class="contact-method-label">Email</div>
+          <div class="contact-method-value"><a href="mailto:hello@kinhaus.space">hello@kinhaus.space</a></div>
+        </div>
+      </div>
+      <div class="contact-method">
+        <div class="contact-method-icon">&#x1F4AC;</div>
+        <div>
+          <div class="contact-method-label">WhatsApp</div>
+          <div class="contact-method-value"><a href="https://wa.me/" target="_blank" rel="noopener">Message us on WhatsApp</a></div>
+        </div>
+      </div>
+      <div class="contact-method">
+        <div class="contact-method-icon">&#x1F3E0;</div>
+        <div>
+          <div class="contact-method-label">Airbnb</div>
+          <div class="contact-method-value"><a href="https://www.airbnb.com/rooms/1511809226602265595" target="_blank" rel="noopener">Book on Airbnb</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-note">
+      For direct bookings (discounted rates), please contact us via email or WhatsApp.
+    </div>
+  </div>
+</MarketingLayout>

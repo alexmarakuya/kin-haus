@@ -1,0 +1,166 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+---
+
+<MarketingLayout title="Kin Haus — Boutique Co-Living in Koh Phangan">
+  <style>
+    .hero {
+      padding: 100px 40px 80px;
+      text-align: center;
+    }
+    .hero-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 52px;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .hero-sub {
+      font-size: 18px;
+      color: #64645f;
+      max-width: 520px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+    .hero-cta {
+      display: inline-block;
+      padding: 12px 28px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .hero-cta:hover { background: #225539; }
+
+    .rooms-preview {
+      padding: 60px 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .rooms-preview h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .room-card {
+      border: 1px solid #e4e2de;
+      border-radius: 12px;
+      overflow: hidden;
+      background: white;
+      transition: box-shadow 0.2s;
+    }
+    .room-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .room-card-img {
+      height: 180px;
+      background: var(--warm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: #8b8b85;
+    }
+    .room-card-body {
+      padding: 20px;
+    }
+    .room-card-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .room-card-rate {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .room-card-desc {
+      font-size: 13px;
+      color: #64645f;
+      line-height: 1.5;
+    }
+    .room-card-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .room-card-link:hover { text-decoration: underline; }
+
+    .about-section {
+      padding: 60px 40px;
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .about-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .about-section p {
+      font-size: 15px;
+      color: #64645f;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 36px; }
+      .rooms-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <section class="hero">
+    <h1 class="hero-title">Kin Haus</h1>
+    <p class="hero-sub">A boutique co-living villa nestled in Thongsala, Koh Phangan. Three unique rooms, one shared home.</p>
+    <a href="/rooms" class="hero-cta">View Rooms</a>
+  </section>
+
+  <section class="rooms-preview">
+    <h2>Our Rooms</h2>
+    <div class="rooms-grid">
+      <div class="room-card">
+        <div class="room-card-img">The Nest</div>
+        <div class="room-card-body">
+          <div class="room-card-name">The Nest</div>
+          <div class="room-card-rate">from &#x0E3F;3,500 / night</div>
+          <div class="room-card-desc">A private retreat perched above the treetops with panoramic views and a king-size bed.</div>
+          <a href="/rooms/the-nest" class="room-card-link">View details &#x2192;</a>
+        </div>
+      </div>
+      <div class="room-card">
+        <div class="room-card-img">Master Suite</div>
+        <div class="room-card-body">
+          <div class="room-card-name">Master Suite</div>
+          <div class="room-card-rate">from &#x0E3F;2,240 / night</div>
+          <div class="room-card-desc">Spacious ground-floor suite with an ensuite bathroom and direct garden access.</div>
+          <a href="/rooms/master-suite" class="room-card-link">View details &#x2192;</a>
+        </div>
+      </div>
+      <div class="room-card">
+        <div class="room-card-img">Nomad Room</div>
+        <div class="room-card-body">
+          <div class="room-card-name">Nomad Room</div>
+          <div class="room-card-rate">from &#x0E3F;1,680 / night</div>
+          <div class="room-card-desc">A cozy workspace-ready room, ideal for digital nomads looking for a longer stay.</div>
+          <a href="/rooms/nomad-room" class="room-card-link">View details &#x2192;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section">
+    <h2>Your Home on the Island</h2>
+    <p>Kin Haus is more than a place to stay. It's a small community of travelers and creators sharing a tropical villa in one of Koh Phangan's most livable neighborhoods. Whether you're here for a week or a month, you'll feel at home.</p>
+  </section>
+</MarketingLayout>

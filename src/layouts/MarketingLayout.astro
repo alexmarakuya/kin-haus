@@ -1,0 +1,78 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<BaseLayout title={title} description={description}>
+  <style>
+    .site-nav {
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #e4e2de;
+    }
+    .nav-brand {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 13px;
+      color: #64645f;
+      text-decoration: none;
+      font-weight: 400;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--accent);
+    }
+    .site-footer {
+      border-top: 1px solid #e4e2de;
+      padding: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #8b8b85;
+    }
+    .site-footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .site-main {
+      min-height: calc(100vh - 140px);
+    }
+  </style>
+
+  <nav class="site-nav">
+    <a href="/" class="nav-brand">Kin Haus</a>
+    <ul class="nav-links">
+      <li><a href="/" class:list={[{ active: currentPath === '/' }]}>Home</a></li>
+      <li><a href="/rooms" class:list={[{ active: currentPath.startsWith('/rooms') }]}>Rooms</a></li>
+      <li><a href="/location" class:list={[{ active: currentPath === '/location' }]}>Location</a></li>
+      <li><a href="/contact" class:list={[{ active: currentPath === '/contact' }]}>Contact</a></li>
+    </ul>
+  </nav>
+
+  <main class="site-main">
+    <slot />
+  </main>
+
+  <footer class="site-footer">
+    <p>Kin Haus &middot; Thongsala, Koh Phangan, Thailand</p>
+  </footer>
+</BaseLayout>

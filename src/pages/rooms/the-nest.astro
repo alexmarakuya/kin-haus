@@ -1,0 +1,45 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+---
+
+<MarketingLayout title="The Nest — Kin Haus" description="A private retreat perched above the treetops at Kin Haus, Koh Phangan">
+  <style>
+    .room-page { padding: 60px 40px; max-width: 800px; margin: 0 auto; }
+    .room-page h1 { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 6px; }
+    .room-rate { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent); margin-bottom: 8px; }
+    .room-season { font-size: 11px; color: #8b8b85; margin-bottom: 24px; }
+    .room-hero { height: 340px; background: var(--warm); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 32px; color: #8b8b85; margin-bottom: 32px; }
+    .room-desc { font-size: 15px; color: #52524e; line-height: 1.7; margin-bottom: 28px; }
+    .room-features { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+    .room-feature { padding: 6px 12px; background: white; border: 1px solid #e4e2de; border-radius: 5px; font-size: 12px; color: #52524e; }
+    .room-cta { display: inline-block; padding: 12px 28px; background: var(--accent); color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500; transition: background 0.15s; }
+    .room-cta:hover { background: #225539; }
+    .room-back { display: inline-block; margin-top: 24px; font-size: 13px; color: #8b8b85; text-decoration: none; }
+    .room-back:hover { color: var(--accent); }
+  </style>
+
+  <div class="room-page">
+    <h1>The Nest</h1>
+    <div class="room-rate">&#x0E3F;5,000 / night (high season)</div>
+    <div class="room-season">Low season (Apr-Oct): &#x0E3F;3,500 / night</div>
+
+    <div class="room-hero">The Nest</div>
+
+    <p class="room-desc">A private retreat perched above the treetops with panoramic views, a king-size bed, and its own balcony. The most spacious room at Kin Haus, perfect for couples or solo travelers who want extra space and a sense of elevation.</p>
+
+    <div class="room-features">
+      <span class="room-feature">King-size bed</span>
+      <span class="room-feature">Private balcony</span>
+      <span class="room-feature">Panoramic views</span>
+      <span class="room-feature">Ensuite bathroom</span>
+      <span class="room-feature">Air conditioning</span>
+      <span class="room-feature">Work desk</span>
+      <span class="room-feature">Hot water shower</span>
+      <span class="room-feature">Ceiling fan</span>
+    </div>
+
+    <a href="https://www.airbnb.com/rooms/1511809226602265595" target="_blank" rel="noopener" class="room-cta">Book on Airbnb</a>
+    <br>
+    <a href="/rooms" class="room-back">&#x2190; All rooms</a>
+  </div>
+</MarketingLayout>
