@@ -52,6 +52,15 @@ import '../styles/dashboard.css';
         <div class="tab-spacer"></div>
       </div>
 
+      <!-- FILTER BAR -->
+      <div class="filter-bar" id="filter-bar">
+        <span class="filter-label">Show:</span>
+        <button class="filter-chip active" data-filter="airbnb"><span class="filter-dot" style="background:var(--airbnb)"></span>Airbnb</button>
+        <button class="filter-chip active" data-filter="direct"><span class="filter-dot" style="background:var(--direct)"></span>Direct</button>
+        <button class="filter-chip active" data-filter="friend"><span class="filter-dot" style="background:var(--friend)"></span>Friends</button>
+        <button class="filter-chip active" data-filter="blocked"><span class="filter-dot" style="background:var(--blocked)"></span>Blocked</button>
+      </div>
+
       <!-- CALENDAR TAB -->
       <div id="tab-calendar" class="cal-pane">
         <div class="cal-nav">
@@ -142,6 +151,7 @@ import '../styles/dashboard.css';
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let currentTab = 'calendar';
+  let activeFilters = { airbnb: true, direct: true, friend: true, blocked: true };
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const ROOMS = ['nest','master','nomad'];
@@ -164,6 +174,15 @@ import '../styles/dashboard.css';
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', function() {
       setTab(this.dataset.tab, this);
+    });
+  });
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      const type = this.dataset.filter;
+      activeFilters[type] = !activeFilters[type];
+      this.classList.toggle('active', activeFilters[type]);
+      render();
     });
   });
 
@@ -267,6 +286,10 @@ import '../styles/dashboard.css';
     renderSidebar();
   }
 
+  function filteredBookings() {
+    return allBookings.filter(b => activeFilters[b.type] !== false);
+  }
+
   // ─── CALENDAR ───────────────────────────────────────────────────────────────
   function renderCalendar() {
     const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -340,7 +363,7 @@ import '../styles/dashboard.css';
   }
 
   function bookingOnDay(room, dStr) {
-    return allBookings.find(b => {
+    return filteredBookings().find(b => {
       if (b.room !== room && b.room !== 'full') return false;
       return dStr >= b.checkin && dStr < b.checkout;
     });
@@ -353,7 +376,7 @@ import '../styles/dashboard.css';
   // ─── LIST ────────────────────────────────────────────────────────────────────
   function renderList() {
     const todayStr = new Date().toISOString().split('T')[0];
-    const sorted = [...allBookings].sort((a,b) => a.checkin.localeCompare(b.checkin));
+    const sorted = [...filteredBookings()].sort((a,b) => a.checkin.localeCompare(b.checkin));
     const upcoming = sorted.filter(b => b.checkout >= todayStr);
     const past = sorted.filter(b => b.checkout < todayStr);
 

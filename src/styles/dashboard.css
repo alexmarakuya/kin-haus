@@ -58,6 +58,15 @@
 .tab.active { color:var(--ink); border-bottom-color:var(--accent); }
 .tab-spacer { flex:1; }
 
+/* FILTER BAR */
+.filter-bar { padding:8px 24px; border-bottom:1px solid #eae8e5; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.filter-label { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:#8b8b85; margin-right:4px; }
+.filter-chip { display:flex; align-items:center; gap:5px; padding:4px 10px; border-radius:12px; font-size:11px; font-family:'Inter',sans-serif; cursor:pointer; border:1px solid #d9d7d3; background:transparent; color:#8b8b85; transition:all 0.15s; }
+.filter-chip:hover { border-color:#b5b3ad; }
+.filter-chip.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.filter-chip.active .filter-dot { box-shadow:0 0 0 1px var(--paper); }
+.filter-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
 /* CALENDAR */
 .cal-pane { flex:1; overflow:hidden; display:flex; flex-direction:column; }
 .cal-nav { padding:12px 24px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #eae8e5; }
