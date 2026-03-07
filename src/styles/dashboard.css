@@ -151,6 +151,11 @@
 .fg-row { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
 .modal-actions { display:flex; gap:9px; justify-content:flex-end; margin-top:18px; }
 
+/* DETAIL MODAL */
+.detail-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid #eae8e5; }
+.detail-label { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:#6b6b66; }
+.detail-value { font-size:13px; font-weight:500; text-align:right; }
+
 /* EMPTY STATE */
 .empty-state { text-align:center; padding:50px 0; color:#8b8b85; }
 .empty-state-title { font-family:'DM Serif Display',serif; font-size:18px; margin-bottom:6px; }

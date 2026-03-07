@@ -112,6 +112,26 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
+  <!-- BOOKING DETAIL MODAL -->
+  <div class="overlay" id="detail-modal">
+    <div class="modal">
+      <div class="modal-title" id="dm-title">Booking Details</div>
+      <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value" id="dm-type"></span></div>
+      <div class="detail-row"><span class="detail-label">Room</span><span class="detail-value" id="dm-room"></span></div>
+      <div class="detail-row"><span class="detail-label">Dates</span><span class="detail-value" id="dm-dates"></span></div>
+      <div class="detail-row"><span class="detail-label">Nights</span><span class="detail-value" id="dm-nights"></span></div>
+      <div id="dm-notes-row" class="detail-row"><span class="detail-label">Notes</span><span class="detail-value" id="dm-notes"></span></div>
+      <div class="fg" style="margin-top:16px">
+        <label>Total Amount (THB)</label>
+        <input id="dm-amount" type="number" placeholder="e.g. 22400" min="0">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="dm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="dm-save">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script is:inline>
   // ─── STATE ──────────────────────────────────────────────────────────────────
   let allBookings = [];
@@ -131,6 +151,9 @@ import '../styles/dashboard.css';
   document.getElementById('btn-add').addEventListener('click', openModal);
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
   document.getElementById('btn-save').addEventListener('click', saveBooking);
+  document.getElementById('dm-cancel').addEventListener('click', closeDetailModal);
+  document.getElementById('dm-save').addEventListener('click', saveBookingAmount);
+  document.getElementById('dm-amount').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBookingAmount(); });
   document.getElementById('month-prev').addEventListener('click', () => changeMonth(-1));
   document.getElementById('month-next').addEventListener('click', () => changeMonth(1));
 
@@ -297,6 +320,8 @@ import '../styles/dashboard.css';
             cell.addEventListener('mouseenter', e => showTooltip(e, bk));
             cell.addEventListener('mousemove', moveTooltip);
             cell.addEventListener('mouseleave', hideTooltip);
+            cell.style.cursor = 'pointer';
+            cell.addEventListener('click', () => { hideTooltip(); openBookingDetail(bk.id); });
           } else {
             cell.classList.add('empty');
             cell.addEventListener('click', () => openModalWithDate(dStr, room));
@@ -353,13 +378,12 @@ import '../styles/dashboard.css';
     const est = rawAmt > 0 ? `\u0E3F${rawAmt.toLocaleString()}` :
       (b.type==='friend'||b.type==='blocked') ? '' : `~\u0E3F${(n*(RATES[b.room]||3200)).toLocaleString()}`;
     const canDelete = b.source === 'manual';
-    const deleteBtn = canDelete ? `<button class="b-delete" onclick="deleteBooking('${b.id}')" title="Delete">\u00D7</button>` : '';
     const conflictNote = b.conflict ? `<div class="b-conflict-note">&#x26A0; Conflict detected</div>` : '';
     const checkinFmt = fmtDate(b.checkin);
     const checkoutFmt = fmtDate(b.checkout);
 
     return `
-      <div class="${rowCls}">
+      <div class="${rowCls}" onclick="openBookingDetail('${b.id}')" style="cursor:pointer">
         <div class="b-badge ${badgeCls}">${b.conflict ? '&#x26A0; Conflict' : label}</div>
         <div class="b-info">
           <div class="b-name">${b.guest || label}</div>
@@ -369,9 +393,9 @@ import '../styles/dashboard.css';
         </div>
         <div class="b-right">
           <div class="b-nights">${n}n</div>
-          ${est ? `<div class="b-amount" onclick="editAmount(this,'${b.id}',${rawAmt})" title="Click to edit">${est}</div>` : `<div class="b-amount b-amount-empty" onclick="editAmount(this,'${b.id}',0)" title="Click to add amount">+</div>`}
+          ${est ? `<div class="b-amount">${est}</div>` : ''}
         </div>
-        ${deleteBtn}
+        ${canDelete ? `<button class="b-delete" onclick="event.stopPropagation();deleteBooking('${b.id}')" title="Delete">\u00D7</button>` : ''}
       </div>`;
   }
 
@@ -435,30 +459,38 @@ import '../styles/dashboard.css';
       <div class="stat-line"><span class="stat-line-label">Conflicts</span><span class="stat-line-val" style="color:${allBookings.filter(b=>b.conflict).length>0?'var(--conflict)':'inherit'}">${allBookings.filter(b=>b.conflict).length}</span></div>`;
   }
 
-  // ─── INLINE AMOUNT EDITING ──────────────────────────────────────────────────
-  function editAmount(el, id, currentAmt) {
-    if (el.querySelector('input')) return; // already editing
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.className = 'b-amount-input';
-    input.value = currentAmt || '';
-    input.placeholder = '0';
-    input.min = '0';
-    el.textContent = '';
-    el.appendChild(input);
-    input.focus();
-    input.select();
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); saveAmount(id, input.value); }
-      if (e.key === 'Escape') { e.preventDefault(); loadBookings(); }
-    });
-    input.addEventListener('blur', () => { saveAmount(id, input.value); });
+  // ─── BOOKING DETAIL MODAL ───────────────────────────────────────────────────
+  let detailBookingId = null;
+
+  function openBookingDetail(id) {
+    const b = allBookings.find(x => x.id === id);
+    if (!b) return;
+    detailBookingId = id;
+    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked'}[b.type]||b.type;
+    const n = nightCount(b);
+    document.getElementById('dm-title').textContent = b.guest || typeLabel;
+    document.getElementById('dm-type').innerHTML = `<span class="b-badge badge-${b.type}">${typeLabel}</span>`;
+    document.getElementById('dm-room').textContent = ROOM_LABELS[b.room] || b.room;
+    document.getElementById('dm-dates').textContent = `${fmtDate(b.checkin)} \u2192 ${fmtDate(b.checkout)}`;
+    document.getElementById('dm-nights').textContent = `${n} night${n !== 1 ? 's' : ''}`;
+    const notesRow = document.getElementById('dm-notes-row');
+    if (b.notes) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
+    else { notesRow.style.display = 'none'; }
+    document.getElementById('dm-amount').value = b.amount > 0 ? b.amount : '';
+    document.getElementById('detail-modal').classList.add('open');
+    document.getElementById('dm-amount').focus();
   }
 
-  async function saveAmount(id, value) {
-    const amount = parseFloat(value) || 0;
+  function closeDetailModal() {
+    document.getElementById('detail-modal').classList.remove('open');
+    detailBookingId = null;
+  }
+
+  async function saveBookingAmount() {
+    if (!detailBookingId) return;
+    const amount = parseFloat(document.getElementById('dm-amount').value) || 0;
     try {
-      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(detailBookingId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount }),
@@ -466,7 +498,9 @@ import '../styles/dashboard.css';
       if (!res.ok) throw new Error('Save failed');
     } catch (err) {
       console.error('[amount] save error:', err);
+      showError('Failed to save amount.');
     }
+    closeDetailModal();
     loadBookings();
   }
 
