@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const error = Astro.url.searchParams.get('error');
+---
+
+<BaseLayout title="Login — Kin Haus">
+  <style>
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    .login-card {
+      width: 340px;
+      max-width: 100%;
+    }
+    .login-brand {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .login-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #8b8b85;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d9d7d3;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: white;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .login-input:focus {
+      border-color: var(--accent);
+    }
+    .login-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .login-btn:hover {
+      background: #225539;
+    }
+    .login-error {
+      background: #fde8e8;
+      border: 1px solid #e05a5a;
+      color: #8a1010;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .login-back {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #8b8b85;
+      text-decoration: none;
+    }
+    .login-back:hover { color: var(--accent); }
+  </style>
+
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-brand">Kin Haus</div>
+      <div class="login-sub">Occupancy Hub</div>
+
+      {error && <div class="login-error">Incorrect password</div>}
+
+      <form method="POST" action="/api/auth">
+        <input
+          type="password"
+          name="password"
+          class="login-input"
+          placeholder="Password"
+          autofocus
+          required
+        />
+        <button type="submit" class="login-btn">Sign In</button>
+      </form>
+
+      <a href="/" class="login-back">&larr; Back to site</a>
+    </div>
+  </div>
+</BaseLayout>
