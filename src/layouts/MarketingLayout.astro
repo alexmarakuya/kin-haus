@@ -258,7 +258,7 @@ const currentPath = Astro.url.pathname;
         <li><a href="/" class:list={[{ active: currentPath === '/' }]}>Home</a></li>
         <li><a href="/rooms" class:list={[{ active: currentPath.startsWith('/rooms') }]}>Rooms</a></li>
         <li><a href="/location" class:list={[{ active: currentPath === '/location' }]}>Location</a></li>
-        <li><a href="/events" class:list={[{ active: currentPath === '/events' }]}>Events</a></li>
+        <!-- <li><a href="/events" class:list={[{ active: currentPath === '/events' }]}>Events</a></li> -->
         <li><a href="/blog" class:list={[{ active: currentPath.startsWith('/blog') }]}>Blog</a></li>
         <li><a href="/contact" class:list={[{ active: currentPath === '/contact' }]}>Contact</a></li>
       </ul>
@@ -296,7 +296,7 @@ const currentPath = Astro.url.pathname;
         <h4 class="footer-heading">More</h4>
         <ul class="footer-nav">
           <li><a href="/location">Location</a></li>
-          <li><a href="/events">Events</a></li>
+          <!-- <li><a href="/events">Events</a></li> -->
           <li><a href="/blog">Blog</a></li>
           <li><a href="/contact">Contact & FAQ</a></li>
         </ul>

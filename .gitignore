@@ -4,3 +4,6 @@ node_modules/
 *.log
 dist/
 .astro/
+
+# Runtime data (created by the app, not overwritten on deploy)
+data/overrides.json
