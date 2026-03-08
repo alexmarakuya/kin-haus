@@ -1,0 +1,112 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Why Co-Living Beats Hotels for Remote Workers",
+    "description": "Hotels are built for tourists, not for people who need to get work done. Here is why co-living is a better fit for digital nomads and remote professionals.",
+    "url": "https://kinhaus.space/blog/co-living-beats-hotels-remote-workers",
+    "datePublished": "2026-03-05",
+    "dateModified": "2026-03-05",
+    "author": { "@type": "Organization", "name": "Kin Haus", "url": "https://kinhaus.space" },
+    "publisher": { "@type": "Organization", "name": "Kin Haus", "url": "https://kinhaus.space", "logo": { "@type": "ImageObject", "url": "https://kinhaus.space/logo.svg" } },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://kinhaus.space/blog/co-living-beats-hotels-remote-workers" },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
+      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://kinhaus.space/blog" },
+      { "@type": "ListItem", "position": 3, "name": "Why Co-Living Beats Hotels for Remote Workers", "item": "https://kinhaus.space/blog/co-living-beats-hotels-remote-workers" },
+    ],
+  },
+];
+---
+
+<MarketingLayout
+  title="Why Co-Living Beats Hotels for Remote Workers -- Kin Haus Blog"
+  description="Hotels are built for tourists. Co-living is built for people who need to get work done. Community, reliable WiFi, and a real workspace make the difference."
+  jsonLd={jsonLd}
+>
+  <style>
+    .blog-post { padding: 60px 40px; max-width: 700px; margin: 0 auto; }
+    .blog-post-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #8b8b85;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+    .blog-post h1 { font-weight: 600; font-size: 34px; margin-bottom: 16px; line-height: 1.2; }
+    .blog-post-intro { font-size: 16px; color: #52524e; line-height: 1.7; margin-bottom: 32px; }
+    .blog-post h2 { font-size: 22px; font-weight: 600; margin-top: 36px; margin-bottom: 12px; }
+    .blog-post p { font-size: 15px; color: #3a3a38; line-height: 1.7; margin-bottom: 16px; }
+    .blog-post a { color: var(--accent); text-decoration: underline; }
+    .blog-post a:hover { color: #245a3b; }
+    .blog-post-cta {
+      margin-top: 40px;
+      padding: 24px;
+      background: var(--warm);
+      border-radius: 10px;
+      text-align: center;
+    }
+    .blog-post-cta p { color: #52524e; margin-bottom: 12px; }
+    .blog-post-cta a {
+      display: inline-block;
+      padding: 10px 24px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .blog-post-cta a:hover { background: #245a3b; color: white; }
+    .blog-back { display: inline-block; margin-top: 32px; font-size: 13px; color: #8b8b85; text-decoration: none; }
+    .blog-back:hover { color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .blog-post { padding: 40px 20px; }
+      .blog-post h1 { font-size: 26px; }
+    }
+  </style>
+
+  <div class="blog-post">
+    <div class="blog-post-meta">March 5, 2026</div>
+    <h1>Why Co-Living Beats Hotels for Remote Workers</h1>
+    <p class="blog-post-intro">If you work remotely and travel, you have probably tried the hotel-as-office setup. It rarely works well. Here is why co-living is a better fit.</p>
+
+    <h2>The hotel problem</h2>
+    <p>Hotels are designed for tourists who leave in the morning, come back at night, and check out in a few days. The WiFi is shared across dozens of rooms and usually unreliable. The desk, if there is one, is a tiny surface wedged between the TV and the minibar. There is no kitchen, so every meal means eating out. And the other guests are on holiday -- not the kind of environment that helps you focus.</p>
+    <p>For a weekend trip, none of this matters. But if you are trying to do deep work for weeks or months at a time, these small frictions add up fast.</p>
+
+    <h2>What co-living gets right</h2>
+    <p>Co-living spaces are built around the assumption that residents need to work. That changes the design of everything:</p>
+    <p><strong>Internet that actually works.</strong> At <a href="/rooms">Kin Haus</a>, we have 500+ Mbps fibre with a mesh network and a backup connection. The internet is not shared with a lobby full of guests streaming Netflix. It is dedicated infrastructure for a small number of residents who depend on it.</p>
+    <p><strong>Real workspaces.</strong> Every room has a proper desk and chair. There are quiet indoor areas and outdoor spots where you can work without feeling like you are in someone's lobby. You do not need to hunt for a cafe with a power outlet.</p>
+    <p><strong>A shared kitchen.</strong> Cooking your own meals saves money and gives you control over your diet. Most co-living spaces have a fully equipped kitchen. At Kin Haus, it is a shared space where residents often cook and eat together -- one of the best parts of the experience.</p>
+
+    <h2>Community without the hustle</h2>
+    <p>One of the hardest parts of remote work is loneliness. In a hotel, you are surrounded by strangers who are leaving tomorrow. In a co-living space, you are living alongside people who are in the same situation: building something, working on their own projects, figuring out how to live well while working remotely.</p>
+    <p>The social dynamic is different. You share meals, have conversations by the <a href="/rooms">pool</a>, and occasionally collaborate. But there is no pressure to socialise when you need to focus. It is the kind of organic community that forms when people share a home rather than just a building.</p>
+
+    <h2>The cost comparison</h2>
+    <p>Co-living is usually cheaper than a comparable hotel, especially for stays longer than a week. A decent hotel room in Southeast Asia costs $40-80 per night. A co-living space with better amenities often works out to $15-40 per night, and the rate drops further with weekly or monthly discounts.</p>
+    <p>Factor in the shared kitchen (fewer restaurant meals), included utilities, and the WiFi that does not require a coworking space membership, and the savings are significant.</p>
+
+    <h2>Who it works best for</h2>
+    <p>Co-living is not for everyone. If you want room service, daily housekeeping, and complete privacy at all times, a hotel is probably better. But if you are a freelancer, founder, developer, designer, writer, or anyone else who works remotely and values community, good internet, and a comfortable workspace, co-living is worth trying.</p>
+    <p>The shift from hotel to co-living often changes how people feel about working abroad. Instead of fighting your environment, you are working with it.</p>
+
+    <div class="blog-post-cta">
+      <p>Kin Haus is a boutique co-living villa in Koh Phangan built for remote workers. Three rooms, 500+ Mbps WiFi, infinity pool, shared kitchen.</p>
+      <a href="/contact">Get in touch</a>
+    </div>
+
+    <a href="/blog" class="blog-back">&larr; All posts</a>
+  </div>
+</MarketingLayout>

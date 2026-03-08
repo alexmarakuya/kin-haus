@@ -2,9 +2,18 @@
 interface Props {
   title: string;
   description?: string;
+  canonicalPath?: string;
+  jsonLd?: object | object[];
 }
 
-const { title, description = 'Kin Haus — boutique co-living villa in Thongsala, Koh Phangan' } = Astro.props;
+const {
+  title,
+  description = 'Boutique co-living villa in Koh Phangan, Thailand for digital nomads and remote workers. Three private rooms with infinity pool, 500+ Mbps WiFi, and shared kitchen.',
+  canonicalPath,
+  jsonLd,
+} = Astro.props;
+const siteUrl = 'https://kinhaus.space';
+const canonicalUrl = canonicalPath ? `${siteUrl}${canonicalPath}` : `${siteUrl}${Astro.url.pathname === '/' ? '' : Astro.url.pathname}`;
 ---
 
 <!DOCTYPE html>
@@ -14,7 +23,72 @@ const { title, description = 'Kin Haus — boutique co-living villa in Thongsala
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content={description}>
   <title>{title}</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="canonical" href={canonicalUrl}>
+
+  <!-- DNS Prefetch / Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://us.i.posthog.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:image" content={`${siteUrl}/og-image.jpg`}>
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content={canonicalUrl}>
+  <meta property="og:site_name" content="Kin Haus">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content={`${siteUrl}/og-image.jpg`}>
+
+  <!-- Organization Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Kin Haus",
+    "url": "https://kinhaus.space",
+    "logo": "https://kinhaus.space/logo.svg",
+    "sameAs": [
+      "https://www.instagram.com/kinhauskpg",
+      "https://www.airbnb.com/rooms/1511809226602265595"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "reservations",
+      "url": "https://wa.me/66638034860",
+      "availableLanguage": "English"
+    }
+  })} />
+
+  <!-- Page-specific structured data -->
+  {jsonLd && (
+    Array.isArray(jsonLd)
+      ? jsonLd.map(ld => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)
+      : <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  )}
+
+  <!-- PostHog Analytics (skip on internal pages) -->
+  <script is:inline>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(/\/$/,"")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    var _ph=window.location.pathname;
+    if(_ph.indexOf("/dashboard")!==0&&_ph!=="/login"){
+      posthog.init("phc_REPLACE_WITH_YOUR_KEY",{api_host:"https://us.i.posthog.com",autocapture:true});
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style is:global>
     :root {
       --ink: #0f1419;
@@ -31,11 +105,15 @@ const { title, description = 'Kin Haus — boutique co-living villa in Thongsala
       --blocked-light: #eeebe4;
       --conflict: #e07a30;
       --conflict-light: #fdebd8;
+      --owner: #d4a259;
+      --owner-light: #faf0dd;
       --nest: #c4773a;
       --master: #4a8f6f;
       --nomad: #6b7fc4;
+      --theater: #9b6fb0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif; }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--paper);

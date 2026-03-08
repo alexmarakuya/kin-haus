@@ -1,0 +1,572 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+
+interface EventLink {
+  platform: 'instagram' | 'facebook' | 'eventbrite' | 'meetup' | 'other';
+  url: string;
+  label?: string;
+}
+
+interface KinEvent {
+  title: string;
+  date: string;
+  time: string;
+  endTime?: string;
+  description: string;
+  details?: string;
+  location: string;
+  category: 'social' | 'wellness' | 'music' | 'workshop' | 'community' | 'other';
+  image?: string;
+  links?: EventLink[];
+}
+
+const allEvents: KinEvent[] = [
+  {
+    title: 'AI Wizards of Phangan',
+    date: '2026-03-10',
+    time: '10:30',
+    endTime: '12:15',
+    description: 'Curious minds come together to share spells, swap secrets, and sharpen their craft. Secret guest speaker on Claude skills and plugins.',
+    details: `<div class="evm-schedule">
+<div class="evm-schedule-item"><span class="evm-stime">10:30</span> Arrive & mingle</div>
+<div class="evm-schedule-item"><span class="evm-stime">11:00</span> Dispatches from the magical realm -- latest AI news</div>
+<div class="evm-schedule-item"><span class="evm-stime">11:15</span> The workshop: join the circle or break off into your own covens</div>
+<div class="evm-schedule-item"><span class="evm-stime">12:15</span> Socialize & swap spells</div>
+</div>
+<p class="evm-p"><strong>Secret guest speaker</strong> -- A mystery wizard joins us to reveal the art of Claude skills and plugins, starting with Claude CoWork. First spell or hundredth, there's something here for every level of the craft.</p>
+<p class="evm-note">No prior wizardry required.</p>
+<p class="evm-note">&#x1F3CA; Bring your swimming gear and stick around for an afternoon by the pool!</p>`,
+    location: 'Kin Haus, Koh Phangan',
+    category: 'workshop',
+  },
+];
+
+// Filter to upcoming events only (today or later)
+const today = new Date().toISOString().split('T')[0];
+const events = allEvents
+  .filter(e => e.date >= today)
+  .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
+// Build JSON-LD for each event
+const eventSchemas = events.map(ev => ({
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": ev.title,
+  "description": ev.description,
+  "startDate": `${ev.date}T${ev.time}:00+07:00`,
+  ...(ev.endTime ? { "endDate": `${ev.date}T${ev.endTime}:00+07:00` } : {}),
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "location": {
+    "@type": "Place",
+    "name": ev.location,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Koh Phangan",
+      "addressRegion": "Surat Thani",
+      "addressCountry": "TH",
+    },
+  },
+  "organizer": {
+    "@type": "Organization",
+    "name": "Kin Haus",
+    "url": "https://kinhaus.space",
+  },
+  ...(ev.image ? { "image": ev.image } : {}),
+}));
+
+const jsonLd = [
+  ...eventSchemas,
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
+      { "@type": "ListItem", "position": 2, "name": "Events", "item": "https://kinhaus.space/events" },
+    ],
+  },
+];
+
+// Helpers
+function getMonth(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+}
+
+function getDay(dateStr: string): string {
+  return String(new Date(dateStr + 'T12:00:00').getDate());
+}
+
+function getWeekday(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function formatTime(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return m === 0 ? `${hour} ${ampm}` : `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+const categoryLabels: Record<string, string> = {
+  social: 'Social',
+  wellness: 'Wellness',
+  music: 'Music',
+  workshop: 'Workshop',
+  community: 'Community',
+  other: 'Event',
+};
+---
+
+<MarketingLayout
+  title="Events -- Workshops & Community Gatherings | Kin Haus, Koh Phangan"
+  description="Upcoming events at Kin Haus co-living villa in Koh Phangan. AI meetups, community gatherings, and workshops for guests and locals."
+  jsonLd={jsonLd}
+>
+  <style>
+    .events-page {
+      padding: 60px 40px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    .events-page h1 {
+      font-weight: 600;
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+    .events-intro {
+      font-size: 15px;
+      color: #64645f;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    /* ── Grid ── */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    /* ── Card ── */
+    .evt-card {
+      background: white;
+      border: 1px solid #e4e2de;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.15s;
+      display: flex;
+      flex-direction: column;
+    }
+    .evt-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+      transform: translateY(-2px);
+    }
+
+    /* Date block */
+    .evt-date {
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid #f0eeeb;
+    }
+    .evt-day-num {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 48px;
+      line-height: 1;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .evt-month-day {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #8b8b85;
+      letter-spacing: 0.04em;
+      margin-top: 4px;
+    }
+
+    /* Body */
+    .evt-body {
+      padding: 16px 20px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .evt-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .evt-badge {
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 500;
+    }
+    .badge-social { background: #d4ede3; color: #1a5c38; }
+    .badge-wellness { background: #e8ddf0; color: #5a3a7a; }
+    .badge-music { background: #fde0d8; color: #8a2e1a; }
+    .badge-workshop { background: #d8e8f5; color: #1a4a7a; }
+    .badge-community { background: #faf0dd; color: #7a5a10; }
+    .badge-other { background: #eae8e5; color: #5a5a55; }
+
+    .evt-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #8b8b85;
+    }
+    .evt-title {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+    .evt-desc {
+      font-size: 12.5px;
+      color: #64645f;
+      line-height: 1.55;
+      margin-bottom: 14px;
+      flex: 1;
+    }
+    .evt-location {
+      font-size: 11px;
+      color: #8b8b85;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .evt-location svg { flex-shrink: 0; }
+
+    /* ── Modal overlay ── */
+    .evm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(15, 20, 25, 0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .evm-overlay.open { display: flex; }
+
+    .evm-modal {
+      background: white;
+      border-radius: 14px;
+      width: 560px;
+      max-width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+      position: relative;
+    }
+    .evm-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #8b8b85;
+      padding: 4px;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    .evm-close:hover { background: var(--warm); color: var(--ink); }
+
+    .evm-header {
+      padding: 32px 32px 0;
+    }
+    .evm-date-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #8b8b85;
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+    .evm-title {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+    .evm-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .evm-location {
+      font-size: 13px;
+      color: #64645f;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .evm-location svg { flex-shrink: 0; }
+
+    .evm-content {
+      padding: 20px 32px 32px;
+    }
+    .evm-desc {
+      font-size: 14px;
+      color: #52524e;
+      line-height: 1.65;
+      margin-bottom: 20px;
+    }
+
+    /* Detail blocks inside modal */
+    .evm-schedule {
+      background: var(--warm);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .evm-schedule-item {
+      font-size: 13px;
+      color: #52524e;
+      line-height: 1.65;
+      padding: 2px 0;
+    }
+    .evm-stime {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-right: 10px;
+      display: inline-block;
+      min-width: 40px;
+    }
+    .evm-p {
+      font-size: 14px;
+      color: #52524e;
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+    .evm-p strong { color: var(--ink); }
+    .evm-note {
+      font-size: 13px;
+      color: #8b8b85;
+      line-height: 1.6;
+      margin-bottom: 6px;
+      font-style: italic;
+    }
+
+    .evm-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #f0eeeb;
+    }
+    .evm-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid #e4e2de;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #52524e;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .evm-link:hover { border-color: var(--accent); color: var(--accent); }
+    .evm-link svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── Empty state ── */
+    .events-empty {
+      text-align: center;
+      padding: 80px 20px;
+      grid-column: 1 / -1;
+    }
+    .events-empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .events-empty p {
+      font-size: 15px;
+      color: #8b8b85;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .events-empty a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .events-empty a:hover { text-decoration: underline; }
+
+    @media (max-width: 960px) {
+      .events-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .events-page { padding: 40px 20px; }
+      .events-page h1 { font-size: 28px; }
+      .events-grid { grid-template-columns: 1fr; }
+      .evt-day-num { font-size: 40px; }
+      .evm-header { padding: 24px 20px 0; }
+      .evm-content { padding: 16px 20px 24px; }
+      .evm-title { font-size: 22px; }
+    }
+  </style>
+
+  <div class="events-page">
+    <h1>Events</h1>
+    <p class="events-intro">What's happening at Kin Haus and around the island</p>
+
+    <div class="events-grid">
+      {events.length > 0 ? (
+        events.map((event, i) => (
+          <article class="evt-card" data-event={String(i)}>
+            <div class="evt-date">
+              <div class="evt-day-num">{getDay(event.date)}</div>
+              <div class="evt-month-day">{getMonth(event.date)} &middot; {getWeekday(event.date)}</div>
+            </div>
+            <div class="evt-body">
+              <div class="evt-meta">
+                <span class={`evt-badge badge-${event.category}`}>{categoryLabels[event.category]}</span>
+                <span class="evt-time">{formatTime(event.time)}{event.endTime ? ` - ${formatTime(event.endTime)}` : ''}</span>
+              </div>
+              <h2 class="evt-title">{event.title}</h2>
+              <p class="evt-desc">{event.description}</p>
+              <div class="evt-location">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {event.location}
+              </div>
+            </div>
+          </article>
+        ))
+      ) : (
+        <div class="events-empty">
+          <div class="events-empty-icon">&#x1F334;</div>
+          <p>No upcoming events right now.<br/>Follow us on Instagram for updates.</p>
+          <a href="https://www.instagram.com/kinhauskpg" target="_blank" rel="noopener noreferrer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            @kinhauskpg
+          </a>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="evm-overlay" id="evmOverlay">
+    <div class="evm-modal" id="evmModal">
+      <button class="evm-close" id="evmClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="evm-header">
+        <div class="evm-date-line" id="evmDate"></div>
+        <h2 class="evm-title" id="evmTitle"></h2>
+        <div class="evm-meta-row">
+          <span class="evt-badge" id="evmBadge"></span>
+          <span class="evt-time" id="evmTime"></span>
+        </div>
+        <div class="evm-location" id="evmLoc">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="evmLocText"></span>
+        </div>
+      </div>
+      <div class="evm-content">
+        <p class="evm-desc" id="evmDesc"></p>
+        <div id="evmDetails"></div>
+        <div class="evm-links" id="evmLinks" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ events, categoryLabels }}>
+    (function() {
+      var overlay = document.getElementById('evmOverlay');
+      var modal = document.getElementById('evmModal');
+      var closeBtn = document.getElementById('evmClose');
+
+      function openModal(idx) {
+        var ev = events[idx];
+        if (!ev) return;
+
+        document.getElementById('evmDate').textContent = new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        document.getElementById('evmTitle').textContent = ev.title;
+
+        var badge = document.getElementById('evmBadge');
+        badge.textContent = categoryLabels[ev.category] || ev.category;
+        badge.className = 'evt-badge badge-' + ev.category;
+
+        var h = parseInt(ev.time.split(':')[0]);
+        var m = parseInt(ev.time.split(':')[1]);
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        var hr = h % 12 || 12;
+        var timeStr = m === 0 ? hr + ' ' + ampm : hr + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+        if (ev.endTime) {
+          var eh = parseInt(ev.endTime.split(':')[0]);
+          var em2 = parseInt(ev.endTime.split(':')[1]);
+          var eampm = eh >= 12 ? 'PM' : 'AM';
+          var ehr = eh % 12 || 12;
+          timeStr += ' - ' + (em2 === 0 ? ehr + ' ' + eampm : ehr + ':' + String(em2).padStart(2, '0') + ' ' + eampm);
+        }
+        document.getElementById('evmTime').textContent = timeStr;
+        document.getElementById('evmLocText').textContent = ev.location;
+        document.getElementById('evmDesc').textContent = ev.description;
+        document.getElementById('evmDetails').innerHTML = ev.details || '';
+
+        var linksEl = document.getElementById('evmLinks');
+        if (ev.links && ev.links.length > 0) {
+          linksEl.style.display = 'flex';
+          linksEl.innerHTML = ev.links.map(function(l) {
+            var icon = '';
+            if (l.platform === 'instagram') icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>';
+            else if (l.platform === 'facebook') icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>';
+            var label = l.label || l.platform.charAt(0).toUpperCase() + l.platform.slice(1);
+            return '<a href="' + l.url + '" target="_blank" rel="noopener noreferrer" class="evm-link">' + icon + ' ' + label + '</a>';
+          }).join('');
+        } else {
+          linksEl.style.display = 'none';
+        }
+
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      document.querySelectorAll('.evt-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+          var idx = parseInt(card.getAttribute('data-event'));
+          openModal(idx);
+        });
+      });
+
+      closeBtn.addEventListener('click', closeModal);
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeModal();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+      });
+    })();
+  </script>
+</MarketingLayout>

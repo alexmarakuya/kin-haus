@@ -4,13 +4,15 @@ import BaseLayout from './BaseLayout.astro';
 interface Props {
   title: string;
   description?: string;
+  canonicalPath?: string;
+  jsonLd?: object | object[];
 }
 
-const { title, description } = Astro.props;
+const { title, description, canonicalPath, jsonLd } = Astro.props;
 const currentPath = Astro.url.pathname;
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} canonicalPath={canonicalPath} jsonLd={jsonLd}>
   <style>
     .site-nav {
       padding: 20px 40px;
@@ -20,11 +22,13 @@ const currentPath = Astro.url.pathname;
       border-bottom: 1px solid #e4e2de;
     }
     .nav-brand {
-      font-family: 'DM Serif Display', serif;
-      font-size: 22px;
-      color: var(--ink);
+      display: flex;
+      align-items: center;
       text-decoration: none;
-      letter-spacing: -0.5px;
+    }
+    .nav-brand img {
+      height: 32px;
+      width: auto;
     }
     .nav-links {
       display: flex;
@@ -42,30 +46,231 @@ const currentPath = Astro.url.pathname;
     .nav-links a.active {
       color: var(--accent);
     }
+    .currency-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #b0ada8;
+    }
+    .currency-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 16px;
+    }
+    .currency-toggle-btns {
+      display: flex;
+      border: 1px solid #e4e2de;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .currency-toggle-btns button {
+      background: none;
+      border: none;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      color: #8b8b85;
+      transition: all 0.15s;
+    }
+    .currency-toggle-btns button.active {
+      background: var(--accent);
+      color: white;
+    }
+    .currency-toggle-btns button:not(.active):hover {
+      background: var(--paper);
+    }
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .nav-burger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      width: 28px;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .nav-burger span {
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: var(--ink);
+      border-radius: 2px;
+      transition: all 0.25s;
+    }
+    .nav-burger.open span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    .nav-burger.open span:nth-child(2) {
+      opacity: 0;
+    }
+    .nav-burger.open span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
+    @media (max-width: 768px) {
+      .site-nav { padding: 14px 20px; position: relative; }
+      .nav-burger { display: flex; }
+      .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0; right: 0;
+        background: white;
+        border-bottom: 1px solid #e4e2de;
+        padding: 20px 24px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+        z-index: 100;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      }
+      .nav-menu.open { display: flex; }
+      .nav-links { flex-direction: column; gap: 16px; }
+      .nav-links a { font-size: 16px; }
+      .currency-toggle { margin-left: 0; }
+      .site-footer { padding: 32px 20px; }
+    }
     .site-footer {
       border-top: 1px solid #e4e2de;
-      padding: 40px;
-      text-align: center;
+      padding: 48px 40px 32px;
       font-size: 12px;
       color: #8b8b85;
     }
     .site-footer a {
-      color: var(--accent);
+      color: #64645f;
       text-decoration: none;
+      transition: color 0.15s;
+    }
+    .site-footer a:hover { color: var(--accent); }
+    .footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 32px;
+    }
+    .footer-logo {
+      height: 40px;
+      width: auto;
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+    .footer-tagline {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #8b8b85;
+    }
+    .footer-heading {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64645f;
+      margin-bottom: 12px;
+    }
+    .footer-nav {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .footer-nav a {
+      font-size: 13px;
+    }
+    .footer-bottom {
+      max-width: 960px;
+      margin: 32px auto 0;
+      padding-top: 20px;
+      border-top: 1px solid #e4e2de;
+      text-align: center;
+      font-size: 12px;
+      color: #b0ada8;
+    }
+    @media (max-width: 640px) {
+      .footer-inner {
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+      }
+      .site-footer { padding: 32px 20px 24px; }
+    }
+    @media (max-width: 380px) {
+      .footer-inner { grid-template-columns: 1fr; }
     }
     .site-main {
       min-height: calc(100vh - 140px);
     }
+
+    /* Lightbox */
+    .room-hero img, .room-gallery img { cursor: pointer; }
+    .lightbox {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.92);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90vw; max-height: 85vh;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+    .lb-close {
+      position: absolute; top: 16px; right: 20px;
+      color: white; font-size: 32px; cursor: pointer;
+      background: none; border: none; line-height: 1;
+      opacity: 0.7; transition: opacity 0.15s;
+    }
+    .lb-close:hover { opacity: 1; }
+    .lb-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      color: white; font-size: 28px; cursor: pointer;
+      background: rgba(255,255,255,0.1); border: none;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0.7; transition: opacity 0.15s;
+    }
+    .lb-nav:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+    .lb-prev { left: 16px; }
+    .lb-next { right: 16px; }
+    .lb-counter {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.6); font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
   </style>
 
   <nav class="site-nav">
-    <a href="/" class="nav-brand">Kin Haus</a>
-    <ul class="nav-links">
-      <li><a href="/" class:list={[{ active: currentPath === '/' }]}>Home</a></li>
-      <li><a href="/rooms" class:list={[{ active: currentPath.startsWith('/rooms') }]}>Rooms</a></li>
-      <li><a href="/location" class:list={[{ active: currentPath === '/location' }]}>Location</a></li>
-      <li><a href="/contact" class:list={[{ active: currentPath === '/contact' }]}>Contact</a></li>
-    </ul>
+    <a href="/" class="nav-brand"><img src="/logo.svg" alt="Kin Haus"></a>
+    <button class="nav-burger" id="navBurger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-menu" id="navMenu">
+      <ul class="nav-links">
+        <li><a href="/" class:list={[{ active: currentPath === '/' }]}>Home</a></li>
+        <li><a href="/rooms" class:list={[{ active: currentPath.startsWith('/rooms') }]}>Rooms</a></li>
+        <li><a href="/location" class:list={[{ active: currentPath === '/location' }]}>Location</a></li>
+        <li><a href="/events" class:list={[{ active: currentPath === '/events' }]}>Events</a></li>
+        <li><a href="/blog" class:list={[{ active: currentPath.startsWith('/blog') }]}>Blog</a></li>
+        <li><a href="/contact" class:list={[{ active: currentPath === '/contact' }]}>Contact</a></li>
+      </ul>
+      <div class="currency-toggle" id="currencyToggle">
+        <span class="currency-label">Currency</span>
+        <div class="currency-toggle-btns">
+          <button data-currency="thb" class="active">&#x0E3F; THB</button>
+          <button data-currency="usd">$ USD</button>
+          <button data-currency="eur">&euro; EUR</button>
+        </div>
+      </div>
+    </div>
   </nav>
 
   <main class="site-main">
@@ -73,6 +278,1028 @@ const currentPath = Astro.url.pathname;
   </main>
 
   <footer class="site-footer">
-    <p>Kin Haus &middot; Thongsala, Koh Phangan, Thailand</p>
+    <div class="footer-inner">
+      <div class="footer-col">
+        <img src="/logo.svg" alt="Kin Haus" class="footer-logo">
+        <p class="footer-tagline">Boutique co-living villa in Koh Phangan, Thailand. Three rooms, one shared home.</p>
+      </div>
+      <nav class="footer-col" aria-label="Rooms">
+        <h4 class="footer-heading">Rooms</h4>
+        <ul class="footer-nav">
+          <li><a href="/rooms">All Rooms</a></li>
+          <li><a href="/rooms/the-nest">The Nest</a></li>
+          <li><a href="/rooms/master-suite">Master Suite</a></li>
+          <li><a href="/rooms/nomad-room">Nomad Room</a></li>
+        </ul>
+      </nav>
+      <nav class="footer-col" aria-label="More">
+        <h4 class="footer-heading">More</h4>
+        <ul class="footer-nav">
+          <li><a href="/location">Location</a></li>
+          <li><a href="/events">Events</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/contact">Contact & FAQ</a></li>
+        </ul>
+      </nav>
+      <div class="footer-col">
+        <h4 class="footer-heading">Connect</h4>
+        <ul class="footer-nav">
+          <li><a href="https://wa.me/66638034860" target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="https://www.instagram.com/kinhauskpg" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://www.airbnb.com/rooms/1511809226602265595" target="_blank" rel="noopener">Airbnb</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Kin Haus -- Koh Phangan, Thailand</p>
+    </div>
   </footer>
+
+  <!-- Mobile nav toggle -->
+  <script is:inline>
+  (function() {
+    var burger = document.getElementById('navBurger');
+    var menu = document.getElementById('navMenu');
+    if (!burger || !menu) return;
+    burger.addEventListener('click', function() {
+      burger.classList.toggle('open');
+      menu.classList.toggle('open');
+    });
+    // Close menu when a link is tapped
+    menu.querySelectorAll('a').forEach(function(a) {
+      a.addEventListener('click', function() {
+        burger.classList.remove('open');
+        menu.classList.remove('open');
+      });
+    });
+  })();
+  </script>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lb-close" aria-label="Close">&times;</button>
+    <button class="lb-nav lb-prev" aria-label="Previous">&#x2039;</button>
+    <img src="" alt="">
+    <button class="lb-nav lb-next" aria-label="Next">&#x203A;</button>
+    <div class="lb-counter"></div>
+  </div>
+
+  <script is:inline>
+  (function() {
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+    const lbImg = lb.querySelector('img');
+    const counter = lb.querySelector('.lb-counter');
+    let images = [];
+    let idx = 0;
+
+    function collectImages() {
+      images = Array.from(document.querySelectorAll('.room-hero img, .room-gallery img'));
+    }
+
+    function show(i) {
+      idx = i;
+      lbImg.src = images[idx].src;
+      lbImg.alt = images[idx].alt;
+      counter.textContent = (idx + 1) + ' / ' + images.length;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hide() {
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', function(e) {
+      const img = e.target.closest('.room-hero img, .room-gallery img');
+      if (img) {
+        collectImages();
+        const i = images.indexOf(img);
+        if (i >= 0) show(i);
+      }
+    });
+
+    lb.querySelector('.lb-close').addEventListener('click', hide);
+    lb.addEventListener('click', function(e) {
+      if (e.target === lb) hide();
+    });
+    lb.querySelector('.lb-prev').addEventListener('click', function() {
+      show((idx - 1 + images.length) % images.length);
+    });
+    lb.querySelector('.lb-next').addEventListener('click', function() {
+      show((idx + 1) % images.length);
+    });
+    document.addEventListener('keydown', function(e) {
+      if (!lb.classList.contains('open')) return;
+      if (e.key === 'Escape') hide();
+      if (e.key === 'ArrowLeft') show((idx - 1 + images.length) % images.length);
+      if (e.key === 'ArrowRight') show((idx + 1) % images.length);
+    });
+
+    // Mobile swipe support
+    var touchStartX = 0;
+    var touchStartY = 0;
+    lb.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    lb.addEventListener('touchend', function(e) {
+      var dx = e.changedTouches[0].screenX - touchStartX;
+      var dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+      if (dx < 0) show((idx + 1) % images.length);
+      else show((idx - 1 + images.length) % images.length);
+    }, { passive: true });
+  })();
+  </script>
+
+  <!-- Flatpickr CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr" is:inline></script>
+
+  <!-- Booking Inquiry Modal -->
+  <style is:global>
+    /* CTA Button */
+    .avail-cta {
+      display: block; width: 100%; padding: 16px 24px;
+      background: var(--accent); color: white; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; font-family: 'Bricolage Grotesque', sans-serif;
+      cursor: pointer; transition: all 0.2s; margin-bottom: 32px;
+      letter-spacing: 0.01em;
+    }
+    .avail-cta:hover { background: #245a3b; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(44,110,73,0.25); }
+    .avail-cta:active { transform: translateY(0); }
+
+    .booking-overlay {
+      position: fixed; inset: 0; z-index: 1100;
+      background: rgba(0,0,0,0.5);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 20px; overflow-y: auto;
+    }
+    .booking-overlay.open { display: flex; }
+    .booking-modal {
+      background: white; border-radius: 12px;
+      width: 100%; max-width: 440px;
+      padding: 32px; position: relative;
+      margin: auto 0;
+    }
+    .bm-close {
+      position: absolute; top: 12px; right: 16px;
+      background: none; border: none; font-size: 24px;
+      color: #8b8b85; cursor: pointer; line-height: 1;
+    }
+    .bm-close:hover { color: var(--ink); }
+    .bm-title { font-weight: 600; font-size: 20px; margin-bottom: 4px; }
+    .bm-room { font-size: 13px; color: var(--accent); font-family: 'JetBrains Mono', monospace; margin-bottom: 16px; }
+    .bm-label { display: block; font-size: 11px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; color: #8b8b85; margin-bottom: 4px; }
+    .bm-input {
+      width: 100%; padding: 10px 12px; border: 1px solid #e4e2de; border-radius: 6px;
+      font-size: 14px; font-family: inherit; background: var(--paper);
+      outline: none; transition: border-color 0.15s;
+    }
+    .bm-input:focus { border-color: var(--accent); }
+
+    /* Calendar container */
+    .bm-calendar-wrap {
+      margin-bottom: 12px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .bm-calendar-wrap .flatpickr-calendar {
+      box-shadow: none !important; border: 1px solid #e4e2de; border-radius: 10px;
+      width: 100% !important; max-width: 100%; font-family: 'Bricolage Grotesque', sans-serif;
+    }
+
+    /* Month/year header */
+    .bm-calendar-wrap .flatpickr-months {
+      border-radius: 10px 10px 0 0; padding: 8px 4px;
+      background: var(--paper); border-bottom: 1px solid #eeecea;
+    }
+    .bm-calendar-wrap .flatpickr-months .flatpickr-month {
+      height: 32px;
+    }
+    .bm-calendar-wrap .flatpickr-current-month {
+      font-size: 14px; font-weight: 600; font-family: 'Bricolage Grotesque', sans-serif;
+      color: var(--ink); padding-top: 4px;
+    }
+    /* Style the month dropdown */
+    .bm-calendar-wrap .flatpickr-current-month .flatpickr-monthDropdown-months {
+      appearance: none; -webkit-appearance: none;
+      background: transparent; border: none;
+      font-size: 14px; font-weight: 600; font-family: 'Bricolage Grotesque', sans-serif;
+      color: var(--ink); cursor: pointer;
+      padding: 2px 4px; margin: 0;
+    }
+    .bm-calendar-wrap .flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+      color: var(--accent);
+    }
+    /* Style the year input */
+    .bm-calendar-wrap .flatpickr-current-month .numInputWrapper {
+      display: inline-block;
+    }
+    .bm-calendar-wrap .flatpickr-current-month .numInputWrapper input.cur-year {
+      font-size: 14px; font-weight: 600; font-family: 'Bricolage Grotesque', sans-serif;
+      color: var(--ink); background: transparent; border: none;
+      padding: 0 2px;
+    }
+    .bm-calendar-wrap .flatpickr-current-month .numInputWrapper span {
+      border: none; opacity: 0.4;
+    }
+    .bm-calendar-wrap .flatpickr-current-month .numInputWrapper span:hover {
+      background: transparent; opacity: 0.8;
+    }
+    .bm-calendar-wrap .flatpickr-current-month .numInputWrapper span::after {
+      border-top-color: var(--ink); border-bottom-color: var(--ink);
+    }
+    /* Prev/next arrows */
+    .bm-calendar-wrap .flatpickr-prev-month,
+    .bm-calendar-wrap .flatpickr-next-month {
+      padding: 6px 10px; border-radius: 6px; top: 8px;
+      transition: background 0.15s;
+    }
+    .bm-calendar-wrap .flatpickr-prev-month:hover,
+    .bm-calendar-wrap .flatpickr-next-month:hover {
+      background: #eeecea;
+    }
+    .bm-calendar-wrap .flatpickr-prev-month svg,
+    .bm-calendar-wrap .flatpickr-next-month svg {
+      fill: var(--ink) !important;
+    }
+    /* Weekday headers */
+    .bm-calendar-wrap .flatpickr-weekdays {
+      background: transparent; padding: 4px 0;
+    }
+    .bm-calendar-wrap span.flatpickr-weekday {
+      color: #8b8b85; font-size: 11px; font-weight: 500;
+      font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    /* Day cells */
+    .bm-calendar-wrap .flatpickr-day {
+      border-radius: 6px; font-size: 13px; max-width: 40px; height: 36px; line-height: 36px;
+      color: var(--ink); font-weight: 400;
+      transition: background 0.1s, color 0.1s;
+    }
+    .bm-calendar-wrap .flatpickr-day:hover:not(.flatpickr-disabled):not(.selected):not(.startRange):not(.endRange) {
+      background: #eeecea; border-color: #eeecea;
+    }
+    .bm-calendar-wrap .flatpickr-day.selected,
+    .bm-calendar-wrap .flatpickr-day.startRange,
+    .bm-calendar-wrap .flatpickr-day.endRange {
+      background: var(--accent) !important; border-color: var(--accent) !important;
+      font-weight: 600;
+    }
+    .bm-calendar-wrap .flatpickr-day.inRange {
+      background: #d4ede3 !important; border-color: #d4ede3 !important;
+      box-shadow: -5px 0 0 #d4ede3, 5px 0 0 #d4ede3 !important;
+    }
+    .bm-calendar-wrap .flatpickr-day.flatpickr-disabled {
+      color: #c5c3be !important; text-decoration: line-through;
+      background: #f5f4f2 !important;
+    }
+    .bm-calendar-wrap .flatpickr-day.today:not(.selected):not(.startRange):not(.endRange) {
+      border-color: var(--accent);
+    }
+    /* Inner container padding */
+    .bm-calendar-wrap .flatpickr-innerContainer {
+      padding: 0 4px 4px;
+    }
+
+    /* Calendar legend */
+    .bm-legend {
+      display: flex; gap: 16px; justify-content: center;
+      margin-top: 8px; margin-bottom: 8px;
+    }
+    .bm-legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: #8b8b85; font-family: 'JetBrains Mono', monospace;
+    }
+    .bm-legend-dot {
+      width: 10px; height: 10px; border-radius: 3px;
+    }
+    .bm-legend-dot.available { background: var(--accent); }
+    .bm-legend-dot.booked { background: #e4e2de; }
+
+    /* Loading spinner */
+    .bm-loading {
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 0; color: #8b8b85;
+      font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    }
+    .bm-loading-spinner {
+      width: 20px; height: 20px; border: 2px solid #e4e2de;
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: bm-spin 0.6s linear infinite; margin-right: 10px;
+    }
+    @keyframes bm-spin { to { transform: rotate(360deg); } }
+
+    /* Date range error */
+    .bm-range-error {
+      text-align: center; font-size: 12px; color: #c0392b;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 8px; display: none;
+    }
+    .bm-range-error.visible { display: block; }
+
+    .bm-nights { font-size: 12px; color: #8b8b85; text-align: center; margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
+    .bm-pricing { margin-bottom: 20px; font-family: 'JetBrains Mono', monospace; }
+    .bm-pricing:empty { margin-bottom: 16px; }
+    .bm-price-card {
+      background: var(--paper); border: 1px solid #e4e2de; border-radius: 10px;
+      padding: 16px 20px;
+    }
+    .bm-calc-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; font-size: 13px; color: #52524e;
+    }
+    .bm-calc-row .bm-calc-label { display: flex; align-items: center; gap: 6px; }
+    .bm-calc-row .bm-calc-value { font-weight: 500; color: var(--ink); }
+    .bm-calc-discount .bm-calc-value { color: var(--accent); }
+    .bm-discount-pill {
+      font-size: 9px; background: #d4ede3; color: #1a5c38;
+      padding: 2px 7px; border-radius: 10px; font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .bm-divider { height: 1px; background: #e4e2de; margin: 8px 0; }
+    .bm-total-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 4px 0 0;
+    }
+    .bm-total-label { font-size: 13px; color: var(--ink); font-weight: 600; }
+    .bm-total { font-size: 20px; font-weight: 700; color: var(--ink); }
+    .bm-name-field { margin-bottom: 12px; }
+    .bm-whatsapp-field { margin-bottom: 12px; }
+    .bm-wa-combo { display: flex; gap: 0; }
+    .bm-wa-code {
+      width: 100px; flex-shrink: 0; padding: 10px 8px; border: 1px solid #e4e2de;
+      border-radius: 6px 0 0 6px; border-right: none; font-size: 13px; font-family: inherit;
+      background: var(--warm); color: var(--ink); outline: none; cursor: pointer;
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b8b85'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center;
+    }
+    .bm-wa-code:focus { border-color: var(--accent); }
+    .bm-wa-num { border-radius: 0 6px 6px 0 !important; }
+    .bm-wa-hint { display: none; font-size: 11px; color: #b0603a; margin-top: 4px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
+    .bm-msg-field { margin-bottom: 20px; }
+    .bm-msg-field textarea { resize: vertical; min-height: 60px; }
+    .bm-actions { display: flex; gap: 10px; }
+    .bm-wa {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 20px; background: #25d366; color: white; border: none;
+      border-radius: 6px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .bm-wa:hover { background: #1fb855; }
+    .bm-wa:disabled { background: #b0b0a8; cursor: not-allowed; }
+    .bm-airbnb {
+      padding: 12px 20px; background: white; color: var(--ink); border: 1px solid #e4e2de;
+      border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;
+      text-decoration: none; transition: border-color 0.15s;
+    }
+    .bm-airbnb:hover { border-color: #ccc; }
+
+    .bm-promo-toggle {
+      display: inline-block; font-size: 12px; color: #8b8b85;
+      text-decoration: none; margin-bottom: 12px;
+      transition: color 0.15s;
+    }
+    .bm-promo-toggle:hover { color: var(--accent); }
+    .bm-promo-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .bm-promo-row input { flex: 1; padding: 9px 12px; border: 1px solid #e4e2de; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; outline: none; }
+    .bm-promo-row input:focus { border-color: var(--accent); }
+    .bm-promo-apply { padding: 9px 16px; border: 1px solid #e4e2de; border-radius: 6px; background: white; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--ink); }
+    .bm-promo-apply:hover { border-color: var(--accent); color: var(--accent); }
+    .bm-promo-status { font-size: 12px; margin-bottom: 12px; }
+    .bm-promo-ok { color: #1a5c38; }
+    .bm-promo-err { color: #b5342a; }
+
+    .bm-confirm {
+      display: none;
+      position: absolute; inset: 0;
+      background: white; border-radius: 16px;
+      padding: 32px 28px;
+      flex-direction: column; justify-content: center;
+      z-index: 10;
+    }
+    .bm-confirm.visible { display: flex; }
+    .bm-confirm-title {
+      font-weight: 600; font-size: 18px; margin-bottom: 20px; text-align: center;
+    }
+    .bm-confirm-body {
+      font-size: 14px; line-height: 1.8; margin-bottom: 24px;
+    }
+    .bm-confirm-row {
+      display: flex; justify-content: space-between; padding: 6px 0;
+      border-bottom: 1px solid #f0eeeb;
+    }
+    .bm-confirm-row:last-child { border-bottom: none; }
+    .bm-confirm-label { color: #8b8b85; }
+    .bm-confirm-value { font-weight: 500; }
+    .bm-confirm-total { font-weight: 600; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    .bm-confirm-actions {
+      display: flex; gap: 10px;
+    }
+    .bm-confirm-back {
+      flex: 1; padding: 12px; border: 1px solid #e4e2de; border-radius: 8px;
+      background: white; font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: all 0.15s; color: var(--ink);
+    }
+    .bm-confirm-back:hover { border-color: #ccc; }
+    .bm-confirm-send {
+      flex: 1; padding: 12px; border: none; border-radius: 8px;
+      background: #25d366; color: white; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .bm-confirm-send:hover { background: #1da851; }
+
+    /* Mobile content overrides */
+    @media (max-width: 768px) {
+      .room-page { padding: 40px 20px !important; }
+      .room-page h1 { font-size: 28px !important; }
+      .room-hero { height: 240px !important; }
+      .room-gallery { grid-template-columns: repeat(2, 1fr) !important; }
+      .room-gallery img { height: 120px !important; }
+      .room-features { grid-template-columns: 1fr !important; }
+      .room-desc { font-size: 14px !important; }
+      .room-rate { font-size: 13px !important; }
+
+      .rooms-page { padding: 40px 20px !important; }
+      .rooms-page h1 { font-size: 28px !important; }
+
+      .contact-page { padding: 40px 20px !important; }
+      .contact-page h1 { font-size: 28px !important; }
+
+      .location-page { padding: 40px 20px !important; }
+      .location-page h1 { font-size: 28px !important; }
+      .location-map { height: 260px !important; }
+
+      .rooms-preview { padding: 40px 20px !important; }
+      .about-text { padding: 32px 20px !important; }
+      .amenities-section { padding: 40px 20px !important; }
+      .gallery-section { padding: 40px 20px !important; }
+      .instagram-section { padding: 32px 20px !important; }
+      .hero-content { padding: 24px 20px !important; }
+      .hero-title { font-size: 32px !important; }
+      .hero-sub { font-size: 15px !important; }
+
+      .booking-modal { padding: 24px 20px !important; max-height: none; }
+      .bm-title { font-size: 18px !important; }
+      .bm-calendar-wrap .flatpickr-day { max-width: 36px; height: 32px; line-height: 32px; font-size: 12px; }
+    }
+  </style>
+
+  <div class="booking-overlay" id="bookingModal">
+    <div class="booking-modal">
+      <button class="bm-close" aria-label="Close">&times;</button>
+      <div class="bm-title">Check Availability</div>
+      <div class="bm-room" id="bmRoom"></div>
+
+      <div class="bm-calendar-wrap">
+        <div class="bm-loading" id="bmLoading">
+          <div class="bm-loading-spinner"></div>
+          Loading availability...
+        </div>
+        <div id="bmCalendar"></div>
+      </div>
+      <div class="bm-legend" id="bmLegend" style="display:none;">
+        <span class="bm-legend-item"><span class="bm-legend-dot available"></span>Available</span>
+        <span class="bm-legend-item"><span class="bm-legend-dot booked"></span>Booked</span>
+      </div>
+      <div class="bm-range-error" id="bmRangeError">Selected dates include booked nights</div>
+
+      <input type="hidden" id="bmCheckin">
+      <input type="hidden" id="bmCheckout">
+
+      <div class="bm-nights" id="bmNights"></div>
+      <div class="bm-pricing" id="bmPricing"></div>
+
+      <div class="bm-name-field">
+        <label class="bm-label" for="bmName">Your name</label>
+        <input type="text" class="bm-input" id="bmName" placeholder="Your name">
+      </div>
+
+      <div class="bm-whatsapp-field">
+        <label class="bm-label" for="bmWhatsapp">WhatsApp number</label>
+        <div class="bm-wa-combo">
+          <select class="bm-wa-code" id="bmWaCode">
+            <option value="66">🇹🇭 +66</option>
+            <option value="1">🇺🇸 +1</option>
+            <option value="44">🇬🇧 +44</option>
+            <option value="61">🇦🇺 +61</option>
+            <option value="49">🇩🇪 +49</option>
+            <option value="33">🇫🇷 +33</option>
+            <option value="31">🇳🇱 +31</option>
+            <option value="46">🇸🇪 +46</option>
+            <option value="7">🇷🇺 +7</option>
+            <option value="972">🇮🇱 +972</option>
+            <option value="65">🇸🇬 +65</option>
+            <option value="81">🇯🇵 +81</option>
+            <option value="82">🇰🇷 +82</option>
+            <option value="91">🇮🇳 +91</option>
+            <option value="86">🇨🇳 +86</option>
+            <option value="852">🇭🇰 +852</option>
+          </select>
+          <input type="tel" class="bm-input bm-wa-num" id="bmWhatsapp" placeholder="812 345 678" inputmode="numeric">
+        </div>
+        <div class="bm-wa-hint" id="bmWaHint"></div>
+      </div>
+
+      <div class="bm-msg-field">
+        <label class="bm-label" for="bmMessage">Message (optional)</label>
+        <textarea class="bm-input" id="bmMessage" placeholder="Anything we should know?"></textarea>
+      </div>
+
+      <a href="#" class="bm-promo-toggle" id="bmPromoToggle">Have a promo code?</a>
+      <div class="bm-promo-wrap" id="bmPromoWrap" style="display:none;">
+        <div class="bm-promo-row">
+          <input type="text" id="bmPromoCode" placeholder="Promo code">
+          <button type="button" class="bm-promo-apply" id="bmPromoApply">Apply</button>
+        </div>
+        <div class="bm-promo-status" id="bmPromoStatus"></div>
+      </div>
+
+      <div class="bm-actions">
+        <button class="bm-wa" id="bmWaBtn" type="button" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.82-6.293-2.188l-.44-.358-3.281 1.1 1.1-3.281-.358-.44A9.95 9.95 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+          <span id="bmWaBtnText">Select dates to book</span>
+        </button>
+        <a class="bm-airbnb" id="bmAirbnbBtn" href="#" target="_blank" rel="noopener">Airbnb</a>
+      </div>
+
+      <div class="bm-confirm" id="bmConfirm">
+        <div class="bm-confirm-title">Confirm your booking request</div>
+        <div class="bm-confirm-body" id="bmConfirmBody"></div>
+        <div class="bm-confirm-actions">
+          <button class="bm-confirm-back" id="bmConfirmBack" type="button">Go Back</button>
+          <button class="bm-confirm-send" id="bmConfirmSend" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.82-6.293-2.188l-.44-.358-3.281 1.1 1.1-3.281-.358-.44A9.95 9.95 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+            Confirm &amp; Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+  (function() {
+    var modal = document.getElementById('bookingModal');
+    if (!modal) return;
+    var checkinEl = document.getElementById('bmCheckin');
+    var checkoutEl = document.getElementById('bmCheckout');
+    var roomEl = document.getElementById('bmRoom');
+    var nightsEl = document.getElementById('bmNights');
+    var nameEl = document.getElementById('bmName');
+    var whatsappEl = document.getElementById('bmWhatsapp');
+    var waCodeEl = document.getElementById('bmWaCode');
+    var msgEl = document.getElementById('bmMessage');
+    var waBtn = document.getElementById('bmWaBtn');
+    var waBtnText = document.getElementById('bmWaBtnText');
+    var airbnbBtn = document.getElementById('bmAirbnbBtn');
+    var calendarEl = document.getElementById('bmCalendar');
+    var loadingEl = document.getElementById('bmLoading');
+    var legendEl = document.getElementById('bmLegend');
+    var rangeErrorEl = document.getElementById('bmRangeError');
+    var pricingEl = document.getElementById('bmPricing');
+
+    var fpInstance = null;
+    var bookedSet = new Set();
+    var activePromoCode = '';
+    var activePromoDiscount = 0;
+
+    var roomNames = {
+      'nest': 'The Nest',
+      'master': 'Master Room',
+      'nomad': 'Nomad Room'
+    };
+
+    var airbnbLinks = {
+      'The Nest': 'https://www.airbnb.com/rooms/1511809226602265595',
+      'Master Room': 'https://www.airbnb.com/rooms/1618003971883950106',
+      'Nomad Room': 'https://www.airbnb.com/rooms/1618012678467611754'
+    };
+
+    var EUR_RATE = 37;
+    var USD_RATE = 34;
+
+    function isLowSeason(dateStr) {
+      var m = new Date(dateStr).getMonth();
+      return m >= 3 && m <= 9;
+    }
+
+    function fmtPrice(thb) {
+      var cur = localStorage.getItem('kin-currency') || 'thb';
+      if (cur === 'eur') return '\u20AC' + Math.round(thb / EUR_RATE).toLocaleString();
+      if (cur === 'usd') return '$' + Math.round(thb / USD_RATE).toLocaleString();
+      return '\u0E3F' + thb.toLocaleString();
+    }
+
+    function toDateStr(d) {
+      var y = d.getFullYear();
+      var m = ('0' + (d.getMonth() + 1)).slice(-2);
+      var day = ('0' + d.getDate()).slice(-2);
+      return y + '-' + m + '-' + day;
+    }
+
+    function rangeHasBookedDates(start, end) {
+      var d = new Date(start);
+      var endDate = new Date(end);
+      while (d < endDate) {
+        if (bookedSet.has(toDateStr(d))) return true;
+        d.setDate(d.getDate() + 1);
+      }
+      return false;
+    }
+
+    var datesReady = false;
+
+    function checkReady() {
+      var waNum = whatsappEl.value.replace(/\D/g, '');
+      var hint = document.getElementById('bmWaHint');
+      if (waNum.length > 0 && waNum.length < 7) {
+        hint.textContent = 'Enter at least 7 digits';
+        hint.style.display = 'block';
+      } else {
+        hint.textContent = '';
+        hint.style.display = 'none';
+      }
+      if (datesReady && waNum.length >= 7) {
+        waBtn.disabled = false;
+        waBtnText.textContent = 'Send via WhatsApp';
+      } else if (datesReady) {
+        waBtn.disabled = true;
+        waBtnText.textContent = 'Enter WhatsApp number';
+      } else {
+        waBtn.disabled = true;
+        waBtnText.textContent = 'Select dates to book';
+      }
+    }
+
+    whatsappEl.addEventListener('input', checkReady);
+
+    function updateSelection(ci, co) {
+      checkinEl.value = ci;
+      checkoutEl.value = co;
+      if (ci && co) {
+        var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+        if (nights > 0) {
+          nightsEl.textContent = nights + ' night' + (nights !== 1 ? 's' : '');
+          updatePricing(nights);
+          datesReady = true;
+          checkReady();
+          return;
+        }
+      }
+      nightsEl.textContent = '';
+      pricingEl.innerHTML = '';
+      datesReady = false;
+      checkReady();
+    }
+
+    function updatePricing(nights) {
+      var page = document.querySelector('.room-page');
+      if (!page || !page.dataset.thbHigh) { pricingEl.innerHTML = ''; return; }
+      var high = parseInt(page.dataset.thbHigh);
+      var low = parseInt(page.dataset.thbLow);
+      var isLow = isLowSeason(checkinEl.value);
+      var rate = isLow ? low : high;
+      var subtotal = rate * nights;
+      var discount = 0;
+      var discountLabel = '';
+      var discountPct = '';
+      if (nights >= 28) { discount = 0.40; discountLabel = 'Monthly discount'; discountPct = '40%'; }
+      else if (nights >= 7) { discount = 0.15; discountLabel = 'Weekly discount'; discountPct = '15%'; }
+      var discountAmt = Math.round(subtotal * discount);
+      var afterStayDiscount = subtotal - discountAmt;
+      var promoAmt = 0;
+      if (activePromoDiscount > 0) {
+        promoAmt = Math.round(afterStayDiscount * (activePromoDiscount / 100));
+      }
+      var total = afterStayDiscount - promoAmt;
+      var html = '<div class="bm-price-card">';
+      html += '<div class="bm-calc-row">';
+      html += '<span class="bm-calc-label">' + fmtPrice(rate) + ' &times; ' + nights + ' night' + (nights !== 1 ? 's' : '') + '</span>';
+      html += '<span class="bm-calc-value">' + fmtPrice(subtotal) + '</span>';
+      html += '</div>';
+      if (discount > 0) {
+        html += '<div class="bm-calc-row bm-calc-discount">';
+        html += '<span class="bm-calc-label"><span class="bm-discount-pill">' + discountPct + '</span> ' + discountLabel + '</span>';
+        html += '<span class="bm-calc-value">&minus;' + fmtPrice(discountAmt) + '</span>';
+        html += '</div>';
+      }
+      if (promoAmt > 0) {
+        html += '<div class="bm-calc-row bm-calc-discount">';
+        html += '<span class="bm-calc-label"><span class="bm-discount-pill">' + activePromoDiscount + '%</span> Promo ' + activePromoCode + '</span>';
+        html += '<span class="bm-calc-value">&minus;' + fmtPrice(promoAmt) + '</span>';
+        html += '</div>';
+      }
+      html += '<div class="bm-divider"></div>';
+      html += '<div class="bm-total-row"><span class="bm-total-label">Total</span><span class="bm-total">' + fmtPrice(total) + '</span></div>';
+      html += '</div>';
+      pricingEl.innerHTML = html;
+    }
+
+    function getFullWhatsapp() {
+      var num = whatsappEl.value.replace(/\D/g, '');
+      if (!num) return '';
+      if (num.charAt(0) === '0') num = num.substring(1);
+      return '+' + waCodeEl.value + num;
+    }
+
+    function buildWaMessage() {
+      var room = roomEl.textContent;
+      var ci = checkinEl.value;
+      var co = checkoutEl.value;
+      var name = nameEl.value.trim();
+      var wa = getFullWhatsapp();
+      var msg = msgEl.value.trim();
+      var text = 'Hi! I\'d like to book ' + room + ' at Kin Haus.\n\nCheck-in: ' + ci + '\nCheck-out: ' + co;
+      if (name) text = 'Hi, I\'m ' + name + '. I\'d like to book ' + room + ' at Kin Haus.\n\nCheck-in: ' + ci + '\nCheck-out: ' + co;
+      if (wa) text += '\nWhatsApp: ' + wa;
+      if (activePromoCode) text += '\nPromo code: ' + activePromoCode + ' (' + activePromoDiscount + '% off)';
+      if (msg) text += '\n\n' + msg;
+      return text;
+    }
+
+    var confirmEl = document.getElementById('bmConfirm');
+    var confirmBody = document.getElementById('bmConfirmBody');
+    var confirmBack = document.getElementById('bmConfirmBack');
+    var confirmSend = document.getElementById('bmConfirmSend');
+
+    function getBookingTotal() {
+      var page = document.querySelector('.room-page');
+      var high = page && page.dataset.thbHigh ? parseInt(page.dataset.thbHigh) : 0;
+      var low = page && page.dataset.thbLow ? parseInt(page.dataset.thbLow) : 0;
+      var ci = checkinEl.value;
+      var co = checkoutEl.value;
+      var nights = 0;
+      var amount = 0;
+      if (ci && co) {
+        nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+        var rate = isLowSeason(ci) ? low : high;
+        var subtotal = rate * nights;
+        var discount = nights >= 28 ? 0.40 : nights >= 7 ? 0.15 : 0;
+        var afterStay = Math.round(subtotal * (1 - discount));
+        var promoAmt = activePromoDiscount > 0 ? Math.round(afterStay * (activePromoDiscount / 100)) : 0;
+        amount = afterStay - promoAmt;
+      }
+      return { nights: nights, amount: amount };
+    }
+
+    waBtn.addEventListener('click', function() {
+      if (waBtn.disabled) return;
+      // Build confirmation summary
+      var info = getBookingTotal();
+      var html = '';
+      html += '<div class="bm-confirm-row"><span class="bm-confirm-label">Room</span><span class="bm-confirm-value">' + roomEl.textContent + '</span></div>';
+      html += '<div class="bm-confirm-row"><span class="bm-confirm-label">Check-in</span><span class="bm-confirm-value">' + checkinEl.value + '</span></div>';
+      html += '<div class="bm-confirm-row"><span class="bm-confirm-label">Check-out</span><span class="bm-confirm-value">' + checkoutEl.value + '</span></div>';
+      html += '<div class="bm-confirm-row"><span class="bm-confirm-label">Nights</span><span class="bm-confirm-value">' + info.nights + '</span></div>';
+      if (info.amount > 0) html += '<div class="bm-confirm-row"><span class="bm-confirm-label">Total</span><span class="bm-confirm-total">' + fmtPrice(info.amount) + '</span></div>';
+      var guestName = nameEl.value.trim();
+      if (guestName) html += '<div class="bm-confirm-row"><span class="bm-confirm-label">Guest</span><span class="bm-confirm-value">' + guestName + '</span></div>';
+      confirmBody.innerHTML = html;
+      confirmEl.classList.add('visible');
+    });
+
+    confirmBack.addEventListener('click', function() {
+      confirmEl.classList.remove('visible');
+    });
+
+    confirmSend.addEventListener('click', function() {
+      confirmEl.classList.remove('visible');
+      var text = buildWaMessage();
+      var info = getBookingTotal();
+      var inquiry = {
+        room: roomEl.textContent,
+        checkin: checkinEl.value,
+        checkout: checkoutEl.value,
+        guest: nameEl.value.trim() || 'Guest',
+        whatsapp: getFullWhatsapp(),
+        message: msgEl.value.trim(),
+        amount: info.amount,
+        currency: 'thb',
+        promoCode: activePromoCode || '',
+        promoDiscount: activePromoDiscount || 0
+      };
+      fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inquiry)
+      }).catch(function() {});
+      if (window.posthog) posthog.capture('inquiry_submitted', { room: inquiry.room, nights: info.nights, amount: info.amount });
+      var encoded = encodeURIComponent(text);
+      window.open('https://wa.me/66638034860?text=' + encoded, '_blank');
+    });
+
+    function openModal(roomSlug) {
+      var roomName = roomNames[roomSlug] || 'Room';
+      roomEl.textContent = roomName;
+      airbnbBtn.href = airbnbLinks[roomName] || '#';
+      if (window.posthog) posthog.capture('booking_modal_opened', { room: roomSlug });
+
+      // Reset state
+      checkinEl.value = '';
+      checkoutEl.value = '';
+      nightsEl.textContent = '';
+      pricingEl.innerHTML = '';
+      nameEl.value = '';
+      waCodeEl.value = '66';
+      whatsappEl.value = '';
+      msgEl.value = '';
+      datesReady = false;
+      waBtn.disabled = true;
+      waBtnText.textContent = 'Select dates to book';
+      rangeErrorEl.classList.remove('visible');
+      bookedSet.clear();
+      activePromoCode = '';
+      activePromoDiscount = 0;
+      document.getElementById('bmPromoCode').value = '';
+      confirmEl.classList.remove('visible');
+      // Reset promo toggle
+      var pt = document.getElementById('bmPromoToggle');
+      var pw = document.getElementById('bmPromoWrap');
+      if (pt) pt.style.display = '';
+      if (pw) pw.style.display = 'none';
+      document.getElementById('bmPromoStatus').innerHTML = '';
+
+      // Destroy previous flatpickr
+      if (fpInstance) { fpInstance.destroy(); fpInstance = null; }
+      calendarEl.innerHTML = '';
+
+      // Show loading, hide legend
+      loadingEl.style.display = 'flex';
+      legendEl.style.display = 'none';
+
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      // Fetch availability
+      fetch('/api/availability/' + roomSlug)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          loadingEl.style.display = 'none';
+          legendEl.style.display = 'flex';
+
+          // Build booked set for validation
+          (data.bookedDates || []).forEach(function(d) { bookedSet.add(d); });
+
+          fpInstance = flatpickr(calendarEl, {
+            mode: 'range',
+            inline: true,
+            minDate: data.range ? data.range.min : 'today',
+            maxDate: data.range ? data.range.max : new Date().fp_incr(90),
+            disable: data.bookedDates || [],
+            showMonths: 1,
+            animate: false,
+            onChange: function(selectedDates) {
+              rangeErrorEl.classList.remove('visible');
+              if (selectedDates.length === 2) {
+                var start = toDateStr(selectedDates[0]);
+                var end = toDateStr(selectedDates[1]);
+                // Validate: no booked dates in between
+                if (rangeHasBookedDates(start, end)) {
+                  rangeErrorEl.classList.add('visible');
+                  fpInstance.clear();
+                  updateSelection('', '');
+                  return;
+                }
+                updateSelection(start, end);
+              } else {
+                updateSelection('', '');
+              }
+            }
+          });
+        })
+        .catch(function() {
+          loadingEl.innerHTML = '<span style="color:#c0392b">Failed to load availability. Please try again.</span>';
+        });
+    }
+
+    function closeModal() {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+      if (fpInstance) { fpInstance.destroy(); fpInstance = null; }
+    }
+
+    // CTA button click handler
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.avail-cta');
+      if (btn && btn.dataset.room) {
+        e.preventDefault();
+        openModal(btn.dataset.room);
+      }
+    });
+
+    modal.querySelector('.bm-close').addEventListener('click', closeModal);
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+
+    // Promo toggle
+    var promoToggle = document.getElementById('bmPromoToggle');
+    var promoWrap = document.getElementById('bmPromoWrap');
+    promoToggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      promoWrap.style.display = promoWrap.style.display === 'none' ? '' : 'none';
+      promoToggle.style.display = 'none';
+    });
+
+    // Promo code apply
+    var promoInput = document.getElementById('bmPromoCode');
+    var promoStatus = document.getElementById('bmPromoStatus');
+    var promoApplyBtn = document.getElementById('bmPromoApply');
+
+    function applyPromoCode() {
+      var code = promoInput.value.trim().toUpperCase();
+      if (!code) { promoStatus.innerHTML = ''; activePromoCode = ''; activePromoDiscount = 0; recalcPricing(); return; }
+      promoApplyBtn.textContent = '...';
+      fetch('/api/discount-codes/validate?code=' + encodeURIComponent(code))
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          promoApplyBtn.textContent = 'Apply';
+          if (data.valid) {
+            activePromoCode = code;
+            activePromoDiscount = data.discount;
+            promoStatus.innerHTML = '<span class="bm-promo-ok">' + code + ' applied -- ' + data.discount + '% off</span>';
+          } else {
+            activePromoCode = '';
+            activePromoDiscount = 0;
+            promoStatus.innerHTML = '<span class="bm-promo-err">Invalid or expired code</span>';
+          }
+          recalcPricing();
+        })
+        .catch(function() {
+          promoApplyBtn.textContent = 'Apply';
+          promoStatus.innerHTML = '<span class="bm-promo-err">Could not validate code</span>';
+        });
+    }
+
+    function recalcPricing() {
+      if (datesReady && checkinEl.value && checkoutEl.value) {
+        var nights = Math.round((new Date(checkoutEl.value) - new Date(checkinEl.value)) / 86400000);
+        if (nights > 0) updatePricing(nights);
+      }
+    }
+
+    promoApplyBtn.addEventListener('click', applyPromoCode);
+    promoInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); applyPromoCode(); }
+    });
+  })();
+  </script>
+
+  <!-- Currency Toggle -->
+  <script is:inline>
+  (function() {
+    var EUR_RATE = 37;
+    var USD_RATE = 34;
+    var toggle = document.getElementById('currencyToggle');
+    if (!toggle) return;
+    var btns = toggle.querySelectorAll('button');
+    var saved = localStorage.getItem('kin-currency') || 'thb';
+
+    function fmtTHB(n) { return '\u0E3F' + n.toLocaleString(); }
+    function fmtEUR(n) { return '\u20AC' + Math.round(n / EUR_RATE).toLocaleString(); }
+    function fmtUSD(n) { return '$' + Math.round(n / USD_RATE).toLocaleString(); }
+
+    function fmtCurrency(thb, currency) {
+      if (currency === 'eur') return fmtEUR(thb);
+      if (currency === 'usd') return fmtUSD(thb);
+      return fmtTHB(thb);
+    }
+
+    function convert(currency) {
+      document.querySelectorAll('[data-thb]').forEach(function(el) {
+        var thb = parseInt(el.dataset.thb);
+        var tpl = el.dataset.priceTpl || '{price}';
+        var price = fmtCurrency(thb, currency);
+        el.textContent = tpl.replace('{price}', price);
+      });
+      document.querySelectorAll('[data-thb-range]').forEach(function(el) {
+        var parts = el.dataset.thbRange.split(',');
+        var low = parseInt(parts[0]);
+        var high = parseInt(parts[1]);
+        var tpl = el.dataset.priceTpl || '{low} - {high} / night';
+        var lp = fmtCurrency(low, currency);
+        var hp = fmtCurrency(high, currency);
+        el.textContent = tpl.replace('{low}', lp).replace('{high}', hp);
+      });
+      btns.forEach(function(b) {
+        b.classList.toggle('active', b.dataset.currency === currency);
+      });
+      localStorage.setItem('kin-currency', currency);
+    }
+
+    btns.forEach(function(b) {
+      b.addEventListener('click', function() { convert(b.dataset.currency); });
+    });
+
+    if (saved !== 'thb') convert(saved);
+  })();
+  </script>
 </BaseLayout>

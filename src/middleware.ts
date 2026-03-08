@@ -11,7 +11,11 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   const path = url.pathname;
 
   // Public routes -- no auth needed
-  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth'));
+  // Allow POST to /api/inquiries from the marketing site (public booking form)
+  // Allow GET to /api/availability/* (public availability calendar)
+  const isPublicInquiry = path === '/api/inquiries' && request.method === 'POST';
+  const isPublicAvailability = path.startsWith('/api/availability') && request.method === 'GET';
+  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability);
 
   if (!isProtected) {
     return next();

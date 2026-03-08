@@ -4,68 +4,176 @@ import MarketingLayout from '../../layouts/MarketingLayout.astro';
 const rooms = [
   {
     name: 'The Nest',
+    key: 'nest',
     slug: 'the-nest',
+    image: '/images/rooms/kinhaus-nest-1.jpg',
     rate: { high: 5000, low: 3500 },
-    description: 'A private retreat perched above the treetops with panoramic views, a king-size bed, and its own balcony. The most spacious room at Kin Haus.',
-    features: ['King-size bed', 'Private balcony', 'Panoramic views', 'Ensuite bathroom', 'Air conditioning', 'Work desk'],
+    description: 'A private retreat at the top of the house with panoramic views, a king-size bed, and ensuite bathroom.',
+    features: ['King-size bed', 'Ensuite bathroom', 'Panoramic views', 'Air conditioning', 'Blackout blinds'],
   },
   {
-    name: 'Master Suite',
+    name: 'Master Room',
+    key: 'master',
     slug: 'master-suite',
+    image: '/images/rooms/kinhaus-master-teak-headboard.jpg',
     rate: { high: 3200, low: 2240 },
-    description: 'Spacious ground-floor suite with an ensuite bathroom and direct garden access. Quiet and private with natural light.',
-    features: ['Queen-size bed', 'Ensuite bathroom', 'Garden access', 'Air conditioning', 'Work desk', 'Wardrobe'],
+    description: 'Spacious lower-floor suite with a king-size bed, full-size wardrobe, and sunrise views.',
+    features: ['King-size bed', 'Shared balcony', 'Shared bathroom', 'Air conditioning', 'Desk', 'Sunrise views'],
   },
   {
     name: 'Nomad Room',
+    key: 'nomad',
     slug: 'nomad-room',
+    image: '/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg',
     rate: { high: 2400, low: 1680 },
-    description: 'A cozy, workspace-ready room ideal for digital nomads looking for a longer stay. Compact but thoughtfully designed.',
-    features: ['Double bed', 'Dedicated workspace', 'Fast WiFi', 'Air conditioning', 'Shared bathroom', 'Storage'],
+    description: 'A cozy, workspace-ready room ideal for digital nomads with a dedicated desk and fast WiFi.',
+    features: ['King-size bed', 'Dedicated desk', 'Shared balcony', 'Shared bathroom', 'Air conditioning', 'Fast WiFi'],
   },
 ];
 ---
 
-<MarketingLayout title="Rooms — Kin Haus">
+<MarketingLayout
+  title="Rooms -- Kin Haus Co-Living Villa, Koh Phangan"
+  description="Compare three private rooms at Kin Haus co-living villa in Koh Phangan. The Nest, Master Suite, and Nomad Room from 1,680 THB/night with pool, fast WiFi, and shared kitchen."
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
+      { "@type": "ListItem", "position": 2, "name": "Rooms", "item": "https://kinhaus.space/rooms" }
+    ]
+  }}
+>
   <style>
-    .rooms-page { padding: 60px 40px; max-width: 900px; margin: 0 auto; }
-    .rooms-page h1 { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 8px; }
+    .rooms-page { padding: 60px 40px; max-width: 1000px; margin: 0 auto; }
+    .rooms-page h1 { font-weight: 600; font-size: 36px; margin-bottom: 8px; }
     .rooms-intro { font-size: 15px; color: #64645f; margin-bottom: 40px; line-height: 1.6; }
 
-    .room-block { border: 1px solid #e4e2de; border-radius: 12px; background: white; margin-bottom: 24px; overflow: hidden; }
-    .room-block-img { height: 220px; background: var(--warm); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 28px; color: #8b8b85; }
-    .room-block-body { padding: 28px; }
-    .room-block-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-    .room-block-name { font-family: 'DM Serif Display', serif; font-size: 22px; }
-    .room-block-rate { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); }
-    .room-block-desc { font-size: 14px; color: #52524e; line-height: 1.6; margin-bottom: 16px; }
+    .rooms-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 
-    .room-features { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .room-feature { padding: 4px 10px; background: var(--paper); border: 1px solid #e4e2de; border-radius: 4px; font-size: 11px; color: #64645f; }
+    .room-card { display: block; border: 1px solid #e4e2de; border-radius: 12px; background: white; overflow: hidden; text-decoration: none; color: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+    .room-card:hover { border-color: #ccc; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .room-card-img { height: 200px; background: var(--warm); overflow: hidden; }
+    .room-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .room-card-body { padding: 20px; }
+    .room-card-name { font-weight: 600; font-size: 18px; margin-bottom: 4px; }
+    .room-card-rate { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); margin-bottom: 10px; }
+    .room-card-desc { font-size: 13px; color: #52524e; line-height: 1.5; margin-bottom: 14px; }
 
-    .room-block-link { display: inline-block; font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 500; }
-    .room-block-link:hover { text-decoration: underline; }
+    .room-features { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .room-feature { padding: 3px 8px; background: var(--paper); border: 1px solid #e4e2de; border-radius: 4px; font-size: 10px; color: #64645f; }
+
+    .room-card-link { display: inline-block; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .room-card-link:hover { text-decoration: underline; }
+
+    .compare-section {
+      margin-top: 56px; padding-top: 40px; border-top: 1px solid #e4e2de;
+    }
+    .compare-section h2 {
+      font-weight: 600; font-size: 22px; margin-bottom: 20px; text-align: center;
+    }
+    .compare-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .compare-table th {
+      text-align: left; font-weight: 600; padding: 10px 12px;
+      border-bottom: 2px solid #e4e2de; font-size: 14px;
+    }
+    .compare-table td {
+      padding: 10px 12px; border-bottom: 1px solid #f0eeeb;
+      color: #52524e;
+    }
+    .compare-table tr td:first-child {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #8b8b85;
+    }
+    .compare-check { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .rooms-grid { grid-template-columns: 1fr; }
+      .compare-table { font-size: 12px; }
+      .compare-table th, .compare-table td { padding: 8px 8px; }
+    }
   </style>
 
   <div class="rooms-page">
     <h1>Our Rooms</h1>
     <p class="rooms-intro">Three distinct rooms, each with its own character. All guests share the kitchen, living area, and pool.</p>
 
-    {rooms.map((room) => (
-      <div class="room-block">
-        <div class="room-block-img">{room.name}</div>
-        <div class="room-block-body">
-          <div class="room-block-header">
-            <div class="room-block-name">{room.name}</div>
-            <div class="room-block-rate">&#x0E3F;{room.rate.low.toLocaleString()} - &#x0E3F;{room.rate.high.toLocaleString()} / night</div>
+    <div class="rooms-grid">
+      {rooms.map((room) => (
+        <a href={`/rooms/${room.slug}`} class="room-card">
+          <div class="room-card-img"><img src={room.image} alt={room.name} loading="lazy"></div>
+          <div class="room-card-body">
+            <div class="room-card-name">{room.name}</div>
+            <div class="room-card-rate" data-thb-range={`${room.rate.low},${room.rate.high}`} data-price-tpl="{low} - {high} / night">&#x0E3F;{room.rate.low.toLocaleString()} - &#x0E3F;{room.rate.high.toLocaleString()} / night</div>
+            <p class="room-card-desc">{room.description}</p>
+            <div class="room-features">
+              {room.features.map((f) => <span class="room-feature">{f}</span>)}
+            </div>
+            <span class="room-card-link">View details &#x2192;</span>
           </div>
-          <p class="room-block-desc">{room.description}</p>
-          <div class="room-features">
-            {room.features.map((f) => <span class="room-feature">{f}</span>)}
-          </div>
-          <a href={`/rooms/${room.slug}`} class="room-block-link">View details &#x2192;</a>
-        </div>
-      </div>
-    ))}
+        </a>
+      ))}
+    </div>
+
+    <div class="compare-section">
+      <h2>Compare Rooms</h2>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>The Nest</th>
+            <th>Master Room</th>
+            <th>Nomad Room</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Price (high)</td>
+            <td data-thb="5000" data-price-tpl="{price}/night">&#x0E3F;5,000/night</td>
+            <td data-thb="3200" data-price-tpl="{price}/night">&#x0E3F;3,200/night</td>
+            <td data-thb="2400" data-price-tpl="{price}/night">&#x0E3F;2,400/night</td>
+          </tr>
+          <tr>
+            <td>Price (low)</td>
+            <td data-thb="3500" data-price-tpl="{price}/night">&#x0E3F;3,500/night</td>
+            <td data-thb="2240" data-price-tpl="{price}/night">&#x0E3F;2,240/night</td>
+            <td data-thb="1680" data-price-tpl="{price}/night">&#x0E3F;1,680/night</td>
+          </tr>
+          <tr>
+            <td>Bed</td>
+            <td>King</td>
+            <td>King</td>
+            <td>King</td>
+          </tr>
+          <tr>
+            <td>Bathroom</td>
+            <td><span class="compare-check">&#x2713;</span> Ensuite</td>
+            <td>Shared</td>
+            <td>Shared</td>
+          </tr>
+          <tr>
+            <td>Desk</td>
+            <td>&#x2014;</td>
+            <td><span class="compare-check">&#x2713;</span></td>
+            <td><span class="compare-check">&#x2713;</span> Dedicated</td>
+          </tr>
+          <tr>
+            <td>Balcony</td>
+            <td><span class="compare-check">&#x2713;</span> Private</td>
+            <td>Shared</td>
+            <td>Shared</td>
+          </tr>
+          <tr>
+            <td>Best for</td>
+            <td>Privacy, couples</td>
+            <td>Space, comfort</td>
+            <td>Remote work</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </MarketingLayout>

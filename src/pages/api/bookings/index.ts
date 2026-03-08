@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ request }) => {
       return {
         ...b,
         amount: ov.amount !== undefined ? ov.amount : b.amount,
-        guest: ov.guest || b.guest,
+        guest: ov.guest !== undefined ? ov.guest : b.guest,
       };
     });
 
@@ -61,14 +61,14 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  if (!['direct', 'friend', 'blocked'].includes(type)) {
-    return new Response(JSON.stringify({ error: 'type must be direct, friend, or blocked' }), {
+  if (!['direct', 'friend', 'blocked', 'owner'].includes(type)) {
+    return new Response(JSON.stringify({ error: 'type must be direct, friend, blocked, or owner' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  if (!['nest', 'master', 'nomad', 'full'].includes(room)) {
+  if (!['nest', 'master', 'nomad', 'theater', 'full'].includes(room)) {
     return new Response(JSON.stringify({ error: 'Invalid room' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },

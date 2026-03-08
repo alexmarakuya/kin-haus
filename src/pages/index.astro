@@ -1,46 +1,146 @@
 ---
 import MarketingLayout from '../layouts/MarketingLayout.astro';
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Kin Haus",
+    "description": "Boutique co-living villa in Koh Phangan, Thailand with three private rooms, infinity pool, and high-speed WiFi for digital nomads and remote workers.",
+    "url": "https://kinhaus.space",
+    "image": "https://kinhaus.space/images/property/kinhaus-pool-deck-and-facade.jpg",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Koh Phangan",
+      "addressRegion": "Surat Thani",
+      "addressCountry": "TH"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 9.7092811,
+      "longitude": 100.0180681
+    },
+    "telephone": "+66638034860",
+    "priceRange": "THB 1,680 - 5,000 per night",
+    "checkinTime": "15:00",
+    "checkoutTime": "12:00",
+    "amenityFeature": [
+      { "@type": "LocationFeatureSpecification", "name": "Infinity Pool", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "High-Speed WiFi (500+ Mbps)", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Shared Kitchen", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Air Conditioning", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Dedicated Workspace", "value": true }
+    ],
+    "makesOffer": [
+      {
+        "@type": "Offer",
+        "name": "The Nest",
+        "url": "https://kinhaus.space/rooms/the-nest",
+        "priceSpecification": { "@type": "UnitPriceSpecification", "price": "3500", "priceCurrency": "THB", "unitText": "night" }
+      },
+      {
+        "@type": "Offer",
+        "name": "Master Suite",
+        "url": "https://kinhaus.space/rooms/master-suite",
+        "priceSpecification": { "@type": "UnitPriceSpecification", "price": "2240", "priceCurrency": "THB", "unitText": "night" }
+      },
+      {
+        "@type": "Offer",
+        "name": "Nomad Room",
+        "url": "https://kinhaus.space/rooms/nomad-room",
+        "priceSpecification": { "@type": "UnitPriceSpecification", "price": "1680", "priceCurrency": "THB", "unitText": "night" }
+      }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" }
+    ]
+  }
+];
 ---
 
-<MarketingLayout title="Kin Haus — Boutique Co-Living in Koh Phangan">
+<MarketingLayout
+  title="Kin Haus -- Boutique Co-Living Villa in Koh Phangan, Thailand"
+  description="Boutique co-living villa in Koh Phangan for digital nomads and remote workers. Three private rooms with infinity pool, 500+ Mbps WiFi, and shared kitchen. From 1,680 THB/night."
+  jsonLd={jsonLd}
+>
   <style>
     .hero {
-      padding: 100px 40px 80px;
+      position: relative;
+      height: 75vh;
+      min-height: 400px;
+      max-height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
+      overflow: hidden;
+    }
+    .hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.45) 100%);
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 40px;
     }
     .hero-title {
-      font-family: 'DM Serif Display', serif;
-      font-size: 52px;
-      letter-spacing: -1px;
-      margin-bottom: 16px;
+      font-size: 48px;
+      color: white;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
     }
     .hero-sub {
       font-size: 18px;
-      color: #64645f;
+      color: rgba(255,255,255,0.9);
       max-width: 520px;
       margin: 0 auto 32px;
       line-height: 1.6;
     }
     .hero-cta {
       display: inline-block;
-      padding: 12px 28px;
-      background: var(--accent);
-      color: white;
+      padding: 14px 32px;
+      background: white;
+      color: var(--ink);
       text-decoration: none;
       border-radius: 6px;
       font-size: 14px;
       font-weight: 500;
-      transition: background 0.15s;
+      transition: all 0.15s;
     }
-    .hero-cta:hover { background: #225539; }
+    .hero-cta:hover { background: var(--paper); }
 
+    .property-summary {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px;
+      text-align: center;
+    }
+    .property-summary p {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #64645f;
+    }
     .rooms-preview {
       padding: 60px 40px;
       max-width: 1000px;
       margin: 0 auto;
     }
     .rooms-preview h2 {
-      font-family: 'DM Serif Display', serif;
+      font-weight: 600;
       font-size: 28px;
       margin-bottom: 32px;
       text-align: center;
@@ -51,28 +151,30 @@ import MarketingLayout from '../layouts/MarketingLayout.astro';
       gap: 24px;
     }
     .room-card {
+      display: block;
       border: 1px solid #e4e2de;
       border-radius: 12px;
       overflow: hidden;
       background: white;
-      transition: box-shadow 0.2s;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.2s, border-color 0.15s;
     }
-    .room-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .room-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); border-color: #ccc; }
     .room-card-img {
-      height: 180px;
+      height: 200px;
       background: var(--warm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'DM Serif Display', serif;
-      font-size: 24px;
-      color: #8b8b85;
+    }
+    .room-card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     .room-card-body {
       padding: 20px;
     }
     .room-card-name {
-      font-family: 'DM Serif Display', serif;
+      font-weight: 600;
       font-size: 18px;
       margin-bottom: 6px;
     }
@@ -96,71 +198,478 @@ import MarketingLayout from '../layouts/MarketingLayout.astro';
       font-weight: 500;
     }
     .room-card-link:hover { text-decoration: underline; }
+    .room-card-actions {
+      display: flex; gap: 8px; margin: 0 20px 14px;
+      padding-top: 14px; border-top: 1px solid #eeecea;
+    }
+    .room-card-avail {
+      flex: 1; padding: 8px 0; background: var(--accent); color: white;
+      border: none; border-radius: 6px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .room-card-avail:hover { background: #245a3b; }
 
     .about-section {
-      padding: 60px 40px;
-      max-width: 700px;
-      margin: 0 auto;
-      text-align: center;
+      position: relative;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
     }
-    .about-section h2 {
-      font-family: 'DM Serif Display', serif;
+    .about-bg {
+      position: absolute;
+      inset: 0;
+    }
+    .about-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .about-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.05) 100%);
+    }
+    .about-text {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      padding: 60px 60px;
+    }
+    .about-text h2 {
+      font-weight: 600;
       font-size: 28px;
       margin-bottom: 16px;
+      color: white;
     }
-    .about-section p {
+    .about-text p {
       font-size: 15px;
-      color: #64645f;
+      color: rgba(255,255,255,0.88);
       line-height: 1.7;
     }
 
+    .testimonials-section {
+      padding: 60px 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .testimonials-section h2 {
+      font-weight: 600; font-size: 28px; margin-bottom: 8px; text-align: center;
+    }
+    .testimonials-sub {
+      font-size: 14px; color: #8b8b85; text-align: center; margin-bottom: 32px;
+    }
+    .testimonials-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    .testimonial-card {
+      padding: 24px;
+      border: 1px solid #e4e2de;
+      border-radius: 10px;
+      background: white;
+    }
+    .testimonial-quote {
+      font-size: 14px;
+      color: #52524e;
+      line-height: 1.6;
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+    .testimonial-author {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .testimonial-stay {
+      font-size: 11px;
+      color: #8b8b85;
+      margin-top: 2px;
+    }
+
+    .amenities-section {
+      padding: 60px 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .amenities-section h2 {
+      font-weight: 600;
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .amenities-sub {
+      font-size: 14px;
+      color: #8b8b85;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .amenities-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .amenity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e4e2de;
+      border-radius: 10px;
+    }
+    .amenity-icon {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      color: var(--ink);
+      opacity: 0.65;
+    }
+    .amenity-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .amenity-text {
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .gallery-section {
+      padding: 60px 40px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .gallery-section h2 {
+      font-weight: 600;
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .gallery-sub {
+      font-size: 14px;
+      color: #8b8b85;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .gallery-grid img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .gallery-grid img:hover { opacity: 0.9; }
+
+    .instagram-section {
+      padding: 48px 40px;
+      text-align: center;
+      border-top: 1px solid #eeecea;
+    }
+    .instagram-inner {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .instagram-icon {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 12px;
+      color: var(--ink);
+      opacity: 0.6;
+    }
+    .instagram-icon svg { width: 100%; height: 100%; }
+    .instagram-section h2 {
+      font-weight: 600;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .instagram-handle {
+      font-size: 14px;
+      color: #8b8b85;
+      margin-bottom: 16px;
+      text-decoration: none;
+      display: block;
+    }
+    .instagram-handle:hover { color: var(--accent); }
+    .instagram-cta {
+      display: inline-block;
+      padding: 10px 24px;
+      border: 1px solid #d4d2ce;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .instagram-cta:hover { border-color: var(--accent); color: var(--accent); }
+
+    .nam-banner {
+      padding: 56px 40px;
+      text-align: center;
+      background: rgb(43, 58, 44);
+      color: #fafaf8;
+    }
+    .nam-banner-inner {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .nam-banner-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(250,250,248,0.45);
+      margin-bottom: 16px;
+    }
+    .nam-banner h2 {
+      font-weight: 600;
+      font-size: 22px;
+      margin-bottom: 10px;
+      color: #fafaf8;
+    }
+    .nam-banner p {
+      font-size: 14px;
+      line-height: 1.7;
+      color: rgba(250,250,248,0.65);
+      margin-bottom: 24px;
+    }
+    .nam-banner-link {
+      display: inline-block;
+      padding: 10px 24px;
+      border: 1px solid rgba(250,250,248,0.25);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fafaf8;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .nam-banner-link:hover {
+      border-color: rgba(250,250,248,0.6);
+      background: rgba(250,250,248,0.08);
+    }
+
     @media (max-width: 768px) {
+      .hero { min-height: 400px; }
       .hero-title { font-size: 36px; }
       .rooms-grid { grid-template-columns: 1fr; }
+      .about-section { min-height: 380px; }
+      .about-text { padding: 40px 24px; }
+      .about-bg::after { background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 100%); }
+      .testimonials-grid { grid-template-columns: 1fr; }
+      .amenities-grid { grid-template-columns: repeat(2, 1fr); }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .gallery-grid img { height: 160px; }
     }
   </style>
 
   <section class="hero">
-    <h1 class="hero-title">Kin Haus</h1>
-    <p class="hero-sub">A boutique co-living villa nestled in Thongsala, Koh Phangan. Three unique rooms, one shared home.</p>
-    <a href="/rooms" class="hero-cta">View Rooms</a>
+    <video class="hero-video" autoplay muted loop playsinline poster="/images/property/kinhaus-pool-deck-and-facade.jpg">
+      <source src="/videos/kinhaus-drone-flyout.mp4" type="video/mp4">
+    </video>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Kin Haus</h1>
+      <p class="hero-sub">A boutique co-living villa in Koh Phangan. Three unique rooms, one shared home.</p>
+      <a href="/rooms" class="hero-cta">Book Rooms</a>
+    </div>
+  </section>
+
+  <section class="property-summary">
+    <p>Kin Haus is a boutique co-living villa in the Thongsala area of Koh Phangan, Thailand. Three private rooms from 1,680 to 5,000 THB per night, each with king-size bed and air conditioning. Guests share an infinity pool, fully equipped kitchen, and common living areas. 500+ Mbps fiber WiFi makes it a great base for digital nomads and remote workers. Check-in 3 PM, checkout 12 PM. Weekly stays get 15% off, monthly stays 40% off.</p>
   </section>
 
   <section class="rooms-preview">
     <h2>Our Rooms</h2>
     <div class="rooms-grid">
       <div class="room-card">
-        <div class="room-card-img">The Nest</div>
-        <div class="room-card-body">
-          <div class="room-card-name">The Nest</div>
-          <div class="room-card-rate">from &#x0E3F;3,500 / night</div>
-          <div class="room-card-desc">A private retreat perched above the treetops with panoramic views and a king-size bed.</div>
-          <a href="/rooms/the-nest" class="room-card-link">View details &#x2192;</a>
+        <a href="/rooms/the-nest" style="text-decoration:none;color:inherit">
+          <div class="room-card-img"><img src="/images/rooms/kinhaus-nest-1.jpg" alt="The Nest private room with panoramic views at Kin Haus co-living villa, Koh Phangan" loading="lazy"></div>
+          <div class="room-card-body">
+            <div class="room-card-name">The Nest</div>
+            <div class="room-card-rate" data-thb="3500" data-price-tpl="from {price} / night">from &#x0E3F;3,500 / night</div>
+            <div class="room-card-desc">A private retreat at the top of the house with panoramic views, a king-size bed, and ensuite bathroom.</div>
+            <span class="room-card-link">View details &#x2192;</span>
+          </div>
+        </a>
+        <div class="room-card-actions">
+          <button class="room-card-avail avail-cta" data-room="nest">Check Availability</button>
         </div>
       </div>
       <div class="room-card">
-        <div class="room-card-img">Master Suite</div>
-        <div class="room-card-body">
-          <div class="room-card-name">Master Suite</div>
-          <div class="room-card-rate">from &#x0E3F;2,240 / night</div>
-          <div class="room-card-desc">Spacious ground-floor suite with an ensuite bathroom and direct garden access.</div>
-          <a href="/rooms/master-suite" class="room-card-link">View details &#x2192;</a>
+        <a href="/rooms/master-suite" style="text-decoration:none;color:inherit">
+          <div class="room-card-img"><img src="/images/rooms/kinhaus-master-teak-headboard.jpg" alt="Master Suite with king-size bed and sunrise views at Kin Haus, Koh Phangan" loading="lazy"></div>
+          <div class="room-card-body">
+            <div class="room-card-name">Master Room</div>
+            <div class="room-card-rate" data-thb="2240" data-price-tpl="from {price} / night">from &#x0E3F;2,240 / night</div>
+            <div class="room-card-desc">Spacious lower-floor suite with a king-size bed, sunrise views, and shared balcony.</div>
+            <span class="room-card-link">View details &#x2192;</span>
+          </div>
+        </a>
+        <div class="room-card-actions">
+          <button class="room-card-avail avail-cta" data-room="master">Check Availability</button>
         </div>
       </div>
       <div class="room-card">
-        <div class="room-card-img">Nomad Room</div>
-        <div class="room-card-body">
-          <div class="room-card-name">Nomad Room</div>
-          <div class="room-card-rate">from &#x0E3F;1,680 / night</div>
-          <div class="room-card-desc">A cozy workspace-ready room, ideal for digital nomads looking for a longer stay.</div>
-          <a href="/rooms/nomad-room" class="room-card-link">View details &#x2192;</a>
+        <a href="/rooms/nomad-room" style="text-decoration:none;color:inherit">
+          <div class="room-card-img"><img src="/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg" alt="Nomad Room with dedicated desk for remote work at Kin Haus, Koh Phangan" loading="lazy"></div>
+          <div class="room-card-body">
+            <div class="room-card-name">Nomad Room</div>
+            <div class="room-card-rate" data-thb="1680" data-price-tpl="from {price} / night">from &#x0E3F;1,680 / night</div>
+            <div class="room-card-desc">A cozy, workspace-ready room ideal for digital nomads with a dedicated desk and fast WiFi.</div>
+            <span class="room-card-link">View details &#x2192;</span>
+          </div>
+        </a>
+        <div class="room-card-actions">
+          <button class="room-card-avail avail-cta" data-room="nomad">Check Availability</button>
         </div>
       </div>
     </div>
   </section>
 
   <section class="about-section">
-    <h2>Your Home on the Island</h2>
-    <p>Kin Haus is more than a place to stay. It's a small community of travelers and creators sharing a tropical villa in one of Koh Phangan's most livable neighborhoods. Whether you're here for a week or a month, you'll feel at home.</p>
+    <div class="about-bg">
+      <img src="/images/property/kinhaus-living-room-glass-walls.jpg" alt="Living room at Kin Haus" loading="lazy">
+    </div>
+    <div class="about-text">
+      <h2>Your Home on the Island</h2>
+      <p>Kin Haus is more than a place to stay. It's a small community of travelers and creators sharing a tropical villa in one of Koh Phangan's most livable neighborhoods. Whether you're here for a week or a month, you'll feel at home.</p>
+    </div>
+  </section>
+
+  <section class="testimonials-section">
+    <h2>What Guests Say</h2>
+    <p class="testimonials-sub">From recent stays at Kin Haus</p>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <p class="testimonial-quote">"The views from the pool are unreal. Waking up to sunrises over the mountains every morning made my trip. The whole house feels like home."</p>
+        <div class="testimonial-author">Sarah</div>
+        <div class="testimonial-stay">The Nest, Jan 2026</div>
+      </div>
+      <div class="testimonial-card">
+        <p class="testimonial-quote">"Perfect setup for remote work. Fast WiFi, a proper desk, and a pool for breaks. Alex was super helpful with local tips and scooter rentals."</p>
+        <div class="testimonial-author">Marc</div>
+        <div class="testimonial-stay">Nomad Room, Dec 2025</div>
+      </div>
+      <div class="testimonial-card">
+        <p class="testimonial-quote">"We stayed for two weeks and didn't want to leave. The kitchen is well-stocked, the pool area is beautiful, and the location is quiet but close to everything."</p>
+        <div class="testimonial-author">Lisa &amp; Tom</div>
+        <div class="testimonial-stay">Master Room, Feb 2026</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="amenities-section">
+    <h2>What We Offer</h2>
+    <p class="amenities-sub">Everything you need for a comfortable stay</p>
+    <div class="amenities-grid">
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg></div>
+        <span class="amenity-text">Infinity pool</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8"/></svg></div>
+        <span class="amenity-text">Fully equipped kitchen</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7 3 5"/><path d="M9 6V3"/><path d="m13 7 2-2"/><circle cx="9" cy="13" r="3"/><path d="M11.83 12H20a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2.17"/><path d="M16 16h2"/></svg></div>
+        <span class="amenity-text">Home cinema projector</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg></div>
+        <span class="amenity-text">Espresso machine</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="4" rx="2"/><rect width="8" height="7" x="6" y="8" rx="1"/><path d="M18 8v7"/><path d="M6 19v2"/><path d="M18 19v2"/></svg></div>
+        <span class="amenity-text">Microwave</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div>
+        <span class="amenity-text">Gas stove</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/></svg></div>
+        <span class="amenity-text">Air fryer</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
+        <span class="amenity-text">Dining table</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4"/><path d="M12 2v2"/><path d="M12 20v2"/></svg></div>
+        <span class="amenity-text">Giant beanbags</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.116 4.104A1 1 0 0 1 6.11 3h11.78a1 1 0 0 1 .994 1.105L17.19 20.21A2 2 0 0 1 15.2 22H8.8a2 2 0 0 1-2-1.79z"/><path d="M6 12a5 5 0 0 1 6 0 5 5 0 0 0 6 0"/></svg></div>
+        <span class="amenity-text">Water filter</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg></div>
+        <span class="amenity-text">1 Gbps mesh WiFi</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3 2 5v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z"/><path d="M6 8h4"/><path d="M6 18h4"/><path d="m12 3-2 2v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z"/><path d="M14 8h4"/><path d="M14 18h4"/><path d="m20 3-2 2v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z"/></svg></div>
+        <span class="amenity-text">Shared terrace</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg></div>
+        <span class="amenity-text">Sunrise views</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>
+        <span class="amenity-text">Scooter parking</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg></div>
+        <span class="amenity-text">Car parking (limited)</span>
+      </div>
+      <div class="amenity">
+        <div class="amenity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></div>
+        <span class="amenity-text">Dedicated workspace</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="gallery-section">
+    <h2>Common Areas</h2>
+    <p class="gallery-sub">Shared spaces that make Kin Haus feel like home</p>
+    <div class="room-gallery gallery-grid">
+      <img src="/images/property/kinhaus-infinity-pool-jungle-view.jpg" alt="Infinity pool with jungle view" loading="lazy">
+      <img src="/images/property/kinhaus-pool-mountain-panorama.jpg" alt="Pool with mountain panorama" loading="lazy">
+      <img src="/images/property/kinhaus-dining-area-pool-view.jpg" alt="Outdoor dining area" loading="lazy">
+      <img src="/images/property/kinhaus-living-room-1.jpg" alt="Living room" loading="lazy">
+      <img src="/images/property/kinhaus-kitchen-and-dining.jpg" alt="Kitchen and dining area" loading="lazy">
+      <img src="/images/property/kinhaus-workspace-and-living-room.jpg" alt="Workspace and living room" loading="lazy">
+      <img src="/images/property/kinhaus-pool-palms-and-mountains.jpg" alt="Pool area with palm trees" loading="lazy">
+      <img src="/images/property/kinhaus-poolside-curved-canopy.jpg" alt="Poolside lounge area" loading="lazy">
+      <img src="/images/property/kinhaus-exterior-elevated-angle.jpg" alt="Kin Haus exterior" loading="lazy">
+    </div>
+  </section>
+
+  <section class="instagram-section">
+    <div class="instagram-inner">
+      <div class="instagram-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></div>
+      <h2>Follow Along</h2>
+      <a href="https://www.instagram.com/kinhauskpg" target="_blank" rel="noopener" class="instagram-handle">@kinhauskpg</a>
+      <a href="https://www.instagram.com/kinhauskpg" target="_blank" rel="noopener" class="instagram-cta">Follow on Instagram</a>
+    </div>
+  </section>
+
+  <section class="nam-banner">
+    <div class="nam-banner-inner">
+      <div class="nam-banner-label">What's next</div>
+      <h2>Kin Haus is just the beginning</h2>
+      <p>We're building something bigger on Koh Phangan. A co-working, co-living, and retreat space designed for creators and independent workers in the age of AI.</p>
+      <a href="https://nam.space" target="_blank" rel="noopener" class="nam-banner-link">Discover N&#x0101;M Space &rarr;</a>
+    </div>
   </section>
 </MarketingLayout>

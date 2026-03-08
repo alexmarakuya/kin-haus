@@ -1,0 +1,95 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://kinhaus.space/blog" },
+  ],
+};
+
+const posts = [
+  {
+    slug: 'digital-nomad-guide-koh-phangan',
+    title: 'The Digital Nomad Guide to Koh Phangan',
+    excerpt: 'Everything you need to know about working remotely from Koh Phangan: WiFi, cost of living, coworking, visas, and the best areas to stay.',
+    date: '2026-03-01',
+  },
+  {
+    slug: 'co-living-beats-hotels-remote-workers',
+    title: 'Why Co-Living Beats Hotels for Remote Workers',
+    excerpt: 'Hotels are built for tourists. Co-living is built for people who actually need to get work done. Here is why the model works better for remote professionals.',
+    date: '2026-03-05',
+  },
+];
+---
+
+<MarketingLayout
+  title="Blog -- Digital Nomad Guides & Co-Living Tips | Kin Haus"
+  description="Guides and tips for digital nomads in Koh Phangan. WiFi reviews, cost of living, co-living advice, and remote work tips from Kin Haus."
+  jsonLd={jsonLd}
+>
+  <style>
+    .blog-page { padding: 60px 40px; max-width: 800px; margin: 0 auto; }
+    .blog-page h1 { font-weight: 600; font-size: 36px; margin-bottom: 8px; }
+    .blog-intro { font-size: 15px; color: #64645f; line-height: 1.6; margin-bottom: 36px; }
+
+    .blog-grid { display: flex; flex-direction: column; gap: 20px; }
+
+    .blog-card {
+      display: block;
+      padding: 24px;
+      background: white;
+      border: 1px solid #e4e2de;
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .blog-card:hover {
+      border-color: #ccc;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+    .blog-card-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #8b8b85;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .blog-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .blog-card p {
+      font-size: 14px;
+      color: #52524e;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .blog-page { padding: 40px 20px; }
+      .blog-page h1 { font-size: 28px; }
+    }
+  </style>
+
+  <div class="blog-page">
+    <h1>Blog</h1>
+    <p class="blog-intro">Guides, tips, and stories for digital nomads and remote workers on Koh Phangan.</p>
+
+    <div class="blog-grid">
+      {posts.map(post => (
+        <a href={`/blog/${post.slug}`} class="blog-card">
+          <div class="blog-card-date">{new Date(post.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+          <h2>{post.title}</h2>
+          <p>{post.excerpt}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+</MarketingLayout>

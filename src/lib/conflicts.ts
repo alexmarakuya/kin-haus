@@ -11,6 +11,13 @@ export function detectConflicts(allBookings: Booking[]): Booking[] {
       const sameRoom = a.room === b.room || a.room === 'full' || b.room === 'full';
       if (!sameRoom) continue;
 
+      // Blocked dates can be overridden by direct, friend, or owner bookings
+      const overridable = ['direct', 'friend', 'owner'];
+      if (
+        (a.type === 'blocked' && overridable.includes(b.type)) ||
+        (b.type === 'blocked' && overridable.includes(a.type))
+      ) continue;
+
       if (a.checkin < b.checkout && b.checkin < a.checkout) {
         result[i].conflict = true;
         result[i].conflictWith = b.id;

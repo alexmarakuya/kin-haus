@@ -36,6 +36,8 @@ const ICAL_SOURCES = {
 };
 
 const BOOKINGS_FILE = path.join(__dirname, 'data', 'bookings.json');
+const OVERRIDES_FILE = path.join(__dirname, 'data', 'overrides.json');
+const PRICING_FILE = path.join(__dirname, 'data', 'pricing.json');
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 // ─── CACHE ───────────────────────────────────────────────────────────────────
@@ -149,6 +151,57 @@ function writeManualBookings(bookings) {
   fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf8');
 }
 
+// ─── OVERRIDES (for Airbnb bookings) ────────────────────────────────────────
+
+function readOverrides() {
+  try {
+    if (!fs.existsSync(OVERRIDES_FILE)) return {};
+    const raw = fs.readFileSync(OVERRIDES_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('[overrides] error reading file:', err.message);
+    return {};
+  }
+}
+
+function writeOverrides(overrides) {
+  fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(overrides, null, 2), 'utf8');
+}
+
+function applyOverrides(bookings) {
+  const overrides = readOverrides();
+  return bookings.map(b => {
+    const ov = overrides[b.id];
+    if (!ov) return b;
+    return { ...b, ...ov };
+  });
+}
+
+// ─── PRICING ────────────────────────────────────────────────────────────────
+
+const DEFAULT_PRICING = {
+  nest:   { high: 5000, low: 3500 },
+  master: { high: 3200, low: 2240 },
+  nomad:  { high: 2400, low: 1680 },
+};
+
+function readPricing() {
+  try {
+    if (!fs.existsSync(PRICING_FILE)) return { ...DEFAULT_PRICING };
+    const raw = fs.readFileSync(PRICING_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    // Merge with defaults so new rooms always have fallback values
+    return { ...DEFAULT_PRICING, ...data };
+  } catch (err) {
+    console.error('[pricing] error reading file:', err.message);
+    return { ...DEFAULT_PRICING };
+  }
+}
+
+function writePricing(pricing) {
+  fs.writeFileSync(PRICING_FILE, JSON.stringify(pricing, null, 2), 'utf8');
+}
+
 // ─── CONFLICT DETECTION ──────────────────────────────────────────────────────
 
 function detectConflicts(allBookings) {
@@ -203,7 +256,7 @@ app.get('/api/bookings', async (req, res) => {
       fetchIcalBookings('nomad', forceRefresh),
     ]);
 
-    const icalBookings = [...nestBookings, ...masterBookings, ...nomadBookings];
+    const icalBookings = applyOverrides([...nestBookings, ...masterBookings, ...nomadBookings]);
     const manualBookings = readManualBookings().map(b => ({ ...b, source: 'manual' }));
     const allBookings = [...icalBookings, ...manualBookings];
 
@@ -286,6 +339,60 @@ app.delete('/api/bookings/:id', (req, res) => {
 
   console.log(`[bookings] deleted: ${id}`);
   res.json({ deleted: true, booking: removed });
+});
+
+// PATCH /api/bookings/:id — update a booking's guest name, amount, or notes
+app.patch('/api/bookings/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = {};
+  if (req.body.guest !== undefined) updates.guest = req.body.guest;
+  if (req.body.amount !== undefined) updates.amount = parseFloat(req.body.amount) || 0;
+  if (req.body.notes !== undefined) updates.notes = req.body.notes;
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+
+  // Check if it's a manual booking first
+  const bookings = readManualBookings();
+  const index = bookings.findIndex(b => b.id === id);
+
+  if (index !== -1) {
+    // Manual booking — update in bookings.json
+    Object.assign(bookings[index], updates);
+    writeManualBookings(bookings);
+    console.log(`[bookings] updated manual: ${id}`, updates);
+    return res.json(bookings[index]);
+  }
+
+  // Airbnb booking — store override
+  const overrides = readOverrides();
+  overrides[id] = { ...(overrides[id] || {}), ...updates };
+  writeOverrides(overrides);
+  console.log(`[overrides] saved for ${id}:`, updates);
+  res.json({ id, ...updates, source: 'override' });
+});
+
+// GET /api/pricing — current room rates
+app.get('/api/pricing', (req, res) => {
+  res.json(readPricing());
+});
+
+// PATCH /api/pricing — update room rates (deep merge)
+app.patch('/api/pricing', (req, res) => {
+  const current = readPricing();
+  const updates = req.body;
+
+  for (const room of Object.keys(updates)) {
+    if (!current[room]) continue;
+    if (typeof updates[room] !== 'object') continue;
+    if (updates[room].high !== undefined) current[room].high = Number(updates[room].high) || 0;
+    if (updates[room].low !== undefined) current[room].low = Number(updates[room].low) || 0;
+  }
+
+  writePricing(current);
+  console.log('[pricing] updated:', JSON.stringify(current));
+  res.json(current);
 });
 
 // GET /api/refresh — force-clear cache and re-fetch

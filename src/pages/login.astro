@@ -31,9 +31,13 @@ const error = Astro.url.searchParams.get('error');
       text-align: center;
       margin-bottom: 32px;
     }
+    .login-pw-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
     .login-input {
       width: 100%;
-      padding: 10px 14px;
+      padding: 10px 40px 10px 14px;
       border: 1px solid #d9d7d3;
       border-radius: 6px;
       font-family: 'Inter', sans-serif;
@@ -41,11 +45,25 @@ const error = Astro.url.searchParams.get('error');
       color: var(--ink);
       background: white;
       outline: none;
-      margin-bottom: 12px;
     }
     .login-input:focus {
       border-color: var(--accent);
     }
+    .login-pw-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: #b0b0a8;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+    }
+    .login-pw-toggle:hover { color: #64645f; }
     .login-btn {
       width: 100%;
       padding: 10px;
@@ -91,16 +109,39 @@ const error = Astro.url.searchParams.get('error');
       {error && <div class="login-error">Incorrect password</div>}
 
       <form method="POST" action="/api/auth">
-        <input
-          type="password"
-          name="password"
-          class="login-input"
-          placeholder="Password"
-          autofocus
-          required
-        />
+        <div class="login-pw-wrap">
+          <input
+            type="password"
+            name="password"
+            id="loginPw"
+            class="login-input"
+            placeholder="Password"
+            autofocus
+            required
+          />
+          <button type="button" class="login-pw-toggle" id="loginPwToggle" aria-label="Show password">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
         <button type="submit" class="login-btn">Sign In</button>
       </form>
+
+      <script is:inline>
+        (function() {
+          var pw = document.getElementById('loginPw');
+          var tog = document.getElementById('loginPwToggle');
+          var eyeOpen = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+          var eyeClosed = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+          if (pw && tog) {
+            tog.addEventListener('click', function() {
+              var show = pw.type === 'password';
+              pw.type = show ? 'text' : 'password';
+              tog.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+              tog.innerHTML = show ? eyeClosed : eyeOpen;
+            });
+          }
+        })();
+      </script>
 
       <a href="/" class="login-back">&larr; Back to site</a>
     </div>

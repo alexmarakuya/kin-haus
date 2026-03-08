@@ -1,11 +1,50 @@
 ---
 import MarketingLayout from '../layouts/MarketingLayout.astro';
+
+const faqItems = [
+  { q: "What's included in the rate?", a: "All rates include the room, access to shared spaces (pool, kitchen, living area, terrace), WiFi, air conditioning, and weekly cleaning. Utilities are included." },
+  { q: "How do I get to Kin Haus from the ferry?", a: "From Thongsala Pier, it's about a 5-minute scooter ride. We can arrange a pickup if you let us know your ferry time via WhatsApp." },
+  { q: "Is there a minimum stay?", a: "No strict minimum, but we recommend at least 3 nights to settle in. Weekly and monthly stays get discounted rates (15% and 40% off)." },
+  { q: "Can I rent a scooter nearby?", a: "Yes, there are several rental shops within 5 minutes. We can recommend a trusted one. Expect to pay around 200-300 baht per day." },
+  { q: "Do you offer discounts for longer stays?", a: "Yes. Stays of 7+ nights get 15% off, and stays of 28+ nights get 40% off. These are applied automatically when you book direct." },
+  { q: "How fast is the WiFi?", a: "Kin Haus has 500+ Mbps fibre internet with a mesh network covering every room and shared space. We also have a backup connection for redundancy. It's built for remote work -- video calls, large uploads, and streaming all run smoothly." },
+  { q: "What are the check-in and check-out times?", a: "Check-in is at 3 PM and check-out is at 12 PM (noon). Early check-in or late check-out may be available depending on availability -- just ask via WhatsApp." },
+  { q: "Is Kin Haus good for remote work?", a: "Absolutely. Kin Haus was designed for digital nomads and remote workers. Every room has a dedicated workspace, the WiFi is 500+ Mbps, and there are quiet indoor and outdoor areas for focused work. Many of our guests work remotely full-time." },
+  { q: "How do I book directly?", a: "Message us on WhatsApp at +66 63 803 4860. Direct bookings get better rates than Airbnb since we don't pay platform fees. We accept bank transfer and cash." },
+];
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqItems.map(item => ({
+      "@type": "Question",
+      "name": item.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.a,
+      },
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
+      { "@type": "ListItem", "position": 2, "name": "Contact & FAQ", "item": "https://kinhaus.space/contact" },
+    ],
+  },
+];
 ---
 
-<MarketingLayout title="Contact — Kin Haus" description="Get in touch with Kin Haus, Koh Phangan">
+<MarketingLayout
+  title="Contact & FAQ -- Kin Haus Co-Living, Koh Phangan"
+  description="Get in touch with Kin Haus for direct bookings, questions, and availability. Message us on WhatsApp for discounted rates. FAQ covering WiFi, check-in times, and remote work."
+  jsonLd={jsonLd}
+>
   <style>
     .contact-page { padding: 60px 40px; max-width: 600px; margin: 0 auto; }
-    .contact-page h1 { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 8px; }
+    .contact-page h1 { font-weight: 600; font-size: 36px; margin-bottom: 8px; }
     .contact-intro { font-size: 15px; color: #64645f; line-height: 1.6; margin-bottom: 32px; }
 
     .contact-methods {
@@ -58,6 +97,40 @@ import MarketingLayout from '../layouts/MarketingLayout.astro';
       text-align: center;
       padding: 20px;
       border-top: 1px solid #e4e2de;
+      margin-bottom: 40px;
+    }
+
+    .faq-section h2 {
+      font-weight: 600; font-size: 22px; margin-bottom: 20px;
+    }
+    .faq-item {
+      border-bottom: 1px solid #e4e2de;
+    }
+    .faq-item summary {
+      padding: 14px 0;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: '+';
+      font-size: 18px;
+      color: #8b8b85;
+      transition: transform 0.2s;
+    }
+    .faq-item[open] summary::after {
+      content: '\2212';
+    }
+    .faq-item p {
+      font-size: 14px;
+      color: #52524e;
+      line-height: 1.6;
+      padding: 0 0 16px;
     }
   </style>
 
@@ -67,17 +140,10 @@ import MarketingLayout from '../layouts/MarketingLayout.astro';
 
     <div class="contact-methods">
       <div class="contact-method">
-        <div class="contact-method-icon">&#x2709;</div>
-        <div>
-          <div class="contact-method-label">Email</div>
-          <div class="contact-method-value"><a href="mailto:hello@kinhaus.space">hello@kinhaus.space</a></div>
-        </div>
-      </div>
-      <div class="contact-method">
         <div class="contact-method-icon">&#x1F4AC;</div>
         <div>
           <div class="contact-method-label">WhatsApp</div>
-          <div class="contact-method-value"><a href="https://wa.me/" target="_blank" rel="noopener">Message us on WhatsApp</a></div>
+          <div class="contact-method-value"><a href="https://wa.me/66638034860" target="_blank" rel="noopener">Message us on WhatsApp</a></div>
         </div>
       </div>
       <div class="contact-method">
@@ -90,7 +156,17 @@ import MarketingLayout from '../layouts/MarketingLayout.astro';
     </div>
 
     <div class="contact-note">
-      For direct bookings (discounted rates), please contact us via email or WhatsApp.
+      For direct bookings (discounted rates), please contact us via WhatsApp.
+    </div>
+
+    <div class="faq-section">
+      <h2>Common Questions</h2>
+      {faqItems.map(item => (
+        <details class="faq-item">
+          <summary>{item.q}</summary>
+          <p>{item.a}</p>
+        </details>
+      ))}
     </div>
   </div>
 </MarketingLayout>

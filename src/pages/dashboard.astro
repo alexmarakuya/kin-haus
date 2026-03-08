@@ -4,7 +4,22 @@ import '../styles/dashboard.css';
 ---
 
 <BaseLayout title="Kin Haus — Occupancy Hub">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr" is:inline></script>
+  <style>
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+    .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange,
+    .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus,
+    .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover,
+    .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay,
+    .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .flatpickr-day.inRange { background: #d4ede3; border-color: #d4ede3; box-shadow: -5px 0 0 #d4ede3, 5px 0 0 #d4ede3; }
+    .flatpickr-day.inRange:hover { background: #b0dcc8; border-color: #b0dcc8; }
+  </style>
   <div class="loading-bar" id="loading-bar"></div>
+  <div class="present-banner"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Present mode active -- guest details are scrambled</div>
 
   <div class="header">
     <div class="header-left">
@@ -16,6 +31,7 @@ import '../styles/dashboard.css';
         <div class="sync-dot" id="sync-dot"></div>
         <span id="sync-label">Loading...</span>
       </div>
+      <button class="btn btn-sm" id="btn-present" title="Scramble guest details for screen sharing"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Present</button>
       <button class="btn btn-sm" id="btn-refresh">&#x21bb; Refresh</button>
       <button class="btn btn-primary btn-sm" id="btn-add">+ Add Booking</button>
     </div>
@@ -27,9 +43,10 @@ import '../styles/dashboard.css';
     <div class="sidebar">
       <div>
         <div class="sidebar-title">Rooms</div>
-        <div class="room-item"><div class="room-dot" style="background:var(--nest)"></div><div><div class="room-name">The Nest</div><div class="room-rate">&#x0E3F;5,000 / night</div></div></div>
-        <div class="room-item"><div class="room-dot" style="background:var(--master)"></div><div><div class="room-name">Master Suite</div><div class="room-rate">&#x0E3F;3,200 / night</div></div></div>
-        <div class="room-item"><div class="room-dot" style="background:var(--nomad)"></div><div><div class="room-name">Nomad Room</div><div class="room-rate">&#x0E3F;2,400 / night</div></div></div>
+        <div class="room-item"><div class="room-dot" style="background:var(--nest)"></div><div><div class="room-name">The Nest</div><div class="room-rate" id="sidebar-rate-nest">&#x0E3F;5,000 / night</div></div></div>
+        <div class="room-item"><div class="room-dot" style="background:var(--master)"></div><div><div class="room-name">Master Room</div><div class="room-rate" id="sidebar-rate-master">&#x0E3F;3,200 / night</div></div></div>
+        <div class="room-item"><div class="room-dot" style="background:var(--nomad)"></div><div><div class="room-name">Nomad Room</div><div class="room-rate" id="sidebar-rate-nomad">&#x0E3F;2,400 / night</div></div></div>
+        <div class="room-item"><div class="room-dot" style="background:var(--theater)"></div><div><div class="room-name">Theater Room</div></div></div>
       </div>
       <div>
         <div class="sidebar-title">Legend</div>
@@ -37,6 +54,7 @@ import '../styles/dashboard.css';
         <div class="legend-row"><div class="legend-chip" style="background:var(--direct)"></div>Direct</div>
         <div class="legend-row"><div class="legend-chip" style="background:var(--friend)"></div>Friend / Personal</div>
         <div class="legend-row"><div class="legend-chip" style="background:var(--blocked)"></div>Blocked</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--owner)"></div>Owner / Host</div>
         <div class="legend-row"><div class="legend-chip" style="background:var(--conflict)"></div>&#x26A0; Conflict</div>
       </div>
       <div>
@@ -49,6 +67,9 @@ import '../styles/dashboard.css';
       <div class="tab-bar">
         <div class="tab active" data-tab="calendar">Calendar</div>
         <div class="tab" data-tab="list">Bookings</div>
+        <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
+        <div class="tab" data-tab="codes">Promo Codes</div>
+        <div class="tab" data-tab="pricing">Pricing</div>
         <div class="tab-spacer"></div>
       </div>
 
@@ -58,7 +79,8 @@ import '../styles/dashboard.css';
         <button class="filter-chip active" data-filter="airbnb"><span class="filter-dot" style="background:var(--airbnb)"></span>Airbnb</button>
         <button class="filter-chip active" data-filter="direct"><span class="filter-dot" style="background:var(--direct)"></span>Direct</button>
         <button class="filter-chip active" data-filter="friend"><span class="filter-dot" style="background:var(--friend)"></span>Friends</button>
-        <button class="filter-chip active" data-filter="blocked"><span class="filter-dot" style="background:var(--blocked)"></span>Blocked</button>
+        <button class="filter-chip" data-filter="blocked"><span class="filter-dot" style="background:var(--blocked)"></span>Blocked</button>
+        <button class="filter-chip" data-filter="owner"><span class="filter-dot" style="background:var(--owner)"></span>Owner</button>
       </div>
 
       <!-- CALENDAR TAB -->
@@ -80,6 +102,46 @@ import '../styles/dashboard.css';
         <div id="list-content"></div>
       </div>
 
+      <!-- INQUIRIES TAB -->
+      <div id="tab-inquiries" class="list-pane" style="display:none">
+        <div id="inquiries-content"></div>
+      </div>
+
+      <!-- PROMO CODES TAB -->
+      <div id="tab-codes" class="list-pane" style="display:none">
+        <div style="padding:20px 28px 12px; display:flex; justify-content:space-between; align-items:center;">
+          <div class="list-section-title" style="margin:0; border:none; padding:0;">Active Codes</div>
+          <button class="btn btn-primary" id="btn-create-code" style="font-size:12px; padding:7px 16px;">+ Create Code</button>
+        </div>
+        <div id="codes-content" style="padding:0 28px 28px;"></div>
+      </div>
+
+      <!-- PRICING TAB -->
+      <div id="tab-pricing" class="list-pane" style="display:none">
+        <div style="padding:20px 28px 28px;">
+          <div class="list-section-title" style="margin:0 0 16px; border:none; padding:0;">Room Nightly Rates</div>
+          <div class="pricing-cards">
+            <div class="pricing-card">
+              <div class="pricing-card-header"><div class="room-dot" style="background:var(--nest)"></div><strong>The Nest</strong></div>
+              <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nest-high" class="pricing-input" min="0" step="100"></div></div>
+              <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nest-low" class="pricing-input" min="0" step="100"></div></div>
+            </div>
+            <div class="pricing-card">
+              <div class="pricing-card-header"><div class="room-dot" style="background:var(--master)"></div><strong>Master Suite</strong></div>
+              <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-master-high" class="pricing-input" min="0" step="100"></div></div>
+              <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-master-low" class="pricing-input" min="0" step="100"></div></div>
+            </div>
+            <div class="pricing-card">
+              <div class="pricing-card-header"><div class="room-dot" style="background:var(--nomad)"></div><strong>Nomad Room</strong></div>
+              <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nomad-high" class="pricing-input" min="0" step="100"></div></div>
+              <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nomad-low" class="pricing-input" min="0" step="100"></div></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-save-pricing" style="margin-top:16px;">Save Rates</button>
+          <span id="pricing-status" style="margin-left:12px; font-size:12px; color:var(--accent); display:none;">Saved!</span>
+        </div>
+      </div>
+
       <div class="stats-footer" id="stats-footer"></div>
     </div>
   </div>
@@ -97,22 +159,22 @@ import '../styles/dashboard.css';
           <option value="direct">Direct Booking</option>
           <option value="friend">Friend / Personal</option>
           <option value="blocked">Blocked</option>
+          <option value="owner">Owner / Host Block</option>
         </select>
       </div>
       <div class="fg">
         <label>Room</label>
         <select id="f-room">
           <option value="nest">The Nest</option>
-          <option value="master">Master Suite</option>
+          <option value="master">Master Room</option>
           <option value="nomad">Nomad Room</option>
+          <option value="theater">Theater Room</option>
           <option value="full">Full House</option>
         </select>
       </div>
-      <div class="fg-row">
-        <div class="fg"><label>Check-in</label><input id="f-checkin" type="date"></div>
-        <div class="fg"><label>Check-out</label><input id="f-checkout" type="date"></div>
-      </div>
-      <div class="fg"><label>Amount (THB) -- optional</label><input id="f-amount" type="number" placeholder="e.g. 22400"></div>
+      <div class="fg"><label>Dates</label><input id="f-dates" type="text" placeholder="Select check-in to check-out" readonly></div>
+      <div class="fg" id="f-rate-row"><label>Rate / night (THB)</label><input id="f-rate" type="number" placeholder="e.g. 2400"></div>
+      <div class="fg" id="f-total-row" style="padding:10px 0 0"><span id="f-total" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#52524e">Select dates to see total</span></div>
       <div class="fg"><label>Notes</label><input id="f-notes" type="text" placeholder="Optional note"></div>
       <div class="modal-actions">
         <button class="btn" id="btn-cancel">Cancel</button>
@@ -145,22 +207,96 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
+  <!-- CREATE PROMO CODE MODAL -->
+  <div class="overlay" id="code-modal">
+    <div class="modal">
+      <div class="modal-title">Create Promo Code</div>
+      <div class="fg">
+        <label>Code</label>
+        <input id="fc-code" type="text" placeholder="e.g. FRIENDS25" style="text-transform:uppercase">
+      </div>
+      <div class="fg">
+        <label>Discount</label>
+        <select id="fc-discount">
+          <option value="10">10%</option>
+          <option value="20">20%</option>
+          <option value="30">30%</option>
+          <option value="40">40%</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Note (optional)</label>
+        <input id="fc-note" type="text" placeholder="e.g. For close friends">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="fc-cancel">Cancel</button>
+        <button class="btn btn-primary" id="fc-save">Create Code</button>
+      </div>
+    </div>
+  </div>
+
   <script is:inline>
   // ─── STATE ──────────────────────────────────────────────────────────────────
   let allBookings = [];
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let currentTab = 'calendar';
-  let activeFilters = { airbnb: true, direct: true, friend: true, blocked: true };
+  let activeFilters = { airbnb: true, direct: true, friend: true, blocked: false, owner: false };
+  let presentMode = false;
+
+  // ─── PRESENT MODE ─────────────────────────────────────────────────────────
+  const FAKE_NAMES = ['Alex T.','Jordan R.','Sam K.','Morgan P.','Casey L.','Riley J.','Jamie W.','Taylor S.','Drew M.','Quinn B.','Avery N.','Dakota H.','Skyler F.','Reese C.','Finley D.','Rowan G.','Emerson V.','Hayden Z.','Parker E.','Blair A.'];
+  const nameMap = {};
+  let nameIndex = 0;
+
+  function scrambleName(real) {
+    if (!real || presentMode === false) return real;
+    if (!nameMap[real]) {
+      nameMap[real] = FAKE_NAMES[nameIndex % FAKE_NAMES.length];
+      nameIndex++;
+    }
+    return nameMap[real];
+  }
+
+  function scramblePhone(num) {
+    if (!num || !presentMode) return num;
+    // Keep first 4 chars, mask the rest
+    if (num.length <= 4) return '****';
+    return num.slice(0, 4) + num.slice(4).replace(/[0-9]/g, '*');
+  }
+
+  function displayName(booking) {
+    return presentMode ? scrambleName(booking.guest || 'Guest') : (booking.guest || '');
+  }
+
+  // ─── DRAG STATE ─────────────────────────────────────────────────────────────
+  let dragRoom = null;
+  let dragStartDay = null;
+  let dragEndDay = null;
+  let isDragging = false;
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const ROOMS = ['nest','master','nomad'];
-  const ROOM_LABELS = { nest:'The Nest', master:'Master Suite', nomad:'Nomad Room', full:'Full House' };
-  const ROOM_COLORS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)', full:'#8a6f9e' };
-  const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked' };
-  const RATES = { nest:5000, master:3200, nomad:2400, full:10600 };
+  const ROOMS = ['nest','master','nomad','theater'];
+  const ROOM_LABELS = { nest:'The Nest', master:'Master Room', nomad:'Nomad Room', theater:'Theater Room', full:'Full House' };
+  const ROOM_COLORS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)', theater:'var(--theater)', full:'#8a6f9e' };
+  const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked', owner:'c-owner' };
+  let RATES_HIGH = { nest:5000, master:3200, nomad:2400, theater:0, full:10600 };
+  let RATES_LOW  = { nest:3500, master:2240, nomad:1680, theater:0, full:7420 };
+
+  function isLowSeason(dateStr) {
+    const m = new Date(dateStr + 'T12:00:00').getMonth(); // 0-indexed
+    return m >= 3 && m <= 9; // Apr(3) - Oct(9)
+  }
+  function getRateForDates(room, dates) {
+    if (!dates || dates.length < 1) return RATES_HIGH[room] || 0;
+    const checkin = dates[0].toISOString().split('T')[0];
+    return isLowSeason(checkin) ? (RATES_LOW[room] || 0) : (RATES_HIGH[room] || 0);
+  }
+  // Keep a simple RATES alias pointing to high season for backwards compat in revenue calc
+  const RATES = RATES_HIGH;
 
   // ─── EVENT LISTENERS ──────────────────────────────────────────────────────
+  document.getElementById('btn-present').addEventListener('click', togglePresentMode);
   document.getElementById('btn-refresh').addEventListener('click', refreshData);
   document.getElementById('btn-add').addEventListener('click', openModal);
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
@@ -170,6 +306,13 @@ import '../styles/dashboard.css';
   document.getElementById('dm-amount').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBookingAmount(); });
   document.getElementById('month-prev').addEventListener('click', () => changeMonth(-1));
   document.getElementById('month-next').addEventListener('click', () => changeMonth(1));
+  document.getElementById('f-room').addEventListener('change', () => {
+    const room = document.getElementById('f-room').value;
+    document.getElementById('f-rate').value = getRateForDates(room, datePicker.selectedDates);
+    updateEstimate();
+  });
+  document.getElementById('f-type').addEventListener('change', updateEstimate);
+  document.getElementById('f-rate').addEventListener('input', updateEstimate);
 
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', function() {
@@ -185,6 +328,68 @@ import '../styles/dashboard.css';
       render();
     });
   });
+
+  // ─── DRAG-TO-SELECT ───────────────────────────────────────────────────────
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const cell = e.target.closest('.cal-cell.empty');
+    if (cell && cell.dataset.room === dragRoom && cell.dataset.date) {
+      dragEndDay = cell.dataset.date;
+      updateDragHighlight();
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    if (dragStartDay && dragEndDay && dragRoom) {
+      const start = dragStartDay < dragEndDay ? dragStartDay : dragEndDay;
+      const end = dragStartDay < dragEndDay ? dragEndDay : dragStartDay;
+      // Add one day to end for checkout date
+      const endDate = new Date(end + 'T12:00:00');
+      endDate.setDate(endDate.getDate() + 1);
+      const checkout = endDate.toISOString().split('T')[0];
+      openModalWithRange(start, checkout, dragRoom);
+    }
+    clearDragHighlight();
+    dragRoom = null;
+    dragStartDay = null;
+    dragEndDay = null;
+  });
+
+  function updateDragHighlight() {
+    clearDragHighlight();
+    if (!dragStartDay || !dragEndDay) return;
+    const lo = dragStartDay < dragEndDay ? dragStartDay : dragEndDay;
+    const hi = dragStartDay < dragEndDay ? dragEndDay : dragStartDay;
+    document.querySelectorAll('.cal-cell.empty').forEach(c => {
+      if (c.dataset.room === dragRoom && c.dataset.date >= lo && c.dataset.date <= hi) {
+        c.classList.add('drag-selected');
+      }
+    });
+  }
+
+  function clearDragHighlight() {
+    document.querySelectorAll('.drag-selected').forEach(c => c.classList.remove('drag-selected'));
+  }
+
+  // ─── PRESENT MODE TOGGLE ────────────────────────────────────────────────────
+  function togglePresentMode() {
+    presentMode = !presentMode;
+    const btn = document.getElementById('btn-present');
+    if (presentMode) {
+      btn.classList.add('btn-present-active');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Present ON';
+      document.body.classList.add('present-mode');
+    } else {
+      btn.classList.remove('btn-present-active');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Present';
+      document.body.classList.remove('present-mode');
+    }
+    render();
+    if (currentTab === 'inquiries') renderInquiries();
+    if (currentTab === 'codes') renderDiscountCodes();
+  }
 
   // ─── API ────────────────────────────────────────────────────────────────────
   async function loadBookings(forceRefresh = false) {
@@ -216,19 +421,32 @@ import '../styles/dashboard.css';
   }
 
   async function saveBooking() {
+    const dates = datePicker.selectedDates;
+    if (!dates || dates.length < 2) {
+      alert('Please select a date range (check-in to check-out).');
+      return;
+    }
+    const checkin = dates[0].toISOString().split('T')[0];
+    const checkout = dates[1].toISOString().split('T')[0];
+    if (checkin >= checkout) {
+      alert('Check-out must be after check-in.');
+      return;
+    }
     const body = {
       guest: document.getElementById('f-guest').value || 'Guest',
       type: document.getElementById('f-type').value,
       room: document.getElementById('f-room').value,
-      checkin: document.getElementById('f-checkin').value,
-      checkout: document.getElementById('f-checkout').value,
-      amount: document.getElementById('f-amount').value,
+      checkin,
+      checkout,
+      amount: (() => {
+        const type = document.getElementById('f-type').value;
+        if (type !== 'direct') return 0;
+        const rate = parseFloat(document.getElementById('f-rate').value) || 0;
+        const nights = Math.round((dates[1] - dates[0]) / 86400000);
+        return calcTotal(rate, nights);
+      })(),
       notes: document.getElementById('f-notes').value,
     };
-    if (!body.checkin || !body.checkout || body.checkin >= body.checkout) {
-      alert('Please set valid check-in and check-out dates.');
-      return;
-    }
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -322,7 +540,7 @@ import '../styles/dashboard.css';
 
       const lbl = document.createElement('div');
       lbl.className = 'row-lbl';
-      const shortName = {nest:'Nest',master:'Master',nomad:'Nomad'}[room];
+      const shortName = {nest:'Nest',master:'Master',nomad:'Nomad',theater:'Theater'}[room];
       lbl.innerHTML = `<div class="row-lbl-dot" style="background:${ROOM_COLORS[room]}"></div>${shortName}`;
       row.appendChild(lbl);
 
@@ -334,14 +552,20 @@ import '../styles/dashboard.css';
           const dStr = ds(currentYear, currentMonth, d);
           if (dStr === todayStr) cell.classList.add('today-outline');
 
-          const bk = bookingOnDay(room, dStr);
+          const allBks = bookingsOnDay(room, dStr);
+          const bk = allBks.find(b => b.type !== 'blocked') || allBks[0];
           if (bk) {
             const typeClass = bk.conflict ? 'c-conflict' : (TYPE_CLASS[bk.type] || 'c-airbnb');
             cell.classList.add(typeClass);
+            // Crosshatch when a non-blocked booking overlaps a blocked one
+            const hasBlock = allBks.some(b => b.type === 'blocked');
+            const hasOverride = allBks.some(b => b.type !== 'blocked');
+            if (hasBlock && hasOverride) cell.classList.add('c-overridden');
             if (bk.checkin === dStr) {
               const init = document.createElement('div');
               init.className = 'cell-initial';
-              init.textContent = (bk.guest || '?').charAt(0).toUpperCase();
+              const name = presentMode ? scrambleName(bk.guest || '?') : (bk.guest || '?');
+              init.textContent = name.charAt(0).toUpperCase();
               cell.appendChild(init);
             }
             cell.addEventListener('mouseenter', e => showTooltip(e, bk));
@@ -351,7 +575,16 @@ import '../styles/dashboard.css';
             cell.addEventListener('click', () => { hideTooltip(); openBookingDetail(bk.id); });
           } else {
             cell.classList.add('empty');
-            cell.addEventListener('click', () => openModalWithDate(dStr, room));
+            cell.dataset.date = dStr;
+            cell.dataset.room = room;
+            cell.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              dragRoom = room;
+              dragStartDay = dStr;
+              dragEndDay = dStr;
+              isDragging = true;
+              updateDragHighlight();
+            });
           }
         } else {
           cell.classList.add('inactive');
@@ -364,6 +597,13 @@ import '../styles/dashboard.css';
 
   function bookingOnDay(room, dStr) {
     return filteredBookings().find(b => {
+      if (b.room !== room && b.room !== 'full') return false;
+      return dStr >= b.checkin && dStr < b.checkout;
+    });
+  }
+
+  function bookingsOnDay(room, dStr) {
+    return filteredBookings().filter(b => {
       if (b.room !== room && b.room !== 'full') return false;
       return dStr >= b.checkin && dStr < b.checkout;
     });
@@ -409,13 +649,16 @@ import '../styles/dashboard.css';
     const checkinFmt = fmtDate(b.checkin);
     const checkoutFmt = fmtDate(b.checkout);
 
+    const guestName = presentMode ? scrambleName(b.guest || label) : (b.guest || label);
+    const notesDisplay = presentMode ? '' : (b.notes ? ' \u00B7 ' + b.notes : '');
+
     return `
       <div class="${rowCls}" onclick="openBookingDetail('${b.id}')" style="cursor:pointer">
         <div class="b-badge ${badgeCls}">${b.conflict ? '&#x26A0; Conflict' : label}</div>
         <div class="b-info">
-          <div class="b-name">${b.guest || label}</div>
+          <div class="b-name">${guestName}</div>
           <div class="b-dates">${checkinFmt} &#x2192; ${checkoutFmt}</div>
-          <div class="b-room">${ROOM_LABELS[b.room]||b.room}${b.notes ? ' \u00B7 ' + b.notes : ''}</div>
+          <div class="b-room">${ROOM_LABELS[b.room]||b.room}${notesDisplay}</div>
           ${conflictNote}
         </div>
         <div class="b-right">
@@ -446,17 +689,34 @@ import '../styles/dashboard.css';
         const bk = bookingOnDay(room, dStr);
         if (bk) {
           bookedNights++;
-          if (bk.type === 'friend' || bk.type === 'blocked') friendNights++;
+          if (bk.type === 'friend' || bk.type === 'blocked' || bk.type === 'owner') friendNights++;
         }
       }
     });
 
+    // Revenue: for cross-month bookings, use average nightly rate and count only nights in this month
+    const monthStart = new Date(currentYear, currentMonth, 1);
+    const monthEnd = new Date(currentYear, currentMonth + 1, 0); // last day of month
     allBookings.filter(b => {
-      const y = parseInt(b.checkin.split('-')[0]);
-      const m = parseInt(b.checkin.split('-')[1]) - 1;
-      return y === currentYear && m === currentMonth && b.type !== 'friend' && b.type !== 'blocked';
+      if (b.type === 'friend' || b.type === 'blocked' || b.type === 'owner') return false;
+      const ci = new Date(b.checkin);
+      const co = new Date(b.checkout);
+      // Booking overlaps this month if checkin < month end+1 and checkout > month start
+      return ci <= monthEnd && co > monthStart;
     }).forEach(b => {
-      revenue += b.amount > 0 ? b.amount : nightCount(b) * (RATES[b.room] || 3200);
+      const totalNights = nightCount(b);
+      if (totalNights <= 0) return;
+      const ci = new Date(b.checkin);
+      const co = new Date(b.checkout);
+      // Clamp to current month boundaries
+      const overlapStart = ci > monthStart ? ci : monthStart;
+      const overlapEndDate = co <= new Date(currentYear, currentMonth + 1, 0, 23, 59) ? co : new Date(currentYear, currentMonth + 1, 1);
+      const nightsInMonth = Math.round((overlapEndDate - overlapStart) / 86400000);
+      if (nightsInMonth <= 0) return;
+      const fallbackRate = isLowSeason(b.checkin) ? (RATES_LOW[b.room] || 2240) : (RATES_HIGH[b.room] || 3200);
+      const totalAmount = b.amount > 0 ? b.amount : totalNights * fallbackRate;
+      const avgPerNight = totalAmount / totalNights;
+      revenue += Math.round(avgPerNight * nightsInMonth);
     });
 
     const occ = Math.round((bookedNights / totalRoomNights) * 100);
@@ -465,7 +725,7 @@ import '../styles/dashboard.css';
       <div class="sf-block"><div class="sf-label">Occupancy</div><div class="sf-value">${occ}%</div><div class="sf-sub">${bookedNights}/${totalRoomNights} room-nights</div></div>
       <div class="sf-block"><div class="sf-label">Available</div><div class="sf-value">${totalRoomNights - bookedNights}</div><div class="sf-sub">room-nights open</div></div>
       <div class="sf-block"><div class="sf-label">Friend / Blocked</div><div class="sf-value">${friendNights}</div><div class="sf-sub">off-market nights</div></div>
-      <div class="sf-block"><div class="sf-label">Est. Revenue</div><div class="sf-value">\u0E3F${revenue.toLocaleString()}</div><div class="sf-sub">${MONTHS[currentMonth]}</div></div>
+      <div class="sf-block"><div class="sf-label">Est. Revenue</div><div class="sf-value">${'\u0E3F' + revenue.toLocaleString()}</div><div class="sf-sub">${MONTHS[currentMonth]}</div></div>
       <div class="occ-track">
         <div class="sf-label">Occupancy bar</div>
         <div class="occ-bar"><div class="occ-fill" style="width:${occ}%"></div></div>
@@ -495,18 +755,22 @@ import '../styles/dashboard.css';
     detailBookingId = id;
     const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked'}[b.type]||b.type;
     const n = nightCount(b);
-    document.getElementById('dm-title').textContent = b.guest || typeLabel;
+    const dmName = presentMode ? scrambleName(b.guest || typeLabel) : (b.guest || typeLabel);
+    document.getElementById('dm-title').textContent = dmName;
     document.getElementById('dm-type').innerHTML = `<span class="b-badge badge-${b.type}">${typeLabel}</span>`;
     document.getElementById('dm-room').textContent = ROOM_LABELS[b.room] || b.room;
     document.getElementById('dm-dates').textContent = `${fmtDate(b.checkin)} \u2192 ${fmtDate(b.checkout)}`;
     document.getElementById('dm-nights').textContent = `${n} night${n !== 1 ? 's' : ''}`;
     const notesRow = document.getElementById('dm-notes-row');
-    if (b.notes) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
+    if (b.notes && !presentMode) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
     else { notesRow.style.display = 'none'; }
-    document.getElementById('dm-guest').value = b.guest || '';
+    document.getElementById('dm-guest').value = presentMode ? dmName : (b.guest || '');
     document.getElementById('dm-amount').value = b.amount > 0 ? b.amount : '';
+    document.getElementById('dm-guest').readOnly = presentMode;
+    document.getElementById('dm-amount').readOnly = presentMode;
+    document.getElementById('dm-save').style.display = presentMode ? 'none' : '';
     document.getElementById('detail-modal').classList.add('open');
-    document.getElementById('dm-guest').focus();
+    if (!presentMode) document.getElementById('dm-guest').focus();
   }
 
   function closeDetailModal() {
@@ -539,11 +803,13 @@ import '../styles/dashboard.css';
     const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked'}[b.type]||b.type;
     const typeColor = {airbnb:'var(--airbnb)',direct:'var(--direct)',friend:'var(--friend)',blocked:'var(--blocked)'}[b.type]||'#8a8070';
     const n = nightCount(b);
+    const ttName = presentMode ? scrambleName(b.guest || typeLabel) : (b.guest || typeLabel);
+    const ttNotes = presentMode ? '' : (b.notes ? `<div class="tt-detail" style="margin-top:3px">${b.notes}</div>` : '');
     tt.innerHTML = `
-      <div class="tt-name">${b.guest||typeLabel}</div>
+      <div class="tt-name">${ttName}</div>
       <div class="tt-detail">${fmtDate(b.checkin)} &#x2192; ${fmtDate(b.checkout)} (${n}n)</div>
       <div class="tt-detail">${ROOM_LABELS[b.room]||b.room}</div>
-      ${b.notes ? `<div class="tt-detail" style="margin-top:3px">${b.notes}</div>` : ''}
+      ${ttNotes}
       <div class="tt-badge" style="background:${typeColor}22;color:${typeColor}">${typeLabel}</div>
       ${b.conflict ? `<div class="tt-conflict">&#x26A0; Booking conflict</div>` : ''}`;
     tt.style.display = 'block';
@@ -556,24 +822,101 @@ import '../styles/dashboard.css';
   }
   function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
 
+  // ─── DATE RANGE PICKER ──────────────────────────────────────────────────────
+  const datePicker = flatpickr('#f-dates', {
+    mode: 'range',
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'j M Y',
+    locale: { rangeSeparator: '  \u2192  ' },
+    onChange: () => updateEstimate(),
+  });
+
+  function getDiscount(nights) {
+    if (nights >= 28) return { pct: 0.40, label: '40% monthly discount' };
+    if (nights >= 7)  return { pct: 0.15, label: '15% weekly discount' };
+    return { pct: 0, label: null };
+  }
+
+  function calcTotal(rate, nights) {
+    const base = rate * nights;
+    const { pct } = getDiscount(nights);
+    return Math.round(base * (1 - pct));
+  }
+
+  function updateEstimate() {
+    const type = document.getElementById('f-type').value;
+    const rateRow = document.getElementById('f-rate-row');
+    const totalRow = document.getElementById('f-total-row');
+    const totalLabel = document.getElementById('f-total');
+    const showPrice = type === 'direct';
+    rateRow.style.display = showPrice ? '' : 'none';
+    totalRow.style.display = showPrice ? '' : 'none';
+    if (!showPrice) return;
+    const dates = datePicker.selectedDates;
+
+    // Auto-update rate based on season when dates are selected
+    if (dates && dates.length >= 1) {
+      const room = document.getElementById('f-room').value;
+      const seasonRate = getRateForDates(room, dates);
+      const currentRate = parseFloat(document.getElementById('f-rate').value) || 0;
+      // Only auto-update if rate matches a known rate (user hasn't manually overridden)
+      const allKnown = [...Object.values(RATES_HIGH), ...Object.values(RATES_LOW)];
+      if (allKnown.includes(currentRate) || currentRate === 0) {
+        document.getElementById('f-rate').value = seasonRate;
+      }
+    }
+
+    if (!dates || dates.length < 2) {
+      totalLabel.textContent = 'Select dates to see total';
+      return;
+    }
+    const nights = Math.round((dates[1] - dates[0]) / 86400000);
+    const rate = parseFloat(document.getElementById('f-rate').value) || 0;
+    const checkinStr = dates[0].toISOString().split('T')[0];
+    const low = isLowSeason(checkinStr);
+    const base = rate * nights;
+    const { pct, label: discountLabel } = getDiscount(nights);
+    const total = Math.round(base * (1 - pct));
+    let text = '\u0E3F' + total.toLocaleString() + ' (' + nights + ' night' + (nights !== 1 ? 's' : '') + ' x \u0E3F' + rate.toLocaleString();
+    if (low) text += ', low season';
+    if (discountLabel) {
+      text += ' \u2014 ' + discountLabel;
+    }
+    text += ')';
+    totalLabel.textContent = text;
+  }
+
   // ─── MODAL ───────────────────────────────────────────────────────────────────
   function openModal() {
     document.getElementById('modal').classList.add('open');
     const y = currentYear, m = String(currentMonth + 1).padStart(2, '0');
-    document.getElementById('f-checkin').value = `${y}-${m}-01`;
-    document.getElementById('f-checkout').value = `${y}-${m}-07`;
+    const checkin = `${y}-${m}-01`;
+    const checkout = `${y}-${m}-07`;
+    datePicker.setDate([checkin, checkout]);
+    document.getElementById('f-rate').value = getRateForDates('nest', datePicker.selectedDates);
+    updateEstimate();
   }
   function openModalWithDate(dStr, room) {
     document.getElementById('modal').classList.add('open');
-    document.getElementById('f-checkin').value = dStr;
     const d = new Date(dStr + 'T12:00:00');
     d.setDate(d.getDate() + 5);
-    document.getElementById('f-checkout').value = d.toISOString().split('T')[0];
+    datePicker.setDate([dStr, d.toISOString().split('T')[0]]);
     if (room) document.getElementById('f-room').value = room;
+    document.getElementById('f-rate').value = getRateForDates(room || 'nest', datePicker.selectedDates);
+    updateEstimate();
+  }
+  function openModalWithRange(checkin, checkout, room) {
+    document.getElementById('modal').classList.add('open');
+    datePicker.setDate([checkin, checkout]);
+    if (room) document.getElementById('f-room').value = room;
+    document.getElementById('f-rate').value = getRateForDates(room || 'nest', datePicker.selectedDates);
+    updateEstimate();
   }
   function closeModal() {
     document.getElementById('modal').classList.remove('open');
-    ['f-guest','f-amount','f-notes'].forEach(id => document.getElementById(id).value = '');
+    ['f-guest','f-rate','f-notes'].forEach(id => document.getElementById(id).value = '');
+    datePicker.clear();
   }
 
   // ─── NAV ─────────────────────────────────────────────────────────────────────
@@ -590,11 +933,345 @@ import '../styles/dashboard.css';
     el.classList.add('active');
     document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'flex' : 'none';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
+    document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
+    document.getElementById('tab-codes').style.display = tab === 'codes' ? 'block' : 'none';
+    document.getElementById('tab-pricing').style.display = tab === 'pricing' ? 'block' : 'none';
+    document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
+    if (tab === 'inquiries') fetchInquiries();
+    if (tab === 'codes') fetchDiscountCodes();
+    if (tab === 'pricing') fetchPricing();
     render();
   }
 
+  // ─── INQUIRIES ───────────────────────────────────────────────────────────────
+  let allInquiries = [];
+
+  async function fetchInquiries() {
+    try {
+      const res = await fetch('/api/inquiries');
+      const data = await res.json();
+      allInquiries = data.inquiries || [];
+      renderInquiries();
+      updateInquiryBadge();
+    } catch (err) {
+      console.error('[inquiries] fetch error:', err);
+    }
+  }
+
+  function updateInquiryBadge() {
+    const badge = document.getElementById('inquiry-badge');
+    const newCount = allInquiries.filter(i => i.status === 'new').length;
+    if (newCount > 0) {
+      badge.textContent = newCount;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function renderInquiries() {
+    const container = document.getElementById('inquiries-content');
+    if (allInquiries.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-title">No inquiries yet</div><div>Inquiries from the booking form will appear here</div></div>';
+      return;
+    }
+
+    const newInq = allInquiries.filter(i => i.status === 'new');
+    const respondedInq = allInquiries.filter(i => i.status === 'responded');
+    const bookedInq = allInquiries.filter(i => i.status === 'booked');
+    const archivedInq = allInquiries.filter(i => i.status === 'archived');
+
+    let html = '';
+    if (newInq.length > 0) {
+      html += '<div class="list-section-title">New</div>';
+      newInq.forEach(i => { html += inquiryCard(i); });
+    }
+    if (respondedInq.length > 0) {
+      html += '<div class="list-section-title">Responded</div>';
+      respondedInq.forEach(i => { html += inquiryCard(i); });
+    }
+    if (bookedInq.length > 0) {
+      html += '<div class="list-section-title">Booked</div>';
+      bookedInq.forEach(i => { html += inquiryCard(i); });
+    }
+    if (archivedInq.length > 0) {
+      html += '<div class="list-section-title">Archived</div>';
+      archivedInq.forEach(i => { html += inquiryCard(i); });
+    }
+    container.innerHTML = html;
+  }
+
+  function waLink(num) {
+    var cleaned = num.replace(/[\s\-\(\)]/g, '');
+    if (cleaned.startsWith('+')) cleaned = cleaned.slice(1);
+    return 'https://wa.me/' + cleaned;
+  }
+
+  function inquiryCard(inq) {
+    const statusClass = 'inq-status-' + inq.status;
+    const statusLabel = {new:'New',responded:'Responded',booked:'Booked',archived:'Archived'}[inq.status] || inq.status;
+    const timeAgo = formatTimeAgo(inq.createdAt);
+    const amountStr = inq.amount > 0 ? '\u0E3F' + inq.amount.toLocaleString() : '';
+
+    let actions = '';
+    if (inq.whatsapp && !presentMode) {
+      actions += `<a class="inq-action-btn inq-action-wa" href="${waLink(inq.whatsapp)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.82-6.293-2.188l-.44-.358-3.281 1.1 1.1-3.281-.358-.44A9.95 9.95 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>Reply</a>`;
+    }
+    if (inq.status === 'new') {
+      actions += `<button class="inq-action-btn" onclick="event.stopPropagation();updateInquiryStatus('${inq.id}','responded')">Mark Responded</button>`;
+      actions += `<button class="inq-action-btn inq-action-convert" onclick="event.stopPropagation();convertToBooking('${inq.id}')">Convert to Booking</button>`;
+    } else if (inq.status === 'responded') {
+      actions += `<button class="inq-action-btn inq-action-convert" onclick="event.stopPropagation();convertToBooking('${inq.id}')">Convert to Booking</button>`;
+      actions += `<button class="inq-action-btn" onclick="event.stopPropagation();updateInquiryStatus('${inq.id}','archived')">Archive</button>`;
+    } else if (inq.status === 'booked') {
+      actions += `<button class="inq-action-btn" onclick="event.stopPropagation();updateInquiryStatus('${inq.id}','archived')">Archive</button>`;
+    }
+    actions += `<button class="inq-action-btn inq-action-delete" onclick="event.stopPropagation();deleteInquiry('${inq.id}')">Delete</button>`;
+
+    return `
+      <div class="inq-card">
+        <div class="inq-card-header">
+          <span class="inq-status ${statusClass}">${statusLabel}</span>
+          <span class="inq-time">${timeAgo}</span>
+        </div>
+        <div class="inq-card-body">
+          <div class="inq-guest">${presentMode ? scrambleName(inq.guest) : inq.guest}${inq.whatsapp ? `<span class="inq-wa-num">${presentMode ? scramblePhone(inq.whatsapp) : inq.whatsapp}</span>` : ''}</div>
+          <div class="inq-detail">${inq.room} &middot; ${fmtDate(inq.checkin)} \u2192 ${fmtDate(inq.checkout)} &middot; ${inq.nights}n</div>
+          ${amountStr ? `<div class="inq-amount">${amountStr}</div>` : ''}
+          ${inq.message && !presentMode ? `<div class="inq-message">"${inq.message}"</div>` : ''}
+        </div>
+        ${presentMode ? '' : `<div class="inq-card-actions">${actions}</div>`}
+      </div>`;
+  }
+
+  function formatTimeAgo(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    if (days < 7) return days + 'd ago';
+    return fmtDate(iso.split('T')[0]);
+  }
+
+  async function updateInquiryStatus(id, status) {
+    try {
+      const res = await fetch(`/api/inquiries/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) fetchInquiries();
+    } catch (err) {
+      showError('Failed to update inquiry.');
+    }
+  }
+
+  async function deleteInquiry(id) {
+    if (!confirm('Delete this inquiry?')) return;
+    try {
+      const res = await fetch(`/api/inquiries/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) fetchInquiries();
+    } catch (err) {
+      showError('Failed to delete inquiry.');
+    }
+  }
+
+  function convertToBooking(id) {
+    const inq = allInquiries.find(i => i.id === id);
+    if (!inq) return;
+    // Open add booking modal pre-filled with inquiry data
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f-guest').value = inq.guest || '';
+    document.getElementById('f-type').value = 'direct';
+    const slugMap = {nest:'nest',master:'master',nomad:'nomad',theater:'theater'};
+    document.getElementById('f-room').value = slugMap[inq.roomSlug] || 'nest';
+    if (inq.checkin && inq.checkout) {
+      datePicker.setDate([inq.checkin, inq.checkout]);
+    }
+    document.getElementById('f-rate').value = getRateForDates(inq.roomSlug || 'nest', datePicker.selectedDates);
+    updateEstimate();
+    // Archive the inquiry
+    updateInquiryStatus(id, 'booked');
+  }
+
+  // ─── PROMO CODES ──────────────────────────────────────────────────────────────
+  let allDiscountCodes = [];
+
+  async function fetchDiscountCodes() {
+    try {
+      const res = await fetch('/api/discount-codes');
+      const data = await res.json();
+      allDiscountCodes = data.codes || [];
+      renderDiscountCodes();
+    } catch (err) {
+      console.error('Failed to fetch discount codes:', err);
+    }
+  }
+
+  function renderDiscountCodes() {
+    const container = document.getElementById('codes-content');
+    if (!allDiscountCodes.length) {
+      container.innerHTML = '<div style="padding:24px 0; text-align:center; color:#8b8b85; font-size:13px;">No promo codes yet. Create one to get started.</div>';
+      return;
+    }
+    const active = allDiscountCodes.filter(c => c.active);
+    const inactive = allDiscountCodes.filter(c => !c.active);
+    let html = '';
+    if (active.length) {
+      active.forEach(c => { html += codeCard(c); });
+    }
+    if (inactive.length) {
+      html += '<div class="list-section-title" style="margin-top:20px;">Inactive</div>';
+      inactive.forEach(c => { html += codeCard(c); });
+    }
+    container.innerHTML = html;
+  }
+
+  function codeCard(c) {
+    const date = new Date(c.createdAt);
+    const dateStr = date.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    const statusClass = c.active ? 'inq-status-new' : 'inq-status-archived';
+    const statusLabel = c.active ? 'Active' : 'Inactive';
+    return '<div class="inq-card" style="margin-bottom:10px;">'
+      + '<div class="inq-card-header">'
+      + '<span class="inq-status ' + statusClass + '">' + statusLabel + '</span>'
+      + '<span class="inq-time">' + dateStr + '</span>'
+      + '</div>'
+      + '<div class="inq-card-body">'
+      + '<div style="font-family:JetBrains Mono,monospace; font-size:18px; font-weight:600; letter-spacing:0.05em; margin-bottom:4px;">' + c.code + '</div>'
+      + '<div style="display:flex; align-items:center; gap:8px;">'
+      + '<span style="background:var(--accent); color:white; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">' + c.discount + '% OFF</span>'
+      + (c.note ? '<span style="font-size:12px; color:#8b8b85;">' + c.note + '</span>' : '')
+      + '</div>'
+      + '</div>'
+      + '<div class="inq-card-actions" style="margin-top:12px;">'
+      + '<button class="inq-action-btn" onclick="toggleCodeStatus(\'' + c.id + '\',' + !c.active + ')">' + (c.active ? 'Deactivate' : 'Activate') + '</button>'
+      + '<button class="inq-action-btn inq-action-delete" onclick="deleteDiscountCode(\'' + c.id + '\')">Delete</button>'
+      + '</div>'
+      + '</div>';
+  }
+
+  // Make functions available to onclick handlers
+  window.toggleCodeStatus = async function(id, active) {
+    try {
+      await fetch('/api/discount-codes/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      });
+      fetchDiscountCodes();
+    } catch (err) {
+      console.error('Failed to toggle code:', err);
+    }
+  };
+
+  window.deleteDiscountCode = async function(id) {
+    if (!confirm('Delete this promo code?')) return;
+    try {
+      await fetch('/api/discount-codes/' + id, { method: 'DELETE' });
+      fetchDiscountCodes();
+    } catch (err) {
+      console.error('Failed to delete code:', err);
+    }
+  };
+
+  // Create code modal
+  document.getElementById('btn-create-code').addEventListener('click', () => {
+    document.getElementById('code-modal').classList.add('open');
+    document.getElementById('fc-code').value = '';
+    document.getElementById('fc-discount').value = '20';
+    document.getElementById('fc-note').value = '';
+    document.getElementById('fc-code').focus();
+  });
+
+  document.getElementById('fc-cancel').addEventListener('click', () => {
+    document.getElementById('code-modal').classList.remove('open');
+  });
+
+  document.getElementById('fc-save').addEventListener('click', async () => {
+    const code = document.getElementById('fc-code').value.trim().toUpperCase();
+    const discount = document.getElementById('fc-discount').value;
+    const note = document.getElementById('fc-note').value.trim();
+    if (!code) { alert('Please enter a code'); return; }
+    try {
+      const res = await fetch('/api/discount-codes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, discount: parseInt(discount), note }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Failed to create code'); return; }
+      document.getElementById('code-modal').classList.remove('open');
+      fetchDiscountCodes();
+    } catch (err) {
+      console.error('Failed to create code:', err);
+      alert('Failed to create code');
+    }
+  });
+
+  // ─── PRICING ──────────────────────────────────────────────────────────────────
+  async function fetchPricing() {
+    try {
+      const res = await fetch('/api/pricing');
+      const data = await res.json();
+      applyPricing(data);
+      // Populate inputs
+      for (const room of ['nest','master','nomad']) {
+        document.getElementById(`price-${room}-high`).value = data[room]?.high || 0;
+        document.getElementById(`price-${room}-low`).value = data[room]?.low || 0;
+      }
+    } catch (err) { console.error('Failed to fetch pricing:', err); }
+  }
+
+  function applyPricing(data) {
+    for (const room of ['nest','master','nomad']) {
+      if (data[room]) {
+        RATES_HIGH[room] = data[room].high || 0;
+        RATES_LOW[room] = data[room].low || 0;
+      }
+    }
+    RATES_HIGH.full = RATES_HIGH.nest + RATES_HIGH.master + RATES_HIGH.nomad;
+    RATES_LOW.full = RATES_LOW.nest + RATES_LOW.master + RATES_LOW.nomad;
+    // Update sidebar
+    for (const room of ['nest','master','nomad']) {
+      const el = document.getElementById(`sidebar-rate-${room}`);
+      if (el) el.textContent = `\u0E3F${RATES_HIGH[room].toLocaleString()} / night`;
+    }
+  }
+
+  document.getElementById('btn-save-pricing').addEventListener('click', async () => {
+    const payload = {};
+    for (const room of ['nest','master','nomad']) {
+      payload[room] = {
+        high: parseInt(document.getElementById(`price-${room}-high`).value) || 0,
+        low: parseInt(document.getElementById(`price-${room}-low`).value) || 0,
+      };
+    }
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      applyPricing(data);
+      render(); // Re-render revenue with new rates
+      const status = document.getElementById('pricing-status');
+      status.style.display = 'inline';
+      setTimeout(() => status.style.display = 'none', 2000);
+    } catch (err) {
+      console.error('Failed to save pricing:', err);
+      alert('Failed to save pricing');
+    }
+  });
+
   // ─── INIT ─────────────────────────────────────────────────────────────────────
+  fetchPricing(); // Load rates before first render
   loadBookings();
+  fetchInquiries(); // Load inquiries on startup for badge count
   setInterval(() => loadBookings(), 30 * 60 * 1000);
   </script>
 </BaseLayout>
