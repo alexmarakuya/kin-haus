@@ -6,15 +6,22 @@ set -e
 
 VPS="root@5.223.42.90"
 APP_DIR="/var/www/kin-haus"
+DATA_FILES="bookings.json overrides.json inquiries.json discount-codes.json pricing.json"
 
 echo "==> Backing up runtime data on VPS..."
-ssh $VPS "cd $APP_DIR && mkdir -p /tmp/kin-haus-backup && cp data/overrides.json /tmp/kin-haus-backup/ 2>/dev/null; cp data/bookings.json /tmp/kin-haus-backup/ 2>/dev/null; cp data/inquiries.json /tmp/kin-haus-backup/ 2>/dev/null; cp data/discount-codes.json /tmp/kin-haus-backup/ 2>/dev/null; echo 'Backed up data files'"
+ssh $VPS "cd $APP_DIR && mkdir -p /tmp/kin-haus-backup && for f in $DATA_FILES; do [ -f data/\$f ] && cp data/\$f /tmp/kin-haus-backup/\$f && echo \"  backed up \$f\"; done; echo 'Backup complete'"
 
 echo "==> Pulling latest code..."
 ssh $VPS "cd $APP_DIR && git fetch origin main && git reset --hard origin/main && git clean -fd -e data/"
 
+echo "==> Ensuring data/ directory exists..."
+ssh $VPS "mkdir -p $APP_DIR/data"
+
 echo "==> Restoring runtime data..."
-ssh $VPS "cp /tmp/kin-haus-backup/overrides.json $APP_DIR/data/ 2>/dev/null; cp /tmp/kin-haus-backup/bookings.json $APP_DIR/data/ 2>/dev/null; cp /tmp/kin-haus-backup/inquiries.json $APP_DIR/data/ 2>/dev/null; cp /tmp/kin-haus-backup/discount-codes.json $APP_DIR/data/ 2>/dev/null; echo 'Restored data files'"
+ssh $VPS "for f in $DATA_FILES; do [ -f /tmp/kin-haus-backup/\$f ] && cp /tmp/kin-haus-backup/\$f $APP_DIR/data/\$f && echo \"  restored \$f\"; done; echo 'Restore complete'"
+
+echo "==> Verifying data files exist..."
+ssh $VPS "cd $APP_DIR && for f in $DATA_FILES; do [ -f data/\$f ] && echo \"  OK: data/\$f\" || echo \"  MISSING: data/\$f (will be created at runtime)\"; done"
 
 echo "==> Installing dependencies..."
 ssh $VPS "cd $APP_DIR && npm install 2>&1 | tail -1"

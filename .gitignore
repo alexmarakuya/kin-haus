@@ -5,5 +5,9 @@ node_modules/
 dist/
 .astro/
 
-# Runtime data (created by the app, not overwritten on deploy)
+# Runtime data (created/modified by the app at runtime, never overwritten on deploy)
+data/bookings.json
 data/overrides.json
+data/inquiries.json
+data/discount-codes.json
+data/pricing.json
