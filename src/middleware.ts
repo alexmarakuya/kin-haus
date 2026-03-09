@@ -15,7 +15,8 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   // Allow GET to /api/availability/* (public availability calendar)
   const isPublicInquiry = path === '/api/inquiries' && request.method === 'POST';
   const isPublicAvailability = path.startsWith('/api/availability') && request.method === 'GET';
-  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability);
+  const isWhatsAppWebhook = path === '/api/whatsapp/webhook';
+  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability && !isWhatsAppWebhook);
 
   if (!isProtected) {
     return next();

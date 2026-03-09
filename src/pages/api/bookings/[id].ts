@@ -64,11 +64,12 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     writeManualBookings(bookings);
   } else {
-    // iCal booking -- only guest + amount overrides
+    // iCal booking -- guest, amount, notes overrides
     const overrides = readOverrides();
     if (!overrides[id!]) overrides[id!] = {};
     if (amount !== undefined) overrides[id!].amount = amount;
     if (guest !== undefined) overrides[id!].guest = guest;
+    if (notes !== undefined) overrides[id!].notes = notes;
     writeOverrides(overrides);
   }
 

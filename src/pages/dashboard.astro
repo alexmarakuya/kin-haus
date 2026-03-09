@@ -156,11 +156,14 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
-  <!-- BOOKING DETAIL MODAL -->
-  <div class="overlay" id="detail-modal">
-    <div class="modal">
-      <div class="modal-title" id="dm-title">Booking Details</div>
-
+  <!-- BOOKING DETAIL SIDEBAR -->
+  <div class="sidebar-overlay" id="detail-overlay"></div>
+  <div class="sidebar" id="detail-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title" id="dm-title">Booking Details</div>
+      <button class="sidebar-close" id="dm-close">&times;</button>
+    </div>
+    <div class="sidebar-body">
       <!-- Type: read-only for iCal, editable for manual -->
       <div class="detail-row" id="dm-type-readonly"><span class="detail-label">Type</span><span class="detail-value" id="dm-type"></span></div>
       <div class="fg" id="dm-type-edit" style="display:none">
@@ -196,7 +199,7 @@ import '../styles/dashboard.css';
       <!-- Nights (always read-only, auto-calculated) -->
       <div class="detail-row"><span class="detail-label">Nights</span><span class="detail-value" id="dm-nights"></span></div>
 
-      <!-- Notes: read-only for iCal, editable for manual -->
+      <!-- Notes: editable for all bookings -->
       <div id="dm-notes-row" class="detail-row"><span class="detail-label">Notes</span><span class="detail-value" id="dm-notes"></span></div>
       <div class="fg" id="dm-notes-edit" style="display:none">
         <label>Notes</label>
@@ -211,8 +214,10 @@ import '../styles/dashboard.css';
         <label>Total Amount (THB)</label>
         <input id="dm-amount" type="number" placeholder="e.g. 22400" min="0">
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-danger" id="dm-delete" style="margin-right:auto; display:none">Delete Booking</button>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-danger" id="dm-delete" style="display:none">Delete Booking</button>
+      <div class="sidebar-footer-right">
         <button class="btn" id="dm-cancel">Cancel</button>
         <button class="btn btn-primary" id="dm-save">Save</button>
       </div>
@@ -285,6 +290,12 @@ import '../styles/dashboard.css';
     return `${y}-${m}-${d}`;
   };
 
+  // Parse "YYYY-MM-DD" at noon local time to avoid UTC midnight boundary shift
+  function parseDateLocal(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
+  }
+
   // ─── PRESENT MODE ─────────────────────────────────────────────────────────
   const FAKE_NAMES = ['Alex T.','Jordan R.','Sam K.','Morgan P.','Casey L.','Riley J.','Jamie W.','Taylor S.','Drew M.','Quinn B.','Avery N.','Dakota H.','Skyler F.','Reese C.','Finley D.','Rowan G.','Emerson V.','Hayden Z.','Parker E.','Blair A.'];
   const nameMap = {};
@@ -343,6 +354,8 @@ import '../styles/dashboard.css';
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
   document.getElementById('btn-save').addEventListener('click', saveBooking);
   document.getElementById('dm-cancel').addEventListener('click', closeDetailModal);
+  document.getElementById('dm-close').addEventListener('click', closeDetailModal);
+  document.getElementById('detail-overlay').addEventListener('click', closeDetailModal);
   document.getElementById('dm-save').addEventListener('click', saveBookingDetail);
   document.getElementById('dm-delete').addEventListener('click', deleteBookingFromModal);
   document.getElementById('dm-amount').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBookingDetail(); });
@@ -531,7 +544,38 @@ import '../styles/dashboard.css';
     const alerts = document.getElementById('alerts');
     const conflicts = bookings.filter(b => b.conflict);
     if (conflicts.length === 0) { alerts.innerHTML = ''; return; }
-    alerts.innerHTML = `<div class="alert alert-conflict">&#x26A0; ${conflicts.length} booking conflict${conflicts.length>1?'s':''} detected -- check the calendar or bookings list for details.</div>`;
+    const details = conflicts.map(b => {
+      const room = ROOM_LABELS[b.room] || b.room;
+      return `<div class="conflict-item" data-id="${b.id}"><strong>${b.guest || 'Guest'}</strong> in ${room} (${b.checkin} to ${b.checkout})</div>`;
+    }).join('');
+    alerts.innerHTML = `<div class="alert alert-conflict" id="conflict-banner">
+      <div class="alert-main">
+        <span>&#x26A0; ${conflicts.length} booking conflict${conflicts.length>1?'s':''} detected</span>
+        <div class="alert-actions">
+          <button class="alert-btn" id="conflict-show">Show</button>
+          <button class="alert-btn alert-dismiss" id="conflict-dismiss">&times;</button>
+        </div>
+      </div>
+      <div class="conflict-details" id="conflict-details" style="display:none">${details}</div>
+    </div>`;
+    document.getElementById('conflict-dismiss').addEventListener('click', () => {
+      document.getElementById('conflict-banner').remove();
+    });
+    document.getElementById('conflict-show').addEventListener('click', () => {
+      const det = document.getElementById('conflict-details');
+      const btn = document.getElementById('conflict-show');
+      if (det.style.display === 'none') {
+        det.style.display = '';
+        btn.textContent = 'Hide';
+      } else {
+        det.style.display = 'none';
+        btn.textContent = 'Show';
+      }
+    });
+    document.querySelectorAll('.conflict-item').forEach(el => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => openBookingDetail(el.dataset.id));
+    });
   }
 
   function showError(msg) {
@@ -597,12 +641,15 @@ import '../styles/dashboard.css';
           const allBks = bookingsOnDay(room, dStr);
           const bk = allBks.find(b => b.type !== 'blocked') || allBks[0];
           if (bk) {
-            const typeClass = bk.conflict ? 'c-conflict' : (TYPE_CLASS[bk.type] || 'c-airbnb');
+            const nonBlocked = allBks.filter(b => b.type !== 'blocked');
+            const isOverlapDay = nonBlocked.length >= 2;
+            const typeClass = isOverlapDay ? 'c-conflict' : (TYPE_CLASS[bk.type] || 'c-airbnb');
             cell.classList.add(typeClass);
             // Crosshatch when a non-blocked booking overlaps a blocked one
             const hasBlock = allBks.some(b => b.type === 'blocked');
-            const hasOverride = allBks.some(b => b.type !== 'blocked');
-            if (hasBlock && hasOverride) cell.classList.add('c-overridden');
+            if (hasBlock && nonBlocked.length > 0) cell.classList.add('c-overridden');
+            // Crosshatch only on the exact overlapping days
+            if (isOverlapDay) cell.classList.add('c-conflict-hatch');
             if (bk.checkin === dStr) {
               const init = document.createElement('div');
               init.className = 'cell-initial';
@@ -834,6 +881,7 @@ import '../styles/dashboard.css';
         altInput: true,
         altFormat: 'j M Y',
         locale: { rangeSeparator: '  \u2192  ' },
+        parseDate: (str) => parseDateLocal(str),
         defaultDate: [b.checkin, b.checkout],
         onChange: function(dates) {
           if (dates.length === 2) {
@@ -849,16 +897,16 @@ import '../styles/dashboard.css';
     // Nights
     document.getElementById('dm-nights').textContent = `${n} night${n !== 1 ? 's' : ''}`;
 
-    // Notes: show editable input for manual, read-only row for iCal
+    // Notes: editable for all bookings (manual + iCal) unless present mode
     const notesRow = document.getElementById('dm-notes-row');
     const notesEdit = document.getElementById('dm-notes-edit');
-    if (isManual && !presentMode) {
+    if (!presentMode) {
       notesRow.style.display = 'none';
       notesEdit.style.display = '';
       document.getElementById('dm-notes-input').value = b.notes || '';
     } else {
       notesEdit.style.display = 'none';
-      if (b.notes && !presentMode) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
+      if (b.notes) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
       else { notesRow.style.display = 'none'; }
     }
 
@@ -874,12 +922,14 @@ import '../styles/dashboard.css';
     // Save button
     document.getElementById('dm-save').style.display = presentMode ? 'none' : '';
 
-    document.getElementById('detail-modal').classList.add('open');
+    document.getElementById('detail-sidebar').classList.add('open');
+    document.getElementById('detail-overlay').classList.add('open');
     if (!presentMode) document.getElementById('dm-guest').focus();
   }
 
   function closeDetailModal() {
-    document.getElementById('detail-modal').classList.remove('open');
+    document.getElementById('detail-sidebar').classList.remove('open');
+    document.getElementById('detail-overlay').classList.remove('open');
     if (detailDatePicker) { detailDatePicker.destroy(); detailDatePicker = null; }
     detailBookingId = null;
     detailBookingSource = null;
@@ -891,13 +941,13 @@ import '../styles/dashboard.css';
     const amount = parseFloat(document.getElementById('dm-amount').value) || 0;
     const isManual = detailBookingSource === 'manual';
 
-    const payload = { amount, guest };
+    const notes = document.getElementById('dm-notes-input').value.trim();
+    const payload = { amount, guest, notes };
 
     if (isManual) {
       // Include all editable fields for manual bookings
       payload.type = document.getElementById('dm-type-select').value;
       payload.room = document.getElementById('dm-room-select').value;
-      payload.notes = document.getElementById('dm-notes-input').value.trim();
 
       if (detailDatePicker && detailDatePicker.selectedDates.length === 2) {
         payload.checkin = detailDatePicker.selectedDates[0].toLocalDateStr();
@@ -959,6 +1009,7 @@ import '../styles/dashboard.css';
     altInput: true,
     altFormat: 'j M Y',
     locale: { rangeSeparator: '  \u2192  ' },
+    parseDate: (str) => parseDateLocal(str),
     onChange: () => updateEstimate(),
   });
 

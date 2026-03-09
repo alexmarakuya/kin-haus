@@ -23,7 +23,7 @@ export function writeManualBookings(bookings: Booking[]): void {
 const OVERRIDES_FILE = path.join(DATA_DIR, 'overrides.json');
 
 export interface BookingOverrides {
-  [id: string]: { amount?: number; guest?: string };
+  [id: string]: { amount?: number; guest?: string; notes?: string };
 }
 
 export function readOverrides(): BookingOverrides {

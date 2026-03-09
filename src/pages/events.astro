@@ -42,7 +42,8 @@ const allEvents: KinEvent[] = [
 ];
 
 // Filter to upcoming events only (today or later)
-const today = new Date().toISOString().split('T')[0];
+const now = new Date();
+const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 const events = allEvents
   .filter(e => e.date >= today)
   .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));

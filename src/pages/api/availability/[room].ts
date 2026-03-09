@@ -5,7 +5,10 @@ import { ROOMS } from '../../../lib/config.ts';
 import type { RoomKey } from '../../../lib/config.ts';
 
 function toStr(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export const GET: APIRoute = async ({ params }) => {

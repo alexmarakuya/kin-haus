@@ -22,6 +22,7 @@ export const GET: APIRoute = async ({ request }) => {
         ...b,
         amount: ov.amount !== undefined ? ov.amount : b.amount,
         guest: ov.guest !== undefined ? ov.guest : b.guest,
+        notes: ov.notes !== undefined ? ov.notes : b.notes,
       };
     });
 
