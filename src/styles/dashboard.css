@@ -15,6 +15,8 @@
 .btn:hover { background:var(--warm); }
 .btn-primary { background:var(--accent); color:white; border-color:var(--accent); }
 .btn-primary:hover { background:#225539; border-color:#225539; }
+.btn-danger { background:#dc3545; color:white; border-color:#dc3545; }
+.btn-danger:hover { background:#c82333; border-color:#c82333; }
 .btn-sm { padding:6px 12px; font-size:12px; }
 .btn-present-active { background:#e8f5e9; border-color:var(--accent); color:var(--accent); font-weight:600; }
 .btn-present-active:hover { background:#d4ede3; }

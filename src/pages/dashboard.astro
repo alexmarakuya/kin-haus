@@ -160,11 +160,49 @@ import '../styles/dashboard.css';
   <div class="overlay" id="detail-modal">
     <div class="modal">
       <div class="modal-title" id="dm-title">Booking Details</div>
-      <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value" id="dm-type"></span></div>
-      <div class="detail-row"><span class="detail-label">Room</span><span class="detail-value" id="dm-room"></span></div>
-      <div class="detail-row"><span class="detail-label">Dates</span><span class="detail-value" id="dm-dates"></span></div>
+
+      <!-- Type: read-only for iCal, editable for manual -->
+      <div class="detail-row" id="dm-type-readonly"><span class="detail-label">Type</span><span class="detail-value" id="dm-type"></span></div>
+      <div class="fg" id="dm-type-edit" style="display:none">
+        <label>Type</label>
+        <select id="dm-type-select">
+          <option value="direct">Direct Booking</option>
+          <option value="friend">Friend / Personal</option>
+          <option value="blocked">Blocked</option>
+          <option value="owner">Owner / Host Block</option>
+        </select>
+      </div>
+
+      <!-- Room: read-only for iCal, editable for manual -->
+      <div class="detail-row" id="dm-room-readonly"><span class="detail-label">Room</span><span class="detail-value" id="dm-room"></span></div>
+      <div class="fg" id="dm-room-edit" style="display:none">
+        <label>Room</label>
+        <select id="dm-room-select">
+          <option value="nest">The Nest</option>
+          <option value="master">Master Room</option>
+          <option value="nomad">Nomad Room</option>
+          <option value="theater">Theater Room</option>
+          <option value="full">Full House</option>
+        </select>
+      </div>
+
+      <!-- Dates: read-only for iCal, flatpickr for manual -->
+      <div class="detail-row" id="dm-dates-readonly"><span class="detail-label">Dates</span><span class="detail-value" id="dm-dates"></span></div>
+      <div class="fg" id="dm-dates-edit" style="display:none">
+        <label>Dates</label>
+        <input id="dm-dates-input" type="text" placeholder="Select check-in to check-out" readonly>
+      </div>
+
+      <!-- Nights (always read-only, auto-calculated) -->
       <div class="detail-row"><span class="detail-label">Nights</span><span class="detail-value" id="dm-nights"></span></div>
+
+      <!-- Notes: read-only for iCal, editable for manual -->
       <div id="dm-notes-row" class="detail-row"><span class="detail-label">Notes</span><span class="detail-value" id="dm-notes"></span></div>
+      <div class="fg" id="dm-notes-edit" style="display:none">
+        <label>Notes</label>
+        <input id="dm-notes-input" type="text" placeholder="Optional note">
+      </div>
+
       <div class="fg" style="margin-top:16px">
         <label>Guest Name</label>
         <input id="dm-guest" type="text" placeholder="e.g. John Smith">
@@ -174,6 +212,7 @@ import '../styles/dashboard.css';
         <input id="dm-amount" type="number" placeholder="e.g. 22400" min="0">
       </div>
       <div class="modal-actions">
+        <button class="btn btn-danger" id="dm-delete" style="margin-right:auto; display:none">Delete Booking</button>
         <button class="btn" id="dm-cancel">Cancel</button>
         <button class="btn btn-primary" id="dm-save">Save</button>
       </div>
@@ -295,8 +334,9 @@ import '../styles/dashboard.css';
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
   document.getElementById('btn-save').addEventListener('click', saveBooking);
   document.getElementById('dm-cancel').addEventListener('click', closeDetailModal);
-  document.getElementById('dm-save').addEventListener('click', saveBookingAmount);
-  document.getElementById('dm-amount').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBookingAmount(); });
+  document.getElementById('dm-save').addEventListener('click', saveBookingDetail);
+  document.getElementById('dm-delete').addEventListener('click', deleteBookingFromModal);
+  document.getElementById('dm-amount').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBookingDetail(); });
   document.getElementById('month-prev').addEventListener('click', () => changeMonth(-1));
   document.getElementById('month-next').addEventListener('click', () => changeMonth(1));
   document.getElementById('f-room').addEventListener('change', () => {
@@ -741,45 +781,126 @@ import '../styles/dashboard.css';
 
   // ─── BOOKING DETAIL MODAL ───────────────────────────────────────────────────
   let detailBookingId = null;
+  let detailBookingSource = null;
+  let detailDatePicker = null;
 
   function openBookingDetail(id) {
     const b = allBookings.find(x => x.id === id);
     if (!b) return;
     detailBookingId = id;
-    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked'}[b.type]||b.type;
+    detailBookingSource = b.source || (b.id.startsWith('airbnb-') ? 'ical' : 'manual');
+    const isManual = detailBookingSource === 'manual';
+    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked',owner:'Owner / Host Block'}[b.type]||b.type;
     const n = nightCount(b);
     const dmName = presentMode ? scrambleName(b.guest || typeLabel) : (b.guest || typeLabel);
+
     document.getElementById('dm-title').textContent = dmName;
-    document.getElementById('dm-type').innerHTML = `<span class="b-badge badge-${b.type}">${typeLabel}</span>`;
-    document.getElementById('dm-room').textContent = ROOM_LABELS[b.room] || b.room;
-    document.getElementById('dm-dates').textContent = `${fmtDate(b.checkin)} \u2192 ${fmtDate(b.checkout)}`;
+
+    // Type: show editable select for manual, read-only badge for iCal
+    document.getElementById('dm-type-readonly').style.display = isManual ? 'none' : '';
+    document.getElementById('dm-type-edit').style.display = isManual && !presentMode ? '' : 'none';
+    if (isManual) {
+      document.getElementById('dm-type-select').value = b.type;
+    } else {
+      document.getElementById('dm-type').innerHTML = `<span class="b-badge badge-${b.type}">${typeLabel}</span>`;
+    }
+
+    // Room: show editable select for manual, read-only text for iCal
+    document.getElementById('dm-room-readonly').style.display = isManual ? 'none' : '';
+    document.getElementById('dm-room-edit').style.display = isManual && !presentMode ? '' : 'none';
+    if (isManual) {
+      document.getElementById('dm-room-select').value = b.room;
+    } else {
+      document.getElementById('dm-room').textContent = ROOM_LABELS[b.room] || b.room;
+    }
+
+    // Dates: show flatpickr for manual, read-only text for iCal
+    document.getElementById('dm-dates-readonly').style.display = isManual ? 'none' : '';
+    document.getElementById('dm-dates-edit').style.display = isManual && !presentMode ? '' : 'none';
+    if (isManual && !presentMode) {
+      if (detailDatePicker) detailDatePicker.destroy();
+      detailDatePicker = flatpickr('#dm-dates-input', {
+        mode: 'range',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'j M Y',
+        locale: { rangeSeparator: '  \u2192  ' },
+        defaultDate: [b.checkin, b.checkout],
+        onChange: function(dates) {
+          if (dates.length === 2) {
+            const nn = Math.round((dates[1] - dates[0]) / 86400000);
+            document.getElementById('dm-nights').textContent = `${nn} night${nn !== 1 ? 's' : ''}`;
+          }
+        }
+      });
+    } else {
+      document.getElementById('dm-dates').textContent = `${fmtDate(b.checkin)} \u2192 ${fmtDate(b.checkout)}`;
+    }
+
+    // Nights
     document.getElementById('dm-nights').textContent = `${n} night${n !== 1 ? 's' : ''}`;
+
+    // Notes: show editable input for manual, read-only row for iCal
     const notesRow = document.getElementById('dm-notes-row');
-    if (b.notes && !presentMode) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
-    else { notesRow.style.display = 'none'; }
+    const notesEdit = document.getElementById('dm-notes-edit');
+    if (isManual && !presentMode) {
+      notesRow.style.display = 'none';
+      notesEdit.style.display = '';
+      document.getElementById('dm-notes-input').value = b.notes || '';
+    } else {
+      notesEdit.style.display = 'none';
+      if (b.notes && !presentMode) { notesRow.style.display = ''; document.getElementById('dm-notes').textContent = b.notes; }
+      else { notesRow.style.display = 'none'; }
+    }
+
+    // Guest + amount (always editable unless present mode)
     document.getElementById('dm-guest').value = presentMode ? dmName : (b.guest || '');
     document.getElementById('dm-amount').value = b.amount > 0 ? b.amount : '';
     document.getElementById('dm-guest').readOnly = presentMode;
     document.getElementById('dm-amount').readOnly = presentMode;
+
+    // Delete button: only for manual bookings
+    document.getElementById('dm-delete').style.display = isManual && !presentMode ? '' : 'none';
+
+    // Save button
     document.getElementById('dm-save').style.display = presentMode ? 'none' : '';
+
     document.getElementById('detail-modal').classList.add('open');
     if (!presentMode) document.getElementById('dm-guest').focus();
   }
 
   function closeDetailModal() {
     document.getElementById('detail-modal').classList.remove('open');
+    if (detailDatePicker) { detailDatePicker.destroy(); detailDatePicker = null; }
     detailBookingId = null;
+    detailBookingSource = null;
   }
 
-  async function saveBookingAmount() {
+  async function saveBookingDetail() {
     if (!detailBookingId) return;
     const guest = document.getElementById('dm-guest').value.trim();
     const amount = parseFloat(document.getElementById('dm-amount').value) || 0;
+    const isManual = detailBookingSource === 'manual';
+
+    const payload = { amount, guest };
+
+    if (isManual) {
+      // Include all editable fields for manual bookings
+      payload.type = document.getElementById('dm-type-select').value;
+      payload.room = document.getElementById('dm-room-select').value;
+      payload.notes = document.getElementById('dm-notes-input').value.trim();
+
+      if (detailDatePicker && detailDatePicker.selectedDates.length === 2) {
+        payload.checkin = detailDatePicker.selectedDates[0].toISOString().split('T')[0];
+        payload.checkout = detailDatePicker.selectedDates[1].toISOString().split('T')[0];
+      }
+    }
+
     try {
       const res = await fetch(`/api/bookings/${encodeURIComponent(detailBookingId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, guest }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Save failed');
     } catch (err) {
@@ -788,6 +909,13 @@ import '../styles/dashboard.css';
     }
     closeDetailModal();
     loadBookings();
+  }
+
+  async function deleteBookingFromModal() {
+    if (!detailBookingId) return;
+    if (!confirm('Delete this booking?')) return;
+    await deleteBooking(detailBookingId);
+    closeDetailModal();
   }
 
   // ─── TOOLTIP ─────────────────────────────────────────────────────────────────
