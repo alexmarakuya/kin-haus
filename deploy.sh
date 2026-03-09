@@ -49,7 +49,7 @@ echo "==> Building..."
 ssh $VPS "cd $APP_DIR && npm run build 2>&1 | tail -1"
 
 echo "==> Restarting server on port $PORT..."
-ssh $VPS "kill \$(pgrep -f \"PORT=$PORT.*entry.mjs\") 2>/dev/null || true; sleep 2; cd $APP_DIR && HOST=0.0.0.0 PORT=$PORT nohup node dist/server/entry.mjs > $LOG 2>&1 &" || true
+ssh $VPS "fuser -k ${PORT}/tcp 2>/dev/null || true; sleep 2; cd $APP_DIR && HOST=0.0.0.0 PORT=$PORT nohup node dist/server/entry.mjs > $LOG 2>&1 &" || true
 
 sleep 3
 
