@@ -195,6 +195,7 @@ body.present-mode .present-banner { display:block; }
 .detail-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #eae8e5; }
 .detail-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b6b66; }
 .detail-value { font-size:14px; font-weight:500; text-align:right; }
+.detail-panel-body .detail-row + .fg { margin-top:16px; }
 
 /* EMPTY STATE */
 .empty-state { text-align:center; padding:60px 0; color:#8b8b85; }
