@@ -156,14 +156,14 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
-  <!-- BOOKING DETAIL SIDEBAR -->
-  <div class="sidebar-overlay" id="detail-overlay"></div>
-  <div class="sidebar" id="detail-sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title" id="dm-title">Booking Details</div>
-      <button class="sidebar-close" id="dm-close">&times;</button>
+  <!-- BOOKING DETAIL PANEL -->
+  <div class="detail-overlay" id="detail-overlay"></div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-panel-header">
+      <div class="detail-panel-title" id="dm-title">Booking Details</div>
+      <button class="detail-panel-close" id="dm-close">&times;</button>
     </div>
-    <div class="sidebar-body">
+    <div class="detail-panel-body">
       <!-- Type: read-only for iCal, editable for manual -->
       <div class="detail-row" id="dm-type-readonly"><span class="detail-label">Type</span><span class="detail-value" id="dm-type"></span></div>
       <div class="fg" id="dm-type-edit" style="display:none">
@@ -215,9 +215,9 @@ import '../styles/dashboard.css';
         <input id="dm-amount" type="number" placeholder="e.g. 22400" min="0">
       </div>
     </div>
-    <div class="sidebar-footer">
+    <div class="detail-panel-footer">
       <button class="btn btn-danger" id="dm-delete" style="display:none">Delete Booking</button>
-      <div class="sidebar-footer-right">
+      <div class="detail-panel-footer-right">
         <button class="btn" id="dm-cancel">Cancel</button>
         <button class="btn btn-primary" id="dm-save">Save</button>
       </div>
@@ -922,13 +922,13 @@ import '../styles/dashboard.css';
     // Save button
     document.getElementById('dm-save').style.display = presentMode ? 'none' : '';
 
-    document.getElementById('detail-sidebar').classList.add('open');
+    document.getElementById('detail-panel').classList.add('open');
     document.getElementById('detail-overlay').classList.add('open');
     if (!presentMode) document.getElementById('dm-guest').focus();
   }
 
   function closeDetailModal() {
-    document.getElementById('detail-sidebar').classList.remove('open');
+    document.getElementById('detail-panel').classList.remove('open');
     document.getElementById('detail-overlay').classList.remove('open');
     if (detailDatePicker) { detailDatePicker.destroy(); detailDatePicker = null; }
     detailBookingId = null;
