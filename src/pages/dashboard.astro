@@ -43,9 +43,9 @@ import '../styles/dashboard.css';
     <div class="sidebar">
       <div>
         <div class="sidebar-title">Rooms</div>
-        <div class="room-item"><div class="room-dot" style="background:var(--nest)"></div><div><div class="room-name">The Nest</div><div class="room-rate" id="sidebar-rate-nest">&#x0E3F;5,000 / night</div></div></div>
-        <div class="room-item"><div class="room-dot" style="background:var(--master)"></div><div><div class="room-name">Master Room</div><div class="room-rate" id="sidebar-rate-master">&#x0E3F;3,200 / night</div></div></div>
-        <div class="room-item"><div class="room-dot" style="background:var(--nomad)"></div><div><div class="room-name">Nomad Room</div><div class="room-rate" id="sidebar-rate-nomad">&#x0E3F;2,400 / night</div></div></div>
+        <div class="room-item" data-room="nest"><div class="room-dot" style="background:var(--nest)"></div><div><div class="room-name">The Nest</div><div class="room-rate" id="sidebar-rate-nest">&#x0E3F;5,000 / night</div></div></div>
+        <div class="room-item" data-room="master"><div class="room-dot" style="background:var(--master)"></div><div><div class="room-name">Master Room</div><div class="room-rate" id="sidebar-rate-master">&#x0E3F;3,200 / night</div></div></div>
+        <div class="room-item" data-room="nomad"><div class="room-dot" style="background:var(--nomad)"></div><div><div class="room-name">Nomad Room</div><div class="room-rate" id="sidebar-rate-nomad">&#x0E3F;2,400 / night</div></div></div>
         <div class="room-item"><div class="room-dot" style="background:var(--theater)"></div><div><div class="room-name">Theater Room</div></div></div>
       </div>
       <div>
@@ -69,7 +69,6 @@ import '../styles/dashboard.css';
         <div class="tab" data-tab="list">Bookings</div>
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
         <div class="tab" data-tab="codes">Promo Codes</div>
-        <div class="tab" data-tab="pricing">Pricing</div>
         <div class="tab-spacer"></div>
       </div>
 
@@ -114,32 +113,6 @@ import '../styles/dashboard.css';
           <button class="btn btn-primary" id="btn-create-code" style="font-size:12px; padding:7px 16px;">+ Create Code</button>
         </div>
         <div id="codes-content" style="padding:0 28px 28px;"></div>
-      </div>
-
-      <!-- PRICING TAB -->
-      <div id="tab-pricing" class="list-pane" style="display:none">
-        <div style="padding:20px 28px 28px;">
-          <div class="list-section-title" style="margin:0 0 16px; border:none; padding:0;">Room Nightly Rates</div>
-          <div class="pricing-cards">
-            <div class="pricing-card">
-              <div class="pricing-card-header"><div class="room-dot" style="background:var(--nest)"></div><strong>The Nest</strong></div>
-              <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nest-high" class="pricing-input" min="0" step="100"></div></div>
-              <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nest-low" class="pricing-input" min="0" step="100"></div></div>
-            </div>
-            <div class="pricing-card">
-              <div class="pricing-card-header"><div class="room-dot" style="background:var(--master)"></div><strong>Master Suite</strong></div>
-              <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-master-high" class="pricing-input" min="0" step="100"></div></div>
-              <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-master-low" class="pricing-input" min="0" step="100"></div></div>
-            </div>
-            <div class="pricing-card">
-              <div class="pricing-card-header"><div class="room-dot" style="background:var(--nomad)"></div><strong>Nomad Room</strong></div>
-              <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nomad-high" class="pricing-input" min="0" step="100"></div></div>
-              <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="price-nomad-low" class="pricing-input" min="0" step="100"></div></div>
-            </div>
-          </div>
-          <button class="btn btn-primary" id="btn-save-pricing" style="margin-top:16px;">Save Rates</button>
-          <span id="pricing-status" style="margin-left:12px; font-size:12px; color:var(--accent); display:none;">Saved!</span>
-        </div>
       </div>
 
       <div class="stats-footer" id="stats-footer"></div>
@@ -232,6 +205,26 @@ import '../styles/dashboard.css';
         <button class="btn" id="fc-cancel">Cancel</button>
         <button class="btn btn-primary" id="fc-save">Create Code</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ROOM DETAIL MODAL -->
+  <div class="overlay" id="room-modal">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-title" id="rm-title" style="display:flex; align-items:center; gap:8px;">
+        <div class="room-dot" id="rm-dot"></div>
+        <span id="rm-name"></span>
+      </div>
+      <div class="rm-section-label">Nightly Rates</div>
+      <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="rm-high" class="pricing-input" min="0" step="100"></div></div>
+      <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="rm-low" class="pricing-input" min="0" step="100"></div></div>
+      <div class="rm-section-label" style="margin-top:16px">Airbnb Listing</div>
+      <a id="rm-airbnb" class="rm-link" href="#" target="_blank" rel="noopener">View on Airbnb &#x2192;</a>
+      <div class="modal-actions">
+        <button class="btn" id="rm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="rm-save">Save Rates</button>
+      </div>
+      <span id="rm-status" style="font-size:11px; color:var(--accent); display:none; margin-top:4px;">Saved!</span>
     </div>
   </div>
 
@@ -935,11 +928,9 @@ import '../styles/dashboard.css';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
     document.getElementById('tab-codes').style.display = tab === 'codes' ? 'block' : 'none';
-    document.getElementById('tab-pricing').style.display = tab === 'pricing' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
     if (tab === 'inquiries') fetchInquiries();
     if (tab === 'codes') fetchDiscountCodes();
-    if (tab === 'pricing') fetchPricing();
     render();
   }
 
@@ -1218,11 +1209,6 @@ import '../styles/dashboard.css';
       const res = await fetch('/api/pricing');
       const data = await res.json();
       applyPricing(data);
-      // Populate inputs
-      for (const room of ['nest','master','nomad']) {
-        document.getElementById(`price-${room}-high`).value = data[room]?.high || 0;
-        document.getElementById(`price-${room}-low`).value = data[room]?.low || 0;
-      }
     } catch (err) { console.error('Failed to fetch pricing:', err); }
   }
 
@@ -1235,21 +1221,51 @@ import '../styles/dashboard.css';
     }
     RATES_HIGH.full = RATES_HIGH.nest + RATES_HIGH.master + RATES_HIGH.nomad;
     RATES_LOW.full = RATES_LOW.nest + RATES_LOW.master + RATES_LOW.nomad;
-    // Update sidebar
     for (const room of ['nest','master','nomad']) {
       const el = document.getElementById(`sidebar-rate-${room}`);
       if (el) el.textContent = `\u0E3F${RATES_HIGH[room].toLocaleString()} / night`;
     }
   }
 
-  document.getElementById('btn-save-pricing').addEventListener('click', async () => {
+  // ─── ROOM MODAL ─────────────────────────────────────────────────────────────
+  const AIRBNB_LINKS = {
+    nest: 'https://www.airbnb.com/rooms/1511809226602265595',
+    master: 'https://www.airbnb.com/rooms/1618003971883950106',
+    nomad: 'https://www.airbnb.com/rooms/1618012678467611754',
+  };
+  const ROOM_COLORS_CSS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)' };
+  let currentRoomSlug = null;
+
+  function openRoomModal(slug) {
+    currentRoomSlug = slug;
+    const name = ROOM_LABELS[slug] || slug;
+    document.getElementById('rm-name').textContent = name;
+    document.getElementById('rm-dot').style.background = ROOM_COLORS_CSS[slug] || '#ccc';
+    document.getElementById('rm-high').value = RATES_HIGH[slug] || 0;
+    document.getElementById('rm-low').value = RATES_LOW[slug] || 0;
+    document.getElementById('rm-airbnb').href = AIRBNB_LINKS[slug] || '#';
+    document.getElementById('rm-status').style.display = 'none';
+    document.getElementById('room-modal').classList.add('open');
+  }
+
+  document.querySelectorAll('.room-item[data-room]').forEach(el => {
+    el.addEventListener('click', () => openRoomModal(el.dataset.room));
+  });
+
+  document.getElementById('rm-cancel').addEventListener('click', () => {
+    document.getElementById('room-modal').classList.remove('open');
+  });
+  document.getElementById('room-modal').addEventListener('click', e => {
+    if (e.target.id === 'room-modal') document.getElementById('room-modal').classList.remove('open');
+  });
+
+  document.getElementById('rm-save').addEventListener('click', async () => {
+    if (!currentRoomSlug) return;
     const payload = {};
-    for (const room of ['nest','master','nomad']) {
-      payload[room] = {
-        high: parseInt(document.getElementById(`price-${room}-high`).value) || 0,
-        low: parseInt(document.getElementById(`price-${room}-low`).value) || 0,
-      };
-    }
+    payload[currentRoomSlug] = {
+      high: parseInt(document.getElementById('rm-high').value) || 0,
+      low: parseInt(document.getElementById('rm-low').value) || 0,
+    };
     try {
       const res = await fetch('/api/pricing', {
         method: 'PATCH',
@@ -1258,8 +1274,8 @@ import '../styles/dashboard.css';
       });
       const data = await res.json();
       applyPricing(data);
-      render(); // Re-render revenue with new rates
-      const status = document.getElementById('pricing-status');
+      render();
+      const status = document.getElementById('rm-status');
       status.style.display = 'inline';
       setTimeout(() => status.style.display = 'none', 2000);
     } catch (err) {

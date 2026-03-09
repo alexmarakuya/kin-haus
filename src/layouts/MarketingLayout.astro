@@ -46,42 +46,59 @@ const currentPath = Astro.url.pathname;
     .nav-links a.active {
       color: var(--accent);
     }
-    .currency-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #b0ada8;
-    }
-    .currency-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .currency-dropdown {
+      position: relative;
       margin-left: 16px;
     }
-    .currency-toggle-btns {
+    .currency-selected {
       display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
       border: 1px solid #e4e2de;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-    .currency-toggle-btns button {
-      background: none;
-      border: none;
-      padding: 4px 10px;
-      font-size: 11px;
+      border-radius: 6px;
+      background: white;
       font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #52524e;
       cursor: pointer;
-      color: #8b8b85;
-      transition: all 0.15s;
+      transition: border-color 0.15s;
+      user-select: none;
     }
-    .currency-toggle-btns button.active {
-      background: var(--accent);
-      color: white;
+    .currency-selected:hover { border-color: #ccc; }
+    .currency-selected svg { width: 10px; height: 10px; color: #b0ada8; transition: transform 0.15s; }
+    .currency-dropdown.open .currency-selected { border-color: var(--accent); }
+    .currency-dropdown.open .currency-selected svg { transform: rotate(180deg); }
+    .currency-options {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 100%;
+      background: white;
+      border: 1px solid #e4e2de;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+      z-index: 200;
     }
-    .currency-toggle-btns button:not(.active):hover {
-      background: var(--paper);
+    .currency-dropdown.open .currency-options { display: block; }
+    .currency-option {
+      display: block;
+      width: 100%;
+      padding: 7px 12px;
+      border: none;
+      background: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #52524e;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+      transition: background 0.1s;
     }
+    .currency-option:hover { background: var(--paper); }
+    .currency-option.active { color: var(--accent); font-weight: 600; }
     .nav-menu {
       display: flex;
       align-items: center;
@@ -135,7 +152,7 @@ const currentPath = Astro.url.pathname;
       .nav-menu.open { display: flex; }
       .nav-links { flex-direction: column; gap: 16px; }
       .nav-links a { font-size: 16px; }
-      .currency-toggle { margin-left: 0; }
+      .currency-dropdown { margin-left: 0; }
       .site-footer { padding: 32px 20px; }
     }
     .site-footer {
@@ -262,12 +279,15 @@ const currentPath = Astro.url.pathname;
         <li><a href="/blog" class:list={[{ active: currentPath.startsWith('/blog') }]}>Blog</a></li>
         <li><a href="/contact" class:list={[{ active: currentPath === '/contact' }]}>Contact</a></li>
       </ul>
-      <div class="currency-toggle" id="currencyToggle">
-        <span class="currency-label">Currency</span>
-        <div class="currency-toggle-btns">
-          <button data-currency="thb" class="active">&#x0E3F; THB</button>
-          <button data-currency="usd">$ USD</button>
-          <button data-currency="eur">&euro; EUR</button>
+      <div class="currency-dropdown" id="currencyToggle">
+        <div class="currency-selected" id="currencySelected">
+          <span id="currencyLabel">&#x0E3F; THB</span>
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
+        </div>
+        <div class="currency-options" id="currencyOptions">
+          <button class="currency-option active" data-currency="thb">&#x0E3F; THB</button>
+          <button class="currency-option" data-currency="usd">$ USD</button>
+          <button class="currency-option" data-currency="eur">&euro; EUR</button>
         </div>
       </div>
     </div>
@@ -867,6 +887,21 @@ const currentPath = Astro.url.pathname;
     var bookedSet = new Set();
     var activePromoCode = '';
     var activePromoDiscount = 0;
+    var currentRoomHigh = 0;
+    var currentRoomLow = 0;
+
+    var roomRates = {
+      'nest': { high: 5000, low: 3500 },
+      'master': { high: 3200, low: 2240 },
+      'nomad': { high: 2400, low: 1680 }
+    };
+
+    // Load dynamic rates from API if available
+    fetch('/api/pricing').then(function(r) { return r.json(); }).then(function(data) {
+      if (data.nest) roomRates.nest = data.nest;
+      if (data.master) roomRates.master = data.master;
+      if (data.nomad) roomRates.nomad = data.nomad;
+    }).catch(function() {});
 
     var roomNames = {
       'nest': 'The Nest',
@@ -958,10 +993,15 @@ const currentPath = Astro.url.pathname;
     }
 
     function updatePricing(nights) {
-      var page = document.querySelector('.room-page');
-      if (!page || !page.dataset.thbHigh) { pricingEl.innerHTML = ''; return; }
-      var high = parseInt(page.dataset.thbHigh);
-      var low = parseInt(page.dataset.thbLow);
+      var high = currentRoomHigh;
+      var low = currentRoomLow;
+      if (!high && !low) {
+        var page = document.querySelector('.room-page');
+        if (page && page.dataset.thbHigh) {
+          high = parseInt(page.dataset.thbHigh);
+          low = parseInt(page.dataset.thbLow);
+        } else { pricingEl.innerHTML = ''; return; }
+      }
       var isLow = isLowSeason(checkinEl.value);
       var rate = isLow ? low : high;
       var subtotal = rate * nights;
@@ -1098,6 +1138,11 @@ const currentPath = Astro.url.pathname;
       roomEl.textContent = roomName;
       airbnbBtn.href = airbnbLinks[roomName] || '#';
       if (window.posthog) posthog.capture('booking_modal_opened', { room: roomSlug });
+
+      // Set rates for this room
+      var rates = roomRates[roomSlug] || { high: 0, low: 0 };
+      currentRoomHigh = rates.high;
+      currentRoomLow = rates.low;
 
       // Reset state
       checkinEl.value = '';
@@ -1253,15 +1298,18 @@ const currentPath = Astro.url.pathname;
   })();
   </script>
 
-  <!-- Currency Toggle -->
+  <!-- Currency Dropdown -->
   <script is:inline>
   (function() {
     var EUR_RATE = 37;
     var USD_RATE = 34;
-    var toggle = document.getElementById('currencyToggle');
-    if (!toggle) return;
-    var btns = toggle.querySelectorAll('button');
+    var dropdown = document.getElementById('currencyToggle');
+    if (!dropdown) return;
+    var selected = document.getElementById('currencySelected');
+    var label = document.getElementById('currencyLabel');
+    var options = dropdown.querySelectorAll('.currency-option');
     var saved = localStorage.getItem('kin-currency') || 'thb';
+    var LABELS = { thb: '\u0E3F THB', usd: '$ USD', eur: '\u20AC EUR' };
 
     function fmtTHB(n) { return '\u0E3F' + n.toLocaleString(); }
     function fmtEUR(n) { return '\u20AC' + Math.round(n / EUR_RATE).toLocaleString(); }
@@ -1289,14 +1337,28 @@ const currentPath = Astro.url.pathname;
         var hp = fmtCurrency(high, currency);
         el.textContent = tpl.replace('{low}', lp).replace('{high}', hp);
       });
-      btns.forEach(function(b) {
+      options.forEach(function(b) {
         b.classList.toggle('active', b.dataset.currency === currency);
       });
+      label.innerHTML = LABELS[currency] || LABELS.thb;
       localStorage.setItem('kin-currency', currency);
+      dropdown.classList.remove('open');
     }
 
-    btns.forEach(function(b) {
-      b.addEventListener('click', function() { convert(b.dataset.currency); });
+    selected.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+
+    options.forEach(function(b) {
+      b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        convert(b.dataset.currency);
+      });
+    });
+
+    document.addEventListener('click', function() {
+      dropdown.classList.remove('open');
     });
 
     if (saved !== 'thb') convert(saved);

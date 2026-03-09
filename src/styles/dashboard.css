@@ -210,11 +210,7 @@ body.present-mode .present-banner { display:block; }
 .inq-action-delete { color:#b5b3ad; border-color:transparent; }
 .inq-action-delete:hover { color:#e05a5a; background:#fde8e8; border-color:#e05a5a; }
 
-/* Pricing */
-.pricing-cards { display:flex; flex-direction:column; gap:16px; }
-.pricing-card { background:white; border:1px solid #e4e2de; border-radius:10px; padding:16px 20px; }
-.pricing-card-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; }
-.pricing-card-header .room-dot { width:10px; height:10px; flex-shrink:0; }
+/* Pricing inputs (used in room modal) */
 .pricing-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
 .pricing-row:last-child { margin-bottom:0; }
 .pricing-row label { font-size:13px; color:#64645f; white-space:nowrap; }
@@ -222,6 +218,13 @@ body.present-mode .present-banner { display:block; }
 .pricing-currency { font-size:14px; color:#8b8b85; }
 .pricing-input { width:90px; padding:6px 10px; border:1px solid #e4e2de; border-radius:6px; font-size:14px; font-family:inherit; text-align:right; }
 .pricing-input:focus { outline:none; border-color:var(--accent); }
+
+/* Room modal */
+.rm-section-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#8b8b85; margin-bottom:8px; margin-top:4px; }
+.rm-link { font-size:12px; color:var(--accent); text-decoration:none; }
+.rm-link:hover { text-decoration:underline; }
+.room-item[data-room] { transition:all 0.12s; }
+.room-item[data-room]:hover { background:var(--warm); border-color:#e4e2de; }
 
 ::-webkit-scrollbar { width:6px; height:6px; }
 ::-webkit-scrollbar-thumb { background:#d9d7d3; border-radius:3px; }
