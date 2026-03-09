@@ -276,6 +276,15 @@ import '../styles/dashboard.css';
   let activeFilters = { airbnb: true, direct: true, friend: true, blocked: false, owner: false };
   let presentMode = false;
 
+  // Local date string helper — avoids UTC shift from toISOString()
+  // Added as prototype so all Date objects can use .toLocalDateStr()
+  Date.prototype.toLocalDateStr = function() {
+    const y = this.getFullYear();
+    const m = String(this.getMonth() + 1).padStart(2, '0');
+    const d = String(this.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   // ─── PRESENT MODE ─────────────────────────────────────────────────────────
   const FAKE_NAMES = ['Alex T.','Jordan R.','Sam K.','Morgan P.','Casey L.','Riley J.','Jamie W.','Taylor S.','Drew M.','Quinn B.','Avery N.','Dakota H.','Skyler F.','Reese C.','Finley D.','Rowan G.','Emerson V.','Hayden Z.','Parker E.','Blair A.'];
   const nameMap = {};
@@ -321,7 +330,7 @@ import '../styles/dashboard.css';
   }
   function getRateForDates(room, dates) {
     if (!dates || dates.length < 1) return RATES_HIGH[room] || 0;
-    const checkin = dates[0].toISOString().split('T')[0];
+    const checkin = dates[0].toLocalDateStr();
     return isLowSeason(checkin) ? (RATES_LOW[room] || 0) : (RATES_HIGH[room] || 0);
   }
   // Keep a simple RATES alias pointing to high season for backwards compat in revenue calc
@@ -381,7 +390,7 @@ import '../styles/dashboard.css';
       // Add one day to end for checkout date
       const endDate = new Date(end + 'T12:00:00');
       endDate.setDate(endDate.getDate() + 1);
-      const checkout = endDate.toISOString().split('T')[0];
+      const checkout = endDate.toLocalDateStr();
       openModalWithRange(start, checkout, dragRoom);
     }
     clearDragHighlight();
@@ -459,8 +468,8 @@ import '../styles/dashboard.css';
       alert('Please select a date range (check-in to check-out).');
       return;
     }
-    const checkin = dates[0].toISOString().split('T')[0];
-    const checkout = dates[1].toISOString().split('T')[0];
+    const checkin = dates[0].toLocalDateStr();
+    const checkout = dates[1].toLocalDateStr();
     if (checkin >= checkout) {
       alert('Check-out must be after check-in.');
       return;
@@ -648,7 +657,7 @@ import '../styles/dashboard.css';
 
   // ─── LIST ────────────────────────────────────────────────────────────────────
   function renderList() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocalDateStr();
     const sorted = [...filteredBookings()].sort((a,b) => a.checkin.localeCompare(b.checkin));
     const upcoming = sorted.filter(b => b.checkout >= todayStr);
     const past = sorted.filter(b => b.checkout < todayStr);
@@ -891,8 +900,8 @@ import '../styles/dashboard.css';
       payload.notes = document.getElementById('dm-notes-input').value.trim();
 
       if (detailDatePicker && detailDatePicker.selectedDates.length === 2) {
-        payload.checkin = detailDatePicker.selectedDates[0].toISOString().split('T')[0];
-        payload.checkout = detailDatePicker.selectedDates[1].toISOString().split('T')[0];
+        payload.checkin = detailDatePicker.selectedDates[0].toLocalDateStr();
+        payload.checkout = detailDatePicker.selectedDates[1].toLocalDateStr();
       }
     }
 
@@ -994,7 +1003,7 @@ import '../styles/dashboard.css';
     }
     const nights = Math.round((dates[1] - dates[0]) / 86400000);
     const rate = parseFloat(document.getElementById('f-rate').value) || 0;
-    const checkinStr = dates[0].toISOString().split('T')[0];
+    const checkinStr = dates[0].toLocalDateStr();
     const low = isLowSeason(checkinStr);
     const base = rate * nights;
     const { pct, label: discountLabel } = getDiscount(nights);
@@ -1022,7 +1031,7 @@ import '../styles/dashboard.css';
     document.getElementById('modal').classList.add('open');
     const d = new Date(dStr + 'T12:00:00');
     d.setDate(d.getDate() + 5);
-    datePicker.setDate([dStr, d.toISOString().split('T')[0]]);
+    datePicker.setDate([dStr, d.toLocalDateStr()]);
     if (room) document.getElementById('f-room').value = room;
     document.getElementById('f-rate').value = getRateForDates(room || 'nest', datePicker.selectedDates);
     updateEstimate();
