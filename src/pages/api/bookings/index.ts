@@ -62,8 +62,8 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  if (!['direct', 'friend', 'blocked', 'owner'].includes(type)) {
-    return new Response(JSON.stringify({ error: 'type must be direct, friend, blocked, or owner' }), {
+  if (!['direct', 'friend', 'blocked', 'owner', 'hold'].includes(type)) {
+    return new Response(JSON.stringify({ error: 'type must be direct, friend, blocked, owner, or hold' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });

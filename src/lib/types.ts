@@ -1,7 +1,7 @@
 export interface Booking {
   id: string;
   guest: string;
-  type: 'airbnb' | 'direct' | 'friend' | 'blocked';
+  type: 'airbnb' | 'direct' | 'friend' | 'blocked' | 'hold';
   room: string;
   checkin: string;
   checkout: string;

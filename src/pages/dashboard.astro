@@ -31,6 +31,7 @@ import '../styles/dashboard.css';
         <div class="sync-dot" id="sync-dot"></div>
         <span id="sync-label">Loading...</span>
       </div>
+      <button class="btn btn-sm btn-currency" id="btn-currency" title="Toggle secondary currency">EUR</button>
       <button class="btn btn-sm" id="btn-present" title="Scramble guest details for screen sharing"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Present</button>
       <button class="btn btn-sm" id="btn-refresh">&#x21bb; Refresh</button>
       <button class="btn btn-primary btn-sm" id="btn-add">+ Add Booking</button>
@@ -55,6 +56,7 @@ import '../styles/dashboard.css';
         <div class="legend-row"><div class="legend-chip" style="background:var(--friend)"></div>Friend / Personal</div>
         <div class="legend-row"><div class="legend-chip" style="background:var(--blocked)"></div>Blocked</div>
         <div class="legend-row"><div class="legend-chip" style="background:var(--owner)"></div>Owner / Host</div>
+        <div class="legend-row"><div class="legend-chip" style="background:var(--hold);border:1px dashed var(--hold)"></div>Hold</div>
         <div class="legend-row"><div class="legend-chip" style="background:var(--conflict)"></div>&#x26A0; Conflict</div>
       </div>
       <div>
@@ -80,7 +82,11 @@ import '../styles/dashboard.css';
         <button class="filter-chip active" data-filter="friend"><span class="filter-dot" style="background:var(--friend)"></span>Friends</button>
         <button class="filter-chip" data-filter="blocked"><span class="filter-dot" style="background:var(--blocked)"></span>Blocked</button>
         <button class="filter-chip" data-filter="owner"><span class="filter-dot" style="background:var(--owner)"></span>Owner</button>
+        <button class="filter-chip" data-filter="hold"><span class="filter-dot" style="background:var(--hold)"></span>Hold</button>
       </div>
+
+      <!-- AVAILABILITY OVERVIEW -->
+      <div class="avail-grid" id="avail-grid"></div>
 
       <!-- CALENDAR TAB -->
       <div id="tab-calendar" class="cal-pane">
@@ -133,6 +139,7 @@ import '../styles/dashboard.css';
           <option value="friend">Friend / Personal</option>
           <option value="blocked">Blocked</option>
           <option value="owner">Owner / Host Block</option>
+          <option value="hold">Hold (Tentative)</option>
         </select>
       </div>
       <div class="fg">
@@ -145,7 +152,8 @@ import '../styles/dashboard.css';
           <option value="full">Full House</option>
         </select>
       </div>
-      <div class="fg"><label>Dates</label><input id="f-dates" type="text" placeholder="Select check-in to check-out" readonly></div>
+      <div class="fg"><label>Check-in → Check-out</label><input id="f-dates" type="text" placeholder="Select dates" readonly></div>
+      <div id="f-nights-row" style="padding:2px 0 8px;font-size:13px;color:#8b8b85;display:none"><span id="f-nights-label"></span></div>
       <div class="fg" id="f-rate-row"><label>Rate / night (THB)</label><input id="f-rate" type="number" placeholder="e.g. 2400"></div>
       <div class="fg" id="f-total-row" style="padding:10px 0 0"><span id="f-total" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#52524e">Select dates to see total</span></div>
       <div class="fg"><label>Notes</label><input id="f-notes" type="text" placeholder="Optional note"></div>
@@ -173,6 +181,7 @@ import '../styles/dashboard.css';
           <option value="friend">Friend / Personal</option>
           <option value="blocked">Blocked</option>
           <option value="owner">Owner / Host Block</option>
+          <option value="hold">Hold (Tentative)</option>
         </select>
       </div>
 
@@ -190,10 +199,10 @@ import '../styles/dashboard.css';
       </div>
 
       <!-- Dates: read-only for iCal, flatpickr for manual -->
-      <div class="detail-row" id="dm-dates-readonly"><span class="detail-label">Dates</span><span class="detail-value" id="dm-dates"></span></div>
+      <div class="detail-row" id="dm-dates-readonly"><span class="detail-label">Check-in → Check-out</span><span class="detail-value" id="dm-dates"></span></div>
       <div class="fg" id="dm-dates-edit" style="display:none">
-        <label>Dates</label>
-        <input id="dm-dates-input" type="text" placeholder="Select check-in to check-out" readonly>
+        <label>Check-in → Check-out</label>
+        <input id="dm-dates-input" type="text" placeholder="Select dates" readonly>
       </div>
 
       <!-- Nights (always read-only, auto-calculated) -->
@@ -278,7 +287,7 @@ import '../styles/dashboard.css';
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let currentTab = 'calendar';
-  let activeFilters = { airbnb: true, direct: true, friend: true, blocked: false, owner: false };
+  let activeFilters = { airbnb: true, direct: true, friend: true, blocked: false, owner: false, hold: false };
   let presentMode = false;
 
   // Local date string helper — avoids UTC shift from toISOString()
@@ -331,7 +340,7 @@ import '../styles/dashboard.css';
   const ROOMS = ['nest','master','nomad','theater'];
   const ROOM_LABELS = { nest:'The Nest', master:'Master Room', nomad:'Nomad Room', theater:'Theater Room', full:'Full House' };
   const ROOM_COLORS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)', theater:'var(--theater)', full:'#8a6f9e' };
-  const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked', owner:'c-owner' };
+  const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked', owner:'c-owner', hold:'c-hold' };
   let RATES_HIGH = { nest:5000, master:3200, nomad:2400, theater:0, full:10600 };
   let RATES_LOW  = { nest:3500, master:2240, nomad:1680, theater:0, full:7420 };
 
@@ -347,7 +356,43 @@ import '../styles/dashboard.css';
   // Keep a simple RATES alias pointing to high season for backwards compat in revenue calc
   const RATES = RATES_HIGH;
 
+  // ─── CURRENCY ────────────────────────────────────────────────────────────────
+  const EUR_RATE = 37, USD_RATE = 34;
+  let secondaryCurrency = localStorage.getItem('kin-currency') || 'EUR';
+
+  function fmtAmount(thb, opts = {}) {
+    if (!thb && thb !== 0) return '';
+    const sym = secondaryCurrency === 'EUR' ? '\u20AC' : '$';
+    const rate = secondaryCurrency === 'EUR' ? EUR_RATE : USD_RATE;
+    const converted = Math.round(thb / rate);
+    const prefix = opts.approx ? '~' : '';
+    return `${prefix}\u0E3F${thb.toLocaleString()} <span class="amt-secondary">(~${sym}${converted.toLocaleString()})</span>`;
+  }
+
+  function fmtAmountText(thb) {
+    // Plain text version (no HTML) for inputs/tooltips
+    if (!thb && thb !== 0) return '';
+    const sym = secondaryCurrency === 'EUR' ? '\u20AC' : '$';
+    const rate = secondaryCurrency === 'EUR' ? EUR_RATE : USD_RATE;
+    const converted = Math.round(thb / rate);
+    return `\u0E3F${thb.toLocaleString()} (~${sym}${converted.toLocaleString()})`;
+  }
+
+  function toggleCurrency() {
+    secondaryCurrency = secondaryCurrency === 'EUR' ? 'USD' : 'EUR';
+    localStorage.setItem('kin-currency', secondaryCurrency);
+    document.getElementById('btn-currency').textContent = secondaryCurrency;
+    render();
+    // Also update sidebar rates
+    for (const room of ['nest','master','nomad']) {
+      const el = document.getElementById(`sidebar-rate-${room}`);
+      if (el) el.innerHTML = fmtAmount(RATES_HIGH[room]).replace('<span class="amt-secondary">', '<br><span class="amt-secondary">');
+    }
+  }
+
   // ─── EVENT LISTENERS ──────────────────────────────────────────────────────
+  document.getElementById('btn-currency').addEventListener('click', toggleCurrency);
+  document.getElementById('btn-currency').textContent = secondaryCurrency;
   document.getElementById('btn-present').addEventListener('click', togglePresentMode);
   document.getElementById('btn-refresh').addEventListener('click', refreshData);
   document.getElementById('btn-add').addEventListener('click', openModal);
@@ -582,12 +627,51 @@ import '../styles/dashboard.css';
     document.getElementById('alerts').innerHTML += `<div class="alert alert-error">&#x2715; ${msg}</div>`;
   }
 
+  // ─── AVAILABILITY OVERVIEW ──────────────────────────────────────────────────
+  function renderAvailGrid() {
+    const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = ds(today.getFullYear(), today.getMonth(), today.getDate());
+    const roomLabels = { nest:'Nest', master:'Master', nomad:'Nomad', theater:'Theater' };
+    let html = `<div class="avail-grid-title">Availability \u00B7 ${MONTHS[currentMonth]} ${currentYear}</div>`;
+
+    for (const room of ROOMS) {
+      let openCount = 0;
+      let blocks = '';
+      for (let d = 1; d <= numDays; d++) {
+        const dStr = ds(currentYear, currentMonth, d);
+        const bk = bookingOnDay(room, dStr);
+        let cls = 'avail-block';
+        if (dStr === todayStr) cls += ' today';
+        if (bk) {
+          cls += ` b-${bk.type}`;
+        } else {
+          openCount++;
+        }
+        blocks += `<div class="${cls}" title="${d} ${MONTHS[currentMonth].slice(0,3)}${bk ? ' - ' + (bk.guest || bk.type) : ' - Available'}"></div>`;
+      }
+      html += `<div class="avail-row">
+        <span class="avail-room-label">${roomLabels[room]}</span>
+        <div class="avail-blocks">${blocks}</div>
+        <span class="avail-open">${openCount} open</span>
+      </div>`;
+    }
+
+    document.getElementById('avail-grid').innerHTML = html;
+  }
+
   // ─── RENDER ─────────────────────────────────────────────────────────────────
   function render() {
     if (currentTab === 'calendar') renderCalendar();
     else renderList();
+    renderAvailGrid();
     renderStats();
     renderSidebar();
+    // Update sidebar rates with currency conversion
+    for (const room of ['nest','master','nomad']) {
+      const el = document.getElementById(`sidebar-rate-${room}`);
+      if (el) el.innerHTML = `${fmtAmount(RATES_HIGH[room])} / night`;
+    }
   }
 
   function filteredBookings() {
@@ -727,12 +811,12 @@ import '../styles/dashboard.css';
 
   function bookingCard(b) {
     const n = nightCount(b);
-    const label = {airbnb:'Airbnb',direct:'Direct',friend:'Friend',blocked:'Blocked'}[b.type] || b.type;
+    const label = {airbnb:'Airbnb',direct:'Direct',friend:'Friend',blocked:'Blocked',hold:'Hold'}[b.type] || b.type;
     const badgeCls = b.conflict ? 'badge-conflict' : `badge-${b.type}`;
     const rowCls = b.conflict ? 'booking-row has-conflict' : 'booking-row';
     const rawAmt = b.amount > 0 ? b.amount : 0;
-    const est = rawAmt > 0 ? `\u0E3F${rawAmt.toLocaleString()}` :
-      (b.type==='friend'||b.type==='blocked') ? '' : `~\u0E3F${(n*(RATES[b.room]||3200)).toLocaleString()}`;
+    const est = rawAmt > 0 ? fmtAmount(rawAmt) :
+      (b.type==='friend'||b.type==='blocked'||b.type==='hold') ? '' : fmtAmount(n*(RATES[b.room]||3200), {approx:true});
     const canDelete = b.source === 'manual';
     const conflictNote = b.conflict ? `<div class="b-conflict-note">&#x26A0; Conflict detected</div>` : '';
     const checkinFmt = fmtDate(b.checkin);
@@ -770,7 +854,7 @@ import '../styles/dashboard.css';
   function renderStats() {
     const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
     const totalRoomNights = numDays * 3;
-    let bookedNights = 0, friendNights = 0, revenue = 0;
+    let bookedNights = 0, friendNights = 0, holdNights = 0, revenue = 0;
 
     ROOMS.forEach(room => {
       for (let d = 1; d <= numDays; d++) {
@@ -779,6 +863,7 @@ import '../styles/dashboard.css';
         if (bk) {
           bookedNights++;
           if (bk.type === 'friend' || bk.type === 'blocked' || bk.type === 'owner') friendNights++;
+          if (bk.type === 'hold') holdNights++;
         }
       }
     });
@@ -787,7 +872,7 @@ import '../styles/dashboard.css';
     const monthStart = new Date(currentYear, currentMonth, 1);
     const monthEnd = new Date(currentYear, currentMonth + 1, 0); // last day of month
     allBookings.filter(b => {
-      if (b.type === 'friend' || b.type === 'blocked' || b.type === 'owner') return false;
+      if (b.type === 'friend' || b.type === 'blocked' || b.type === 'owner' || b.type === 'hold') return false;
       const ci = new Date(b.checkin);
       const co = new Date(b.checkout);
       // Booking overlaps this month if checkin < month end+1 and checkout > month start
@@ -814,7 +899,8 @@ import '../styles/dashboard.css';
       <div class="sf-block"><div class="sf-label">Occupancy</div><div class="sf-value">${occ}%</div><div class="sf-sub">${bookedNights}/${totalRoomNights} room-nights</div></div>
       <div class="sf-block"><div class="sf-label">Available</div><div class="sf-value">${totalRoomNights - bookedNights}</div><div class="sf-sub">room-nights open</div></div>
       <div class="sf-block"><div class="sf-label">Friend / Blocked</div><div class="sf-value">${friendNights}</div><div class="sf-sub">off-market nights</div></div>
-      <div class="sf-block"><div class="sf-label">Est. Revenue</div><div class="sf-value">${'\u0E3F' + revenue.toLocaleString()}</div><div class="sf-sub">${MONTHS[currentMonth]}</div></div>
+      ${holdNights > 0 ? `<div class="sf-block"><div class="sf-label">Holds</div><div class="sf-value" style="color:var(--hold)">${holdNights}</div><div class="sf-sub">tentative nights</div></div>` : ''}
+      <div class="sf-block"><div class="sf-label">Est. Revenue</div><div class="sf-value">${fmtAmount(revenue)}</div><div class="sf-sub">${MONTHS[currentMonth]}</div></div>
       <div class="occ-track">
         <div class="sf-label">Occupancy bar</div>
         <div class="occ-bar"><div class="occ-fill" style="width:${occ}%"></div></div>
@@ -832,6 +918,7 @@ import '../styles/dashboard.css';
       <div class="stat-line"><span class="stat-line-label">Airbnb</span><span class="stat-line-val">${bks.filter(b=>b.type==='airbnb').length}</span></div>
       <div class="stat-line"><span class="stat-line-label">Direct</span><span class="stat-line-val">${bks.filter(b=>b.type==='direct').length}</span></div>
       <div class="stat-line"><span class="stat-line-label">Friends</span><span class="stat-line-val">${bks.filter(b=>b.type==='friend').length}</span></div>
+      <div class="stat-line"><span class="stat-line-label">Holds</span><span class="stat-line-val" style="color:var(--hold)">${bks.filter(b=>b.type==='hold').length}</span></div>
       <div class="stat-line"><span class="stat-line-label">Conflicts</span><span class="stat-line-val" style="color:${allBookings.filter(b=>b.conflict).length>0?'var(--conflict)':'inherit'}">${allBookings.filter(b=>b.conflict).length}</span></div>`;
   }
 
@@ -846,7 +933,7 @@ import '../styles/dashboard.css';
     detailBookingId = id;
     detailBookingSource = b.source || (b.id.startsWith('airbnb-') ? 'ical' : 'manual');
     const isManual = detailBookingSource === 'manual';
-    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked',owner:'Owner / Host Block'}[b.type]||b.type;
+    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked',owner:'Owner / Host Block',hold:'Hold (Tentative)'}[b.type]||b.type;
     const n = nightCount(b);
     const dmName = presentMode ? scrambleName(b.guest || typeLabel) : (b.guest || typeLabel);
 
@@ -980,8 +1067,8 @@ import '../styles/dashboard.css';
   // ─── TOOLTIP ─────────────────────────────────────────────────────────────────
   function showTooltip(e, b) {
     const tt = document.getElementById('tooltip');
-    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked'}[b.type]||b.type;
-    const typeColor = {airbnb:'var(--airbnb)',direct:'var(--direct)',friend:'var(--friend)',blocked:'var(--blocked)'}[b.type]||'#8a8070';
+    const typeLabel = {airbnb:'Airbnb',direct:'Direct Booking',friend:'Friend / Personal',blocked:'Blocked',hold:'Hold (Tentative)'}[b.type]||b.type;
+    const typeColor = {airbnb:'var(--airbnb)',direct:'var(--direct)',friend:'var(--friend)',blocked:'var(--blocked)',hold:'var(--hold)'}[b.type]||'#8a8070';
     const n = nightCount(b);
     const ttName = presentMode ? scrambleName(b.guest || typeLabel) : (b.guest || typeLabel);
     const ttNotes = presentMode ? '' : (b.notes ? `<div class="tt-detail" style="margin-top:3px">${b.notes}</div>` : '');
@@ -1010,7 +1097,16 @@ import '../styles/dashboard.css';
     altFormat: 'j M Y',
     locale: { rangeSeparator: '  \u2192  ' },
     parseDate: (str) => parseDateLocal(str),
-    onChange: () => updateEstimate(),
+    onChange: (dates) => {
+      if (dates.length === 2) {
+        const nn = Math.round((dates[1] - dates[0]) / 86400000);
+        document.getElementById('f-nights-label').textContent = `${nn} night${nn !== 1 ? 's' : ''}`;
+        document.getElementById('f-nights-row').style.display = '';
+      } else {
+        document.getElementById('f-nights-row').style.display = 'none';
+      }
+      updateEstimate();
+    },
   });
 
   function getDiscount(nights) {
@@ -1033,8 +1129,18 @@ import '../styles/dashboard.css';
     const showPrice = type === 'direct';
     rateRow.style.display = showPrice ? '' : 'none';
     totalRow.style.display = showPrice ? '' : 'none';
-    if (!showPrice) return;
+
+    // Always update night count display regardless of type
     const dates = datePicker.selectedDates;
+    if (dates && dates.length === 2) {
+      const nn = Math.round((dates[1] - dates[0]) / 86400000);
+      document.getElementById('f-nights-label').textContent = `${nn} night${nn !== 1 ? 's' : ''}`;
+      document.getElementById('f-nights-row').style.display = '';
+    } else {
+      document.getElementById('f-nights-row').style.display = 'none';
+    }
+
+    if (!showPrice) return;
 
     // Auto-update rate based on season when dates are selected
     if (dates && dates.length >= 1) {
@@ -1059,12 +1165,15 @@ import '../styles/dashboard.css';
     const base = rate * nights;
     const { pct, label: discountLabel } = getDiscount(nights);
     const total = Math.round(base * (1 - pct));
-    let text = '\u0E3F' + total.toLocaleString() + ' (' + nights + ' night' + (nights !== 1 ? 's' : '') + ' x \u0E3F' + rate.toLocaleString();
+    const sym = secondaryCurrency === 'EUR' ? '\u20AC' : '$';
+    const cRate = secondaryCurrency === 'EUR' ? EUR_RATE : USD_RATE;
+    const converted = Math.round(total / cRate);
+    let text = '\u0E3F' + total.toLocaleString() + ' (~' + sym + converted.toLocaleString() + ') \u00B7 ' + nights + ' night' + (nights !== 1 ? 's' : '') + ' x \u0E3F' + rate.toLocaleString();
     if (low) text += ', low season';
     if (discountLabel) {
       text += ' \u2014 ' + discountLabel;
     }
-    text += ')';
+    text += '';
     totalLabel.textContent = text;
   }
 
@@ -1190,7 +1299,7 @@ import '../styles/dashboard.css';
     const statusClass = 'inq-status-' + inq.status;
     const statusLabel = {new:'New',responded:'Responded',booked:'Booked',archived:'Archived'}[inq.status] || inq.status;
     const timeAgo = formatTimeAgo(inq.createdAt);
-    const amountStr = inq.amount > 0 ? '\u0E3F' + inq.amount.toLocaleString() : '';
+    const amountStr = inq.amount > 0 ? fmtAmount(inq.amount) : '';
 
     let actions = '';
     if (inq.whatsapp && !presentMode) {
@@ -1411,7 +1520,7 @@ import '../styles/dashboard.css';
     RATES_LOW.full = RATES_LOW.nest + RATES_LOW.master + RATES_LOW.nomad;
     for (const room of ['nest','master','nomad']) {
       const el = document.getElementById(`sidebar-rate-${room}`);
-      if (el) el.textContent = `\u0E3F${RATES_HIGH[room].toLocaleString()} / night`;
+      if (el) el.innerHTML = `${fmtAmount(RATES_HIGH[room])} / night`;
     }
   }
 

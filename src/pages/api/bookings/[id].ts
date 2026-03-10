@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { readManualBookings, writeManualBookings, readOverrides, writeOverrides } from '../../../lib/bookings.ts';
 
-const VALID_TYPES = ['direct', 'friend', 'blocked', 'owner'];
+const VALID_TYPES = ['direct', 'friend', 'blocked', 'owner', 'hold'];
 const VALID_ROOMS = ['nest', 'master', 'nomad', 'theater', 'full'];
 
 export const PATCH: APIRoute = async ({ params, request }) => {
