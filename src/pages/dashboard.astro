@@ -300,6 +300,16 @@ import '../styles/dashboard.css';
   const ROOM_LABELS = { nest:'The Nest', master:'Master Suite', nomad:'Nomad Room', theater:'Theater Room', full:'Full House' };
   const ROOM_COLORS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)', theater:'var(--theater)', full:'#8a6f9e' };
   const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked', owner:'c-owner', hold:'c-hold', waitlist:'c-waitlist' };
+  const BAR_COLORS = {
+    airbnb:  { bg:'var(--airbnb-light)',  accent:'var(--airbnb)',  bs:'' },
+    direct:  { bg:'var(--direct-light)',  accent:'var(--direct)',  bs:'' },
+    friend:  { bg:'var(--friend-light)',  accent:'var(--friend)',  bs:'' },
+    blocked: { bg:'var(--blocked-light)', accent:'var(--blocked)', bs:'' },
+    owner:   { bg:'var(--owner-light)',   accent:'var(--owner)',   bs:'' },
+    hold:    { bg:'var(--hold-light)',    accent:'var(--hold)',    bs:'bar-dashed' },
+    waitlist:{ bg:'var(--waitlist-light)', accent:'var(--waitlist)', bs:'bar-dotted' },
+    conflict:{ bg:'var(--conflict-light)',accent:'var(--conflict)', bs:'' },
+  };
   let RATES_HIGH = { nest:5000, master:3200, nomad:2400, theater:0, full:10600 };
   let RATES_LOW  = { nest:3500, master:2240, nomad:1680, theater:0, full:7420 };
   const RATES = RATES_HIGH;
@@ -706,37 +716,64 @@ import '../styles/dashboard.css';
           const dStr = ds(currentYear, currentMonth, d);
           if (dStr === todayStr) cell.classList.add('today-outline');
 
+          // Determine bookings: staying (checkin <= d < checkout) and departing (checkout === d)
           const allBks = bookingsOnDay(room, dStr);
-          const bk = allBks.find(b => b.type !== 'blocked') || allBks[0];
-          if (bk) {
-            const nonBlocked = allBks.filter(b => b.type !== 'blocked');
-            const isOverlapDay = nonBlocked.length >= 2;
-            const typeClass = isOverlapDay ? 'c-conflict' : (TYPE_CLASS[bk.type] || 'c-airbnb');
-            cell.classList.add(typeClass);
-            // Crosshatch when a non-blocked booking overlaps a blocked one
-            const hasBlock = allBks.some(b => b.type === 'blocked');
-            if (hasBlock && nonBlocked.length > 0) cell.classList.add('c-overridden');
-            // Crosshatch only on the exact overlapping days
-            if (isOverlapDay) cell.classList.add('c-conflict-hatch');
-            // Half-day bars for check-in and last night (2+ night bookings only)
-            const _n = nightCount(bk);
-            if (_n >= 2) {
-              if (bk.checkin === dStr) cell.classList.add('c-first');
-              const _nd = new Date(currentYear, currentMonth, d + 1);
-              if (ds(_nd.getFullYear(), _nd.getMonth(), _nd.getDate()) >= bk.checkout) cell.classList.add('c-last');
-            }
-            if (bk.checkin === dStr) {
-              const init = document.createElement('div');
-              init.className = 'cell-initial';
-              const name = presentMode ? scrambleName(bk.guest || '?') : (bk.guest || '?');
-              init.textContent = name.charAt(0).toUpperCase();
-              cell.appendChild(init);
-            }
-            cell.addEventListener('mouseenter', e => showTooltip(e, bk));
-            cell.addEventListener('mousemove', moveTooltip);
-            cell.addEventListener('mouseleave', hideTooltip);
+          const stayBk = allBks.find(b => b.type !== 'blocked') || allBks[0];
+          const deptBk = departingOnDay(room, dStr);
+
+          if (stayBk || deptBk) {
             cell.style.cursor = 'pointer';
-            cell.addEventListener('click', () => { hideTooltip(); openBookingDetail(bk.id); });
+
+            // Departing bar (left half — checkout day)
+            if (deptBk) {
+              const bar = makeBar(deptBk, 'bar-last');
+              cell.appendChild(bar);
+            }
+
+            // Staying bar (check-in or middle day)
+            if (stayBk) {
+              const nonBlocked = allBks.filter(b => b.type !== 'blocked');
+              const isOverlapDay = nonBlocked.length >= 2;
+              const hasBlock = allBks.some(b => b.type === 'blocked');
+              const isCheckin = stayBk.checkin === dStr;
+              const isSingleNight = nightCount(stayBk) === 1;
+
+              // Determine bar type (conflict or booking type)
+              let barBk = { ...stayBk };
+              if (isOverlapDay) barBk._barType = 'conflict';
+
+              // Determine bar class
+              let barClass = 'bar-mid';
+              if (isCheckin) {
+                barClass = isSingleNight ? 'bar-only' : 'bar-first';
+              } else if (deptBk) {
+                // Departing bar occupies left half, so staying mid-bar takes right half only
+                barClass = 'bar-mid-right';
+              }
+
+              // Extra classes for hatching
+              let extra = '';
+              if (hasBlock && nonBlocked.length > 0) extra += ' bar-overridden';
+              if (isOverlapDay) extra += ' bar-conflict-hatch';
+
+              const bar = makeBar(barBk, barClass, extra);
+              cell.appendChild(bar);
+
+              // Guest initial letter on check-in day
+              if (isCheckin) {
+                const init = document.createElement('div');
+                init.className = 'cell-initial';
+                init.style.left = 'calc(50% + 3px)';
+                const name = presentMode ? scrambleName(stayBk.guest || '?') : (stayBk.guest || '?');
+                init.textContent = name.charAt(0).toUpperCase();
+                cell.appendChild(init);
+              }
+            }
+
+            // Fallback: if only departing (no staying), cell click goes to departing booking
+            if (!stayBk && deptBk) {
+              cell.addEventListener('click', () => { hideTooltip(); openBookingDetail(deptBk.id); });
+            }
           } else {
             cell.classList.add('empty');
             cell.dataset.date = dStr;
@@ -771,6 +808,29 @@ import '../styles/dashboard.css';
       if (b.room !== room && b.room !== 'full') return false;
       return dStr >= b.checkin && dStr < b.checkout;
     });
+  }
+
+  function departingOnDay(room, dStr) {
+    return filteredBookings().find(b => {
+      if (b.room !== room && b.room !== 'full') return false;
+      if (b.type === 'waitlist') return false;
+      return b.checkout === dStr;
+    });
+  }
+
+  function makeBar(bk, barClass, extra) {
+    const bar = document.createElement('div');
+    const colors = BAR_COLORS[bk._barType || bk.type] || BAR_COLORS.airbnb;
+    bar.className = 'booking-bar ' + barClass + (colors.bs ? ' ' + colors.bs : '') + (extra || '');
+    bar.style.background = colors.bg;
+    bar.style.borderBottom = '2px solid ' + colors.accent;
+    if (colors.bs === 'bar-dashed') bar.style.borderBottomStyle = 'dashed';
+    if (colors.bs === 'bar-dotted') bar.style.borderBottomStyle = 'dotted';
+    bar.addEventListener('mouseenter', e => showTooltip(e, bk));
+    bar.addEventListener('mousemove', moveTooltip);
+    bar.addEventListener('mouseleave', hideTooltip);
+    bar.addEventListener('click', () => { hideTooltip(); openBookingDetail(bk.id); });
+    return bar;
   }
 
   function ds(y, m, d) {

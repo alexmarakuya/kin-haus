@@ -110,37 +110,21 @@ body.present-mode .present-banner { display:block; }
 .cal-cell.empty { border-color:#eae8e5; }
 .cal-cell.empty:hover { background:var(--warm); }
 .cal-cell.today-outline { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
-.cal-cell.c-airbnb { background:var(--airbnb-light); border-bottom:2px solid var(--airbnb); }
-.cal-cell.c-direct { background:var(--direct-light); border-bottom:2px solid var(--direct); }
-.cal-cell.c-friend { background:var(--friend-light); border-bottom:2px solid var(--friend); }
-.cal-cell.c-blocked { background:var(--blocked-light); border-bottom:2px solid var(--blocked); }
-.cal-cell.c-owner { background:var(--owner-light); border-bottom:2px solid var(--owner); }
-.cal-cell.c-hold { background:var(--hold-light); border-bottom:2px dashed var(--hold); }
-.cal-cell.c-waitlist { background:var(--waitlist-light); border-bottom:2px dotted var(--waitlist); }
-.cal-cell.c-conflict { background:var(--conflict-light); border-bottom:2px solid var(--conflict); }
-.cell-initial { position:absolute; top:4px; left:5px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0.6; }
+.cell-initial { position:absolute; top:4px; left:5px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0.6; z-index:2; }
 .cal-cell.inactive { border-color:transparent; cursor:default; background:transparent; }
 .cal-cell.drag-selected { background:var(--direct-light); border-color:var(--accent); }
-.cal-cell.c-overridden { background-image:repeating-linear-gradient(135deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 5px); }
-.cal-cell.c-conflict-hatch { background-image:repeating-linear-gradient(135deg,transparent,transparent 3px,rgba(180,60,20,0.15) 3px,rgba(180,60,20,0.15) 5px); }
 
-/* Half-day cell variables (mirrors type colors for gradient use) */
-.cal-cell.c-airbnb { --cell-bg:var(--airbnb-light); --cell-accent:var(--airbnb); --cell-bs:solid; }
-.cal-cell.c-direct { --cell-bg:var(--direct-light); --cell-accent:var(--direct); --cell-bs:solid; }
-.cal-cell.c-friend { --cell-bg:var(--friend-light); --cell-accent:var(--friend); --cell-bs:solid; }
-.cal-cell.c-blocked { --cell-bg:var(--blocked-light); --cell-accent:var(--blocked); --cell-bs:solid; }
-.cal-cell.c-owner { --cell-bg:var(--owner-light); --cell-accent:var(--owner); --cell-bs:solid; }
-.cal-cell.c-hold { --cell-bg:var(--hold-light); --cell-accent:var(--hold); --cell-bs:dashed; }
-.cal-cell.c-waitlist { --cell-bg:var(--waitlist-light); --cell-accent:var(--waitlist); --cell-bs:dotted; }
-.cal-cell.c-conflict { --cell-bg:var(--conflict-light); --cell-accent:var(--conflict); --cell-bs:solid; }
-
-/* Half-day bars: check-in = right half, last night = left half */
-.cal-cell.c-first { background:linear-gradient(to right,transparent 50%,var(--cell-bg) 50%); border-bottom-color:transparent; }
-.cal-cell.c-last { background:linear-gradient(to right,var(--cell-bg) 50%,transparent 50%); border-bottom-color:transparent; }
-.cal-cell.c-first::after,.cal-cell.c-last::after { content:''; position:absolute; bottom:-1px; height:0; border-bottom:2px var(--cell-bs) var(--cell-accent); }
-.cal-cell.c-first::after { right:0; width:50%; }
-.cal-cell.c-last::after { left:0; width:50%; }
-.cal-cell.c-first .cell-initial { left:calc(50% + 1px); }
+/* Booking bar: inner element for colored booking indicator */
+.booking-bar { position:absolute; top:0; bottom:0; z-index:1; }
+.booking-bar.bar-mid { left:0; right:0; }
+.booking-bar.bar-mid-right { left:50%; right:0; }
+.booking-bar.bar-first { left:50%; right:0; border-radius:4px 0 0 4px; }
+.booking-bar.bar-last { left:0; right:50%; border-radius:0 4px 4px 0; }
+.booking-bar.bar-only { left:50%; right:0; border-radius:4px; }
+.booking-bar.bar-dashed { border-bottom-style:dashed; }
+.booking-bar.bar-dotted { border-bottom-style:dotted; }
+.booking-bar.bar-overridden { background-image:repeating-linear-gradient(135deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 5px); }
+.booking-bar.bar-conflict-hatch { background-image:repeating-linear-gradient(135deg,transparent,transparent 3px,rgba(180,60,20,0.15) 3px,rgba(180,60,20,0.15) 5px); }
 
 /* TOOLTIP */
 .tooltip { position:fixed; background:var(--ink); color:var(--paper); padding:12px 15px; border-radius:7px; font-size:13px; pointer-events:none; z-index:1000; display:none; min-width:190px; box-shadow:0 8px 24px rgba(0,0,0,0.2); }
