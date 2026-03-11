@@ -1,17 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { DiscountCode } from './types.ts';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CODES_FILE = path.join(DATA_DIR, 'discount-codes.json');
-
-export interface DiscountCode {
-  id: string;
-  code: string;
-  discount: number;
-  note: string;
-  active: boolean;
-  createdAt: string;
-}
 
 export function readDiscountCodes(): DiscountCode[] {
   try {

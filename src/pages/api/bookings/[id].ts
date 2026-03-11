@@ -1,8 +1,7 @@
 import type { APIRoute } from 'astro';
 import { readManualBookings, writeManualBookings, readOverrides, writeOverrides } from '../../../lib/bookings.ts';
-
-const VALID_TYPES = ['direct', 'friend', 'blocked', 'owner', 'hold'];
-const VALID_ROOMS = ['nest', 'master', 'nomad', 'theater', 'full'];
+import { VALID_BOOKING_TYPES, VALID_ROOMS } from '../../../lib/constants.ts';
+import { json, jsonError } from '../../../lib/api-response.ts';
 
 export const PATCH: APIRoute = async ({ params, request }) => {
   const { id } = params;
@@ -16,10 +15,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   const notes = body.notes !== undefined ? String(body.notes) : undefined;
 
   if (amount !== undefined && (isNaN(amount) || amount < 0)) {
-    return new Response(JSON.stringify({ error: 'Invalid amount' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Invalid amount');
   }
 
   // Check if it's a manual booking first
@@ -33,20 +29,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (checkin !== undefined) manual.checkin = checkin;
     if (checkout !== undefined) manual.checkout = checkout;
     if (type !== undefined) {
-      if (!VALID_TYPES.includes(type)) {
-        return new Response(JSON.stringify({ error: `type must be one of: ${VALID_TYPES.join(', ')}` }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      if (!VALID_BOOKING_TYPES.includes(type)) {
+        return jsonError(`type must be one of: ${VALID_BOOKING_TYPES.join(', ')}`);
       }
       (manual as any).type = type;
     }
     if (room !== undefined) {
       if (!VALID_ROOMS.includes(room)) {
-        return new Response(JSON.stringify({ error: `room must be one of: ${VALID_ROOMS.join(', ')}` }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return jsonError(`room must be one of: ${VALID_ROOMS.join(', ')}`);
       }
       manual.room = room;
     }
@@ -56,10 +46,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const finalCheckin = checkin || manual.checkin;
     const finalCheckout = checkout || manual.checkout;
     if (finalCheckin >= finalCheckout) {
-      return new Response(JSON.stringify({ error: 'Check-in must be before check-out' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError('Check-in must be before check-out');
     }
 
     writeManualBookings(bookings);
@@ -74,9 +61,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   }
 
   console.log(`[bookings] updated: ${id} — amount=${amount}, guest=${guest}`);
-  return new Response(JSON.stringify({ updated: true, id, amount, guest }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return json({ updated: true, id, amount, guest });
 };
 
 export const DELETE: APIRoute = async ({ params }) => {
@@ -85,17 +70,12 @@ export const DELETE: APIRoute = async ({ params }) => {
   const index = bookings.findIndex((b) => b.id === id);
 
   if (index === -1) {
-    return new Response(JSON.stringify({ error: 'Booking not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Booking not found', 404);
   }
 
   const removed = bookings.splice(index, 1)[0];
   writeManualBookings(bookings);
 
   console.log(`[bookings] deleted: ${id}`);
-  return new Response(JSON.stringify({ deleted: true, booking: removed }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return json({ deleted: true, booking: removed });
 };

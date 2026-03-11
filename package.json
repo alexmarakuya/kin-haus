@@ -7,14 +7,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "start": "node dist/server/entry.mjs",
-    "refresh": "node scripts/refresh.js"
+    "start": "node dist/server/entry.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.4",
     "@astrojs/sitemap": "^3.7.0",
     "astro": "^5.18.0",
-    "node-ical": "^0.19.0"
+    "node-ical": "^0.19.0",
+    "openai": "^6.27.0"
   },
   "engines": {
     "node": ">=18.0.0"

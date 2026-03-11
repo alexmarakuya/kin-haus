@@ -1,10 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { createHmac } from 'crypto';
-
-function getSessionToken(): string {
-  const password = import.meta.env.DASHBOARD_PASSWORD || process.env.DASHBOARD_PASSWORD || '';
-  return createHmac('sha256', password).update(password).digest('hex');
-}
+import { getSessionToken } from './lib/auth.ts';
 
 export const onRequest = defineMiddleware(async ({ request, cookies, redirect }, next) => {
   const url = new URL(request.url);

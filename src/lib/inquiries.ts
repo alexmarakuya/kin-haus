@@ -1,24 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Inquiry } from './types.ts';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const INQUIRIES_FILE = path.join(DATA_DIR, 'inquiries.json');
-
-export interface Inquiry {
-  id: string;
-  room: string;
-  roomSlug: string;
-  checkin: string;
-  checkout: string;
-  nights: number;
-  guest: string;
-  message: string;
-  whatsapp: string;
-  amount: number;
-  currency: string;
-  status: 'new' | 'responded' | 'booked' | 'archived';
-  createdAt: string;
-}
 
 export function readInquiries(): Inquiry[] {
   try {

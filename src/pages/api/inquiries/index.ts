@@ -1,34 +1,17 @@
 import type { APIRoute } from 'astro';
 import { readInquiries, writeInquiries } from '../../../lib/inquiries.ts';
-
-const ROOM_SLUGS: Record<string, string> = {
-  'The Nest': 'nest',
-  'Master Suite': 'master',
-  'Nomad Room': 'nomad',
-  'Theater Room': 'theater',
-};
-
-const ROOM_NAMES: Record<string, string> = {
-  nest: 'The Nest',
-  master: 'Master Suite',
-  nomad: 'Nomad Room',
-  theater: 'Theater Room',
-};
+import { ROOM_SLUGS, ROOM_LABELS } from '../../../lib/constants.ts';
+import { json, jsonError } from '../../../lib/api-response.ts';
 
 export const GET: APIRoute = async () => {
   try {
     const inquiries = readInquiries();
     // Sort by createdAt descending (newest first)
     inquiries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return new Response(JSON.stringify({ inquiries }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ inquiries });
   } catch (err: any) {
     console.error('[api] /api/inquiries GET error:', err);
-    return new Response(JSON.stringify({ error: 'Failed to fetch inquiries', detail: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Failed to fetch inquiries', 500, err.message);
   }
 };
 
@@ -38,21 +21,15 @@ export const POST: APIRoute = async ({ request }) => {
     const { room, checkin, checkout, guest, message, whatsapp, amount, currency, promoCode, promoDiscount } = body;
 
     if (!room || !checkin || !checkout) {
-      return new Response(JSON.stringify({ error: 'room, checkin, and checkout are required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError('room, checkin, and checkout are required');
     }
 
     if (checkin >= checkout) {
-      return new Response(JSON.stringify({ error: 'checkout must be after checkin' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError('checkout must be after checkin');
     }
 
     const roomSlug = ROOM_SLUGS[room] || room.toLowerCase().replace(/\s+/g, '-');
-    const roomName = ROOM_NAMES[roomSlug] || room;
+    const roomName = ROOM_LABELS[roomSlug] || room;
     const nights = Math.round((new Date(checkout + 'T12:00:00').getTime() - new Date(checkin + 'T12:00:00').getTime()) / 86400000);
 
     const inquiry = {
@@ -78,15 +55,9 @@ export const POST: APIRoute = async ({ request }) => {
     writeInquiries(inquiries);
 
     console.log(`[inquiries] new: ${inquiry.id} -- ${inquiry.guest} (${inquiry.room}, ${inquiry.checkin} to ${inquiry.checkout})`);
-    return new Response(JSON.stringify(inquiry), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json(inquiry, 201);
   } catch (err: any) {
     console.error('[api] /api/inquiries POST error:', err);
-    return new Response(JSON.stringify({ error: 'Failed to create inquiry', detail: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Failed to create inquiry', 500, err.message);
   }
 };

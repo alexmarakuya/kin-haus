@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Booking } from './types.ts';
+import type { Booking, BookingOverrides } from './types.ts';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
@@ -21,10 +21,6 @@ export function writeManualBookings(bookings: Booking[]): void {
 }
 
 const OVERRIDES_FILE = path.join(DATA_DIR, 'overrides.json');
-
-export interface BookingOverrides {
-  [id: string]: { amount?: number; guest?: string; notes?: string };
-}
 
 export function readOverrides(): BookingOverrides {
   try {

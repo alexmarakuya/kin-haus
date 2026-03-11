@@ -11,8 +11,11 @@ export function detectConflicts(allBookings: Booking[]): Booking[] {
       const sameRoom = a.room === b.room || a.room === 'full' || b.room === 'full';
       if (!sameRoom) continue;
 
+      // Waitlist bookings never trigger conflicts -- they're backup interest for already-booked dates
+      if (a.type === 'waitlist' || b.type === 'waitlist') continue;
+
       // Blocked dates can be overridden by direct, friend, or owner bookings
-      const overridable = ['direct', 'friend', 'owner'];
+      const overridable = ['direct', 'friend', 'owner', 'hold'];
       if (
         (a.type === 'blocked' && overridable.includes(b.type)) ||
         (b.type === 'blocked' && overridable.includes(a.type))

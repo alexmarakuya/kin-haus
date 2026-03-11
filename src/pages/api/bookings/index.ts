@@ -4,6 +4,8 @@ import { readManualBookings, writeManualBookings, readOverrides } from '../../..
 import { detectConflicts } from '../../../lib/conflicts.ts';
 import { filterByDateRange } from '../../../lib/dates.ts';
 import { getLastSyncTimes } from '../../../lib/cache.ts';
+import { VALID_BOOKING_TYPES, VALID_ROOMS } from '../../../lib/constants.ts';
+import { json, jsonError } from '../../../lib/api-response.ts';
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -29,25 +31,19 @@ export const GET: APIRoute = async ({ request }) => {
     const filtered = filterByDateRange(allBookings, from, to);
     const withConflicts = detectConflicts(filtered);
 
-    return new Response(
-      JSON.stringify({
-        bookings: withConflicts,
-        meta: {
-          total: withConflicts.length,
-          ical: icalBookings.length,
-          manual: manualBookings.length,
-          conflicts: withConflicts.filter((b) => b.conflict).length,
-          lastSync: getLastSyncTimes(),
-        },
-      }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+    return json({
+      bookings: withConflicts,
+      meta: {
+        total: withConflicts.length,
+        ical: icalBookings.length,
+        manual: manualBookings.length,
+        conflicts: withConflicts.filter((b) => b.conflict).length,
+        lastSync: getLastSyncTimes(),
+      },
+    });
   } catch (err: any) {
     console.error('[api] /api/bookings error:', err);
-    return new Response(JSON.stringify({ error: 'Failed to fetch bookings', detail: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Failed to fetch bookings', 500, err.message);
   }
 };
 
@@ -56,24 +52,15 @@ export const POST: APIRoute = async ({ request }) => {
   const { guest, type, room, checkin, checkout, amount, notes } = body;
 
   if (!checkin || !checkout || checkin >= checkout) {
-    return new Response(JSON.stringify({ error: 'Invalid check-in / check-out dates' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Invalid check-in / check-out dates');
   }
 
-  if (!['direct', 'friend', 'blocked', 'owner', 'hold'].includes(type)) {
-    return new Response(JSON.stringify({ error: 'type must be direct, friend, blocked, owner, or hold' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (!VALID_BOOKING_TYPES.includes(type)) {
+    return jsonError(`type must be one of: ${VALID_BOOKING_TYPES.join(', ')}`);
   }
 
-  if (!['nest', 'master', 'nomad', 'theater', 'full'].includes(room)) {
-    return new Response(JSON.stringify({ error: 'Invalid room' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (!VALID_ROOMS.includes(room)) {
+    return jsonError(`room must be one of: ${VALID_ROOMS.join(', ')}`);
   }
 
   const bookings = readManualBookings();
@@ -92,8 +79,5 @@ export const POST: APIRoute = async ({ request }) => {
   writeManualBookings(bookings);
 
   console.log(`[bookings] added: ${newBooking.id} — ${newBooking.guest} (${room}, ${checkin}–${checkout})`);
-  return new Response(JSON.stringify(newBooking), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return json(newBooking, 201);
 };

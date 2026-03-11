@@ -1,20 +1,8 @@
 import { fetchIcalBookings } from './ical.ts';
 import { readManualBookings } from './bookings.ts';
+import { formatDate } from './dates.ts';
 import type { RoomKey } from './config.ts';
-
-export interface AvailableWindow {
-  start: string;
-  end: string;
-  nights: number;
-}
-
-export interface RoomAvailability {
-  room: RoomKey;
-  isAvailableNow: boolean;
-  currentBookingEnd: string | null;
-  nextAvailable: AvailableWindow | null;
-  allWindows: AvailableWindow[];
-}
+import type { AvailableWindow, RoomAvailability } from './types.ts';
 
 /**
  * Compute the next available window for a room.
@@ -22,13 +10,13 @@ export interface RoomAvailability {
  */
 export async function getNextAvailable(roomKey: RoomKey): Promise<RoomAvailability> {
   const icalBookings = await fetchIcalBookings(roomKey);
-  const manualBookings = readManualBookings().filter((b) => b.room === roomKey || b.room === 'full');
+  const manualBookings = readManualBookings().filter((b) => (b.room === roomKey || b.room === 'full') && b.type !== 'waitlist');
 
   const allBookings = [...icalBookings, ...manualBookings];
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = toStr(today);
+  const todayStr = formatDate(today);
 
   // Build a set of booked dates (each date = night starting that day)
   const bookedDates = new Set<string>();
@@ -37,7 +25,7 @@ export async function getNextAvailable(roomKey: RoomKey): Promise<RoomAvailabili
     const co = new Date(b.checkout + 'T00:00:00');
     const d = new Date(ci);
     while (d < co) {
-      bookedDates.add(toStr(d));
+      bookedDates.add(formatDate(d));
       d.setDate(d.getDate() + 1);
     }
   }
@@ -49,31 +37,32 @@ export async function getNextAvailable(roomKey: RoomKey): Promise<RoomAvailabili
   let currentBookingEnd: string | null = null;
   if (!isAvailableNow) {
     const d = new Date(today);
-    while (bookedDates.has(toStr(d))) {
+    while (bookedDates.has(formatDate(d))) {
       d.setDate(d.getDate() + 1);
     }
-    currentBookingEnd = toStr(d);
+    currentBookingEnd = formatDate(d);
   }
 
   // Find all available windows (at least 2 nights) in the look-ahead period
   const lookAhead = 90;
   const allWindows: AvailableWindow[] = [];
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + lookAhead);
 
   const d = new Date(today);
-  for (let i = 0; i < lookAhead; i++) {
-    const dStr = toStr(d);
-    if (!bookedDates.has(dStr)) {
+  while (d < endDate) {
+    if (!bookedDates.has(formatDate(d))) {
       const start = new Date(d);
-      while (!bookedDates.has(toStr(d)) && i < lookAhead) {
+      while (d < endDate && !bookedDates.has(formatDate(d))) {
         d.setDate(d.getDate() + 1);
-        i++;
       }
       const nights = Math.round((d.getTime() - start.getTime()) / 86400000);
       if (nights >= 2) {
-        allWindows.push({ start: toStr(start), end: toStr(d), nights });
+        allWindows.push({ start: formatDate(start), end: formatDate(d), nights });
       }
+    } else {
+      d.setDate(d.getDate() + 1);
     }
-    d.setDate(d.getDate() + 1);
   }
 
   const nextAvailable = allWindows.length > 0 ? allWindows[0] : null;
@@ -87,11 +76,4 @@ export async function getAllAvailability(): Promise<Record<string, RoomAvailabil
   const map: Record<string, RoomAvailability> = {};
   for (const r of results) map[r.room] = r;
   return map;
-}
-
-function toStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }

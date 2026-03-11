@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createHmac } from 'crypto';
+import { getSessionToken } from '../../lib/auth.ts';
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const form = await request.formData();
@@ -10,7 +10,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     return redirect('/login?error=1', 302);
   }
 
-  const token = createHmac('sha256', expected).update(expected).digest('hex');
+  const token = getSessionToken();
 
   cookies.set('kin_session', token, {
     httpOnly: true,

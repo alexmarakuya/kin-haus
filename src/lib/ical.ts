@@ -4,15 +4,7 @@ import { ICAL_SOURCES, ROOMS } from './config.ts';
 import type { RoomKey } from './config.ts';
 import type { Booking } from './types.ts';
 import { isCacheValid, getCachedBookings, setCachedBookings } from './cache.ts';
-
-function toDateStr(d: unknown): string | null {
-  if (!d) return null;
-  const date = new Date(d as string | number | Date);
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { toDateStr } from './dates.ts';
 
 export async function fetchIcalBookings(roomKey: RoomKey, forceRefresh = false): Promise<Booking[]> {
   if (!forceRefresh && isCacheValid(roomKey)) {

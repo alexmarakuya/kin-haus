@@ -1,30 +1,22 @@
 import type { APIRoute } from 'astro';
 import { fetchIcalBookings } from '../../../lib/ical.ts';
 import { readManualBookings } from '../../../lib/bookings.ts';
+import { formatDate } from '../../../lib/dates.ts';
 import { ROOMS } from '../../../lib/config.ts';
 import type { RoomKey } from '../../../lib/config.ts';
-
-function toStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { json, jsonError } from '../../../lib/api-response.ts';
 
 export const GET: APIRoute = async ({ params }) => {
   const room = params.room as string;
 
   if (!ROOMS.includes(room as RoomKey)) {
-    return new Response(JSON.stringify({ error: 'Invalid room. Use: nest, master, or nomad' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Invalid room. Use: nest, master, or nomad');
   }
 
   try {
     const roomKey = room as RoomKey;
     const icalBookings = await fetchIcalBookings(roomKey);
-    const manualBookings = readManualBookings().filter((b) => b.room === roomKey || b.room === 'full');
+    const manualBookings = readManualBookings().filter((b) => (b.room === roomKey || b.room === 'full') && b.type !== 'waitlist');
     const allBookings = [...icalBookings, ...manualBookings];
 
     const today = new Date();
@@ -38,7 +30,7 @@ export const GET: APIRoute = async ({ params }) => {
       const co = new Date(b.checkout + 'T00:00:00');
       const d = new Date(ci);
       while (d < co) {
-        const dStr = toStr(d);
+        const dStr = formatDate(d);
         // Only include dates within our range
         if (d >= today && d <= maxDate) {
           bookedDates.add(dStr);
@@ -47,24 +39,17 @@ export const GET: APIRoute = async ({ params }) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
+    return json(
+      {
         room: roomKey,
         bookedDates: Array.from(bookedDates).sort(),
-        range: { min: toStr(today), max: toStr(maxDate) },
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300', // Cache 5 minutes
-        },
-      }
+        range: { min: formatDate(today), max: formatDate(maxDate) },
+      },
+      200,
+      { 'Cache-Control': 'public, max-age=300' }
     );
   } catch (err: any) {
     console.error(`[api] /api/availability/${room} error:`, err.message);
-    return new Response(JSON.stringify({ error: 'Failed to fetch availability' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('Failed to fetch availability', 500);
   }
 };
