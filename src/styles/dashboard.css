@@ -115,13 +115,12 @@ body.present-mode .present-banner { display:block; }
 .cal-cell.drag-selected { background:var(--direct-light); border-color:var(--accent); }
 
 /* Booking bar: inner element for colored booking indicator */
-.booking-bar { position:absolute; top:0; bottom:0; z-index:1; }
+.booking-bar { position:absolute; top:0; bottom:0; height:100%; z-index:1; box-sizing:border-box; }
 .booking-bar.bar-mid { left:0; right:0; }
-.booking-bar.bar-mid-right { left:calc(50% + 1px); right:0; }
-.booking-bar.bar-first { left:calc(50% + 1px); right:0; border-radius:4px 0 0 4px; }
-.booking-bar.bar-last { left:0; right:calc(50% + 1px); border-radius:0 4px 4px 0; }
-.booking-bar.bar-last-stay { left:0; right:calc(50% + 1px); border-radius:0 4px 4px 0; }
-.booking-bar.bar-only { left:calc(50% + 1px); right:0; border-radius:4px; }
+.booking-bar.bar-mid-right { left:calc(50% + 2px); right:0; }
+.booking-bar.bar-first { left:calc(50% + 2px); right:0; border-radius:4px 0 0 4px; }
+.booking-bar.bar-last { left:0; right:calc(50% + 2px); border-radius:0 4px 4px 0; }
+.booking-bar.bar-only { left:calc(50% + 2px); right:0; border-radius:4px; }
 .booking-bar.bar-dashed { border-bottom-style:dashed; }
 .booking-bar.bar-dotted { border-bottom-style:dotted; }
 .booking-bar.bar-overridden { background-image:repeating-linear-gradient(135deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 5px); }

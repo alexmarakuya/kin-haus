@@ -744,16 +744,12 @@ import '../styles/dashboard.css';
 
               // Determine bar class
               let barClass = 'bar-mid';
-              const tomorrow = nextDay(dStr);
-              const isLastStay = !isCheckin && stayBk.checkout === tomorrow;
 
               if (isCheckin) {
                 barClass = isSingleNight ? 'bar-only' : 'bar-first';
               } else if (deptBk) {
                 // Departing bar occupies left half, so staying mid-bar takes right half only
                 barClass = 'bar-mid-right';
-              } else if (isLastStay) {
-                barClass = 'bar-last-stay';
               }
 
               // Extra classes for hatching
