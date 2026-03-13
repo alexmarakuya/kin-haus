@@ -1,13 +1,22 @@
+# Dependencies
 node_modules/
-.env
-.DS_Store
-*.log
+
+# Build output
 dist/
 .astro/
-.claude/
+
+# Secrets & local config
+.env
 .mcp.json
 
-# Runtime data (created/modified by the app at runtime, never overwritten on deploy)
+# Claude Code local settings
+.claude/
+
+# OS
+.DS_Store
+*.log
+
+# Runtime data (created/modified by the app, backed up on deploy)
 data/bookings.json
 data/overrides.json
 data/inquiries.json
