@@ -132,7 +132,7 @@ import '../styles/dashboard.css';
         </div>
 
         <!-- Inventory Grid -->
-        <div style="padding:0 28px 12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="padding:20px 28px 12px; display:flex; justify-content:space-between; align-items:center;">
           <div class="list-section-title" style="margin:0; border:none; padding:0;">Inventory</div>
         </div>
         <div class="monitor-grid" id="monitor-grid"></div>
@@ -846,6 +846,23 @@ import '../styles/dashboard.css';
               updateDragHighlight();
             });
           }
+
+          // Waitlist strip: thin bar at bottom, independent of main booking bars
+          const wlBks = waitlistOnDay(room, dStr);
+          if (wlBks.length > 0) {
+            const wb = wlBks[0];
+            const wbar = document.createElement('div');
+            wbar.className = 'booking-bar-waitlist';
+            if (wb.checkin === dStr) wbar.classList.add('wbar-first');
+            const nextDay = new Date(dStr); nextDay.setDate(nextDay.getDate() + 1);
+            const nextStr = nextDay.toISOString().slice(0,10);
+            if (wb.checkout === nextStr) wbar.classList.add('wbar-last');
+            wbar.addEventListener('mouseenter', e => showTooltip(e, wb));
+            wbar.addEventListener('mousemove', moveTooltip);
+            wbar.addEventListener('mouseleave', hideTooltip);
+            wbar.addEventListener('click', () => { hideTooltip(); openBookingDetail(wb.id); });
+            cell.appendChild(wbar);
+          }
         } else {
           cell.classList.add('inactive');
         }
@@ -858,6 +875,7 @@ import '../styles/dashboard.css';
   function bookingOnDay(room, dStr) {
     return filteredBookings().find(b => {
       if (b.room !== room && b.room !== 'full') return false;
+      if (b.type === 'waitlist') return false;
       return dStr >= b.checkin && dStr < b.checkout;
     });
   }
@@ -865,6 +883,15 @@ import '../styles/dashboard.css';
   function bookingsOnDay(room, dStr) {
     return filteredBookings().filter(b => {
       if (b.room !== room && b.room !== 'full') return false;
+      if (b.type === 'waitlist') return false;
+      return dStr >= b.checkin && dStr < b.checkout;
+    });
+  }
+
+  function waitlistOnDay(room, dStr) {
+    return filteredBookings().filter(b => {
+      if (b.room !== room && b.room !== 'full') return false;
+      if (b.type !== 'waitlist') return false;
       return dStr >= b.checkin && dStr < b.checkout;
     });
   }
@@ -978,8 +1005,9 @@ import '../styles/dashboard.css';
         const bk = bookingOnDay(room, dStr);
         if (bk) {
           if (bk.type === 'waitlist') { waitlistNights++; continue; }
+          if (bk.type === 'blocked') { friendNights++; continue; }
           bookedNights++;
-          if (bk.type === 'friend' || bk.type === 'blocked' || bk.type === 'owner') friendNights++;
+          if (bk.type === 'friend' || bk.type === 'owner') friendNights++;
           if (bk.type === 'hold') holdNights++;
         }
       }
