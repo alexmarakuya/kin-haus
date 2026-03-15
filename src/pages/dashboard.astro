@@ -71,7 +71,6 @@ import '../styles/dashboard.css';
         <div class="tab active" data-tab="calendar">Calendar</div>
         <div class="tab" data-tab="list">Bookings</div>
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
-        <div class="tab" data-tab="codes">Promo Codes</div>
         <div class="tab" data-tab="monitors">Monitors</div>
         <div class="tab-spacer"></div>
       </div>
@@ -131,26 +130,44 @@ import '../styles/dashboard.css';
           <div class="monitor-stat"><span class="monitor-stat-value" id="ms-utilisation">0%</span><span class="monitor-stat-label">Utilisation</span></div>
         </div>
 
-        <!-- Inventory Grid -->
-        <div style="padding:20px 28px 12px; display:flex; justify-content:space-between; align-items:center;">
-          <div class="list-section-title" style="margin:0; border:none; padding:0;">Inventory</div>
-        </div>
-        <div class="monitor-grid" id="monitor-grid"></div>
+        <!-- Pipeline -->
+        <div class="monitor-pipeline" id="monitor-pipeline">
+          <!-- Booked -->
+          <div class="pipeline-section" id="pipeline-booked">
+            <div class="pipeline-header">
+              <span class="pipeline-title">Booked</span>
+              <span class="pipeline-count" id="count-booked">0</span>
+            </div>
+            <div class="pipeline-cards" id="cards-booked"></div>
+          </div>
 
-        <!-- Active Rentals Table -->
-        <div style="padding:20px 28px 12px;">
-          <div class="list-section-title" style="margin:0; border:none; padding:0;">Active Rentals</div>
-        </div>
-        <div class="monitor-table-wrap" id="active-rentals-wrap">
-          <div id="active-rentals-content" style="padding:0 28px;"></div>
-        </div>
+          <!-- Delivered -->
+          <div class="pipeline-section" id="pipeline-delivered">
+            <div class="pipeline-header">
+              <span class="pipeline-title">Delivered</span>
+              <span class="pipeline-count" id="count-delivered">0</span>
+            </div>
+            <div class="pipeline-cards" id="cards-delivered"></div>
+          </div>
 
-        <!-- Rental History -->
-        <div style="padding:20px 28px 12px; display:flex; justify-content:space-between; align-items:center;">
-          <div class="list-section-title" style="margin:0; border:none; padding:0;">Rental History</div>
-          <button class="btn btn-sm" id="btn-export-csv" style="font-size:11px;">Export CSV</button>
+          <!-- Available Monitors -->
+          <div class="pipeline-section" id="pipeline-available">
+            <div class="pipeline-header">
+              <span class="pipeline-title">Available Monitors</span>
+              <button class="btn btn-primary btn-sm" id="btn-new-rental">+ New Rental</button>
+            </div>
+            <div class="pipeline-cards" id="cards-available"></div>
+          </div>
+
+          <!-- History (collapsible) -->
+          <div class="pipeline-section">
+            <div class="pipeline-header pipeline-toggle" id="history-toggle">
+              <span class="pipeline-title">History <span class="pipeline-chevron" id="history-chevron">&#x25B8;</span></span>
+              <button class="btn btn-sm" id="btn-export-csv" style="font-size:11px;">Export CSV</button>
+            </div>
+            <div id="history-content" style="display:none"></div>
+          </div>
         </div>
-        <div id="history-content" style="padding:0 28px 28px;"></div>
       </div>
 
       <div class="stats-footer" id="stats-footer"></div>
@@ -359,11 +376,15 @@ import '../styles/dashboard.css';
           <input id="mr-deposit" type="checkbox">
           <label for="mr-deposit" style="margin:0; font-size:13px;">Deposit received</label>
         </div>
+        <div class="fg" style="display:flex; align-items:center; gap:8px;">
+          <input id="mr-deliver-now" type="checkbox">
+          <label for="mr-deliver-now" style="margin:0; font-size:13px;">Hand over now (start billing today)</label>
+        </div>
         <div class="fg"><label>Notes (optional)</label><input id="mr-notes" type="text" placeholder="Optional note"></div>
       </div>
       <div class="modal-footer">
         <button class="btn" id="mr-cancel">Cancel</button>
-        <button class="btn btn-primary" id="mr-save">Start Rental</button>
+        <button class="btn btn-primary" id="mr-save">Create Rental</button>
       </div>
     </div>
   </div>
@@ -396,7 +417,8 @@ import '../styles/dashboard.css';
   let allBookings = [];
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
-  let currentTab = 'calendar';
+  let currentTab = localStorage.getItem('kin-active-tab') || 'calendar';
+  if (currentTab === 'codes') currentTab = 'calendar'; // tab removed
   let activeFilters = { airbnb: true, direct: true, friend: true, blocked: false, owner: false, hold: false, waitlist: false };
   let presentMode = false;
 
@@ -520,6 +542,12 @@ import '../styles/dashboard.css';
       setTab(this.dataset.tab, this);
     });
   });
+
+  // Restore saved tab on load
+  if (currentTab !== 'calendar') {
+    const savedTabEl = document.querySelector(`.tab[data-tab="${currentTab}"]`);
+    if (savedTabEl) setTab(currentTab, savedTabEl);
+  }
 
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', function() {
@@ -1429,16 +1457,15 @@ import '../styles/dashboard.css';
 
   function setTab(tab, el) {
     currentTab = tab;
+    localStorage.setItem('kin-active-tab', tab);
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
     document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'flex' : 'none';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
-    document.getElementById('tab-codes').style.display = tab === 'codes' ? 'block' : 'none';
     document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
     if (tab === 'inquiries') fetchInquiries();
-    if (tab === 'codes') fetchDiscountCodes();
     if (tab === 'monitors') loadMonitors();
     render();
   }
@@ -1826,12 +1853,20 @@ import '../styles/dashboard.css';
 
   // ─── MONITORS ──────────────────────────────────────────────────────────────────
   let allMonitors = [];
+  let allRentals = [];
   let monitorRevenue = {};
+  let historyOpen = false;
 
   function formatDateDMY(dateStr) {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
     return `${d}/${m}/${y}`;
+  }
+
+  function fmtDateShort(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
   }
 
   async function loadMonitors() {
@@ -1845,11 +1880,10 @@ import '../styles/dashboard.css';
       const revData = await revRes.json();
       const histData = await histRes.json();
       allMonitors = monData.monitors || [];
+      allRentals = monData.rentals || [];
       monitorRevenue = revData;
       renderMonitorSummary(revData);
-      renderMonitorGrid(allMonitors);
-      renderActiveRentals(allMonitors.filter(m => m.currentRenter));
-      renderMonitorHistory(histData.rentals || []);
+      renderPipeline(allMonitors, allRentals, histData.rentals || []);
     } catch (err) {
       console.error('[monitors] load error:', err);
     }
@@ -1862,93 +1896,156 @@ import '../styles/dashboard.css';
     document.getElementById('ms-utilisation').textContent = `${rev.utilisationPercent || 0}%`;
   }
 
-  function monitorStatusBadge(m) {
-    if (m.overdue) return '<span class="monitor-badge monitor-badge-overdue">OVERDUE</span>';
-    if (m.status === 'rented') return '<span class="monitor-badge monitor-badge-rented">RENTED</span>';
-    if (m.status === 'maintenance') return '<span class="monitor-badge monitor-badge-maintenance">MAINTENANCE</span>';
-    return '<span class="monitor-badge monitor-badge-available">AVAILABLE</span>';
+  function monitorName(monitorId) {
+    return allMonitors.find(m => m.id === monitorId)?.name || monitorId;
   }
 
-  function renderMonitorGrid(monitors) {
-    const grid = document.getElementById('monitor-grid');
-    if (!monitors.length) { grid.innerHTML = '<div style="padding:0 28px; color:#8b8b85; font-size:13px;">No monitors configured.</div>'; return; }
-    grid.innerHTML = monitors.map(m => {
-      const actions = [];
-      if (m.status === 'available') actions.push(`<button class="btn btn-primary btn-sm" onclick="openRentModal('${m.id}')">Rent</button>`);
-      if (m.status === 'available') actions.push(`<button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">Maintenance</button>`);
-      if (m.status === 'rented') actions.push(`<button class="btn btn-sm" onclick="returnMonitor('${m.rentalId}')">Return</button>`);
-      if (m.status === 'maintenance') actions.push(`<button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">Make Available</button>`);
+  function renderPipeline(monitors, rentals, history) {
+    const booked = rentals.filter(r => r.status === 'booked');
+    const delivered = rentals.filter(r => r.status === 'delivered');
+    const available = monitors.filter(m => m.status === 'available');
+    const maintenance = monitors.filter(m => m.status === 'maintenance');
 
-      let details = '';
-      if (m.currentRenter) {
-        const daysInfo = m.daysRemaining !== null && m.daysRemaining !== undefined
-          ? (m.daysRemaining < 0 ? `<span style="color:var(--airbnb)">${Math.abs(m.daysRemaining)}d overdue</span>` : `${m.daysRemaining}d remaining`)
-          : '';
-        details = `
-          <div class="monitor-card-details">
-            <div><span class="monitor-detail-label">Renter:</span> ${m.currentRenter}</div>
-            <div><span class="monitor-detail-label">Since:</span> ${formatDateDMY(m.rentalStartDate)} ${daysInfo ? ' · ' + daysInfo : ''}</div>
-            <div><span class="monitor-detail-label">Revenue so far:</span> &#x0E3F;${(m.revenueAccrued || 0).toLocaleString()}</div>
-            <div><span class="monitor-detail-label">Deposit:</span> ${m.depositHeld ? 'Held' : 'Not held'}</div>
-          </div>`;
-      }
+    // Counts
+    document.getElementById('count-booked').textContent = booked.length;
+    document.getElementById('count-delivered').textContent = delivered.length;
 
-      return `
-        <div class="monitor-card ${m.overdue ? 'monitor-card-overdue' : ''}">
-          <div class="monitor-card-header">
+    // Booked cards
+    const bookedContainer = document.getElementById('cards-booked');
+    if (!booked.length) {
+      bookedContainer.innerHTML = '<div class="pipeline-empty">No booked rentals</div>';
+    } else {
+      bookedContainer.innerHTML = booked.map(r => {
+        const mon = monitors.find(m => m.id === r.monitorId);
+        return `<div class="rental-card">
+          <div class="rental-card-top">
             <div>
-              <div class="monitor-card-name">${m.name}</div>
-              <div class="monitor-card-id">${m.id} · &#x0E3F;${m.dailyRate}/day</div>
+              <div class="rental-card-renter">${r.renter}</div>
+              <div class="rental-card-monitor">${mon?.name || r.monitorId} · &#x0E3F;${r.dailyRate}/day</div>
+              <div class="rental-card-dates">Booked for ${fmtDateShort(r.startDate)}${r.endDate ? ' → ' + fmtDateShort(r.endDate) : ''}</div>
+              <div class="rental-card-meta">Contact: ${r.contact}${r.depositHeld ? ' · Deposit: Held' : ''}</div>
             </div>
-            ${monitorStatusBadge(m)}
+            <span class="monitor-badge monitor-badge-booked">BOOKED</span>
           </div>
-          ${details}
-          <div class="monitor-card-actions">${actions.join('')}</div>
+          <div class="rental-card-actions">
+            <button class="btn btn-primary btn-sm" onclick="advanceRental('${r.id}','deliver')">Mark Delivered</button>
+            <button class="btn btn-sm" onclick="advanceRental('${r.id}','cancel')">Cancel</button>
+          </div>
         </div>`;
-    }).join('');
-  }
+      }).join('');
+    }
 
-  function renderActiveRentals(active) {
-    const container = document.getElementById('active-rentals-content');
-    if (!active.length) { container.innerHTML = '<div style="color:#8b8b85; font-size:13px; padding:4px 0 12px;">No active rentals.</div>'; return; }
-    container.innerHTML = `<table class="monitor-table"><thead><tr>
-      <th>Monitor</th><th>Renter</th><th>Contact</th><th>Days</th><th>Remaining</th><th>Revenue</th><th>Deposit</th><th></th>
-    </tr></thead><tbody>${active.map(m => {
-      const overdue = m.daysRemaining !== null && m.daysRemaining < 0;
-      return `<tr class="${overdue ? 'overdue-row' : ''}">
-        <td>${m.name}</td>
-        <td>${m.currentRenter}</td>
-        <td style="font-size:11px">${m.currentRenterContact || ''}</td>
-        <td>${m.daysRented || 0}d</td>
-        <td>${m.daysRemaining !== null ? (m.daysRemaining < 0 ? '<span style="color:var(--airbnb)">' + Math.abs(m.daysRemaining) + 'd overdue</span>' : m.daysRemaining + 'd') : '-'}</td>
-        <td>&#x0E3F;${(m.revenueAccrued || 0).toLocaleString()}</td>
-        <td>${m.depositHeld ? 'Held' : 'No'}</td>
-        <td><button class="btn btn-sm" onclick="returnMonitor('${m.rentalId}')" style="font-size:11px">Return</button></td>
-      </tr>`;
-    }).join('')}</tbody></table>`;
+    // Delivered cards
+    const deliveredContainer = document.getElementById('cards-delivered');
+    if (!delivered.length) {
+      deliveredContainer.innerHTML = '<div class="pipeline-empty">No delivered monitors</div>';
+    } else {
+      deliveredContainer.innerHTML = delivered.map(r => {
+        const mon = monitors.find(m => m.id === r.monitorId);
+        const enriched = mon ? monitors.find(m2 => m2.rentalId === r.id) || mon : null;
+        const daysRented = enriched?.daysRented || 0;
+        const daysRemaining = enriched?.daysRemaining;
+        const revenue = enriched?.revenueAccrued || 0;
+        const overdue = enriched?.overdue || false;
+        const daysInfo = daysRemaining !== null && daysRemaining !== undefined
+          ? (daysRemaining < 0 ? `<span style="color:var(--airbnb)">${Math.abs(daysRemaining)}d overdue</span>` : `${daysRemaining}d remaining`)
+          : '';
+        return `<div class="rental-card ${overdue ? 'rental-card-overdue' : ''}">
+          <div class="rental-card-top">
+            <div>
+              <div class="rental-card-renter">${r.renter}</div>
+              <div class="rental-card-monitor">${mon?.name || r.monitorId} · &#x0E3F;${r.dailyRate}/day</div>
+              <div class="rental-card-dates">${fmtDateShort(r.deliveryDate || r.startDate)} → ${r.endDate ? fmtDateShort(r.endDate) : 'open'} · ${daysRented}d so far${daysInfo ? ' · ' + daysInfo : ''}</div>
+              <div class="rental-card-meta">Revenue: &#x0E3F;${revenue.toLocaleString()}${r.depositHeld ? ' · Deposit: Held' : ''}</div>
+            </div>
+            <span class="monitor-badge ${overdue ? 'monitor-badge-overdue' : 'monitor-badge-delivered'}">${overdue ? 'OVERDUE' : 'DELIVERED'}</span>
+          </div>
+          <div class="rental-card-actions">
+            <button class="btn btn-primary btn-sm" onclick="advanceRental('${r.id}','return')">Mark Returned</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Available monitors
+    const availContainer = document.getElementById('cards-available');
+    const allAvail = [...available, ...maintenance];
+    if (!allAvail.length) {
+      availContainer.innerHTML = '<div class="pipeline-empty">All monitors are rented out</div>';
+    } else {
+      availContainer.innerHTML = allAvail.map(m => {
+        const isMain = m.status === 'maintenance';
+        return `<div class="monitor-avail-card">
+          <div class="monitor-avail-info">
+            <div>
+              <div class="monitor-avail-name">${m.name}</div>
+              <div class="monitor-avail-rate">${m.id} · &#x0E3F;${m.dailyRate}/day${isMain ? ' · Maintenance' : ''}</div>
+            </div>
+          </div>
+          <div class="monitor-avail-actions">
+            ${m.status === 'available' ? `<button class="btn btn-primary btn-sm" onclick="openRentModal('${m.id}')">New Rental</button>` : ''}
+            <button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">${isMain ? 'Make Available' : 'Maintenance'}</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // History
+    renderMonitorHistory(history);
   }
 
   function renderMonitorHistory(rentals) {
     const container = document.getElementById('history-content');
-    if (!rentals.length) { container.innerHTML = '<div style="color:#8b8b85; font-size:13px;">No completed rentals yet.</div>'; return; }
-    const monitorName = (id) => allMonitors.find(m => m.id === id)?.name || id;
-    container.innerHTML = `<table class="monitor-table"><thead><tr>
-      <th>Monitor</th><th>Renter</th><th>Dates</th><th>Days</th><th>Revenue</th><th>Notes</th>
+    if (!rentals.length) {
+      container.innerHTML = '<div style="color:#8b8b85; font-size:13px; padding:12px 0;">No completed rentals yet.</div>';
+      return;
+    }
+    container.innerHTML = `<table class="monitor-table" style="margin-top:12px"><thead><tr>
+      <th>Monitor</th><th>Renter</th><th>Dates</th><th>Days</th><th>Revenue</th><th>Status</th><th>Notes</th>
     </tr></thead><tbody>${rentals.map(r => {
       const days = r.revenue > 0 ? Math.round(r.revenue / r.dailyRate) : 0;
-      return `<tr>
+      const isCancelled = r.status === 'cancelled';
+      return `<tr style="${isCancelled ? 'opacity:0.5' : ''}">
         <td>${monitorName(r.monitorId)}</td>
         <td>${r.renter}</td>
         <td style="font-size:11px">${formatDateDMY(r.startDate)} - ${formatDateDMY(r.completedAt?.slice(0,10) || '')}</td>
         <td>${days}d</td>
-        <td>&#x0E3F;${r.revenue.toLocaleString()}</td>
+        <td>${isCancelled ? '-' : '&#x0E3F;' + r.revenue.toLocaleString()}</td>
+        <td><span class="monitor-badge ${isCancelled ? 'monitor-badge-cancelled' : 'monitor-badge-available'}">${r.status}</span></td>
         <td style="font-size:11px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.notes || ''}</td>
       </tr>`;
     }).join('')}</tbody></table>`;
   }
 
+  // History toggle
+  document.getElementById('history-toggle').addEventListener('click', (e) => {
+    if (e.target.closest('.btn')) return; // don't toggle when clicking export
+    historyOpen = !historyOpen;
+    document.getElementById('history-content').style.display = historyOpen ? 'block' : 'none';
+    document.getElementById('history-chevron').classList.toggle('open', historyOpen);
+  });
+
   // ─── MONITOR ACTIONS ───────────────────────────────────────────────────────
   let rentStartPicker, rentEndPicker;
+
+  window.advanceRental = async function(rentalId, action) {
+    const labels = { deliver: 'Mark as delivered?', return: 'Mark as returned? Revenue will be calculated.', cancel: 'Cancel this rental?' };
+    if (!confirm(labels[action] || `Confirm ${action}?`)) return;
+    try {
+      const res = await fetch(`/api/monitors/advance/${rentalId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) { const err = await res.json(); alert(err.error || `Failed to ${action}`); return; }
+      const data = await res.json();
+      if (action === 'return') alert(`Monitor returned. Revenue: ฿${data.revenue.toLocaleString()}`);
+      loadMonitors();
+    } catch (err) {
+      console.error(`[monitors] ${action} error:`, err);
+      alert(`Failed to ${action} rental`);
+    }
+  };
 
   function openRentModal(monitorId) {
     const modal = document.getElementById('rent-modal');
@@ -1957,21 +2054,19 @@ import '../styles/dashboard.css';
       `<option value="${m.id}" ${m.id === monitorId ? 'selected' : ''}>${m.name} (${m.id})</option>`
     ).join('');
 
-    // Pre-fill rate from selected monitor
     const mon = allMonitors.find(m => m.id === monitorId);
     document.getElementById('mr-rate').value = mon ? mon.dailyRate : '';
     document.getElementById('mr-renter').value = '';
     document.getElementById('mr-contact').value = '';
     document.getElementById('mr-notes').value = '';
     document.getElementById('mr-deposit').checked = false;
+    document.getElementById('mr-deliver-now').checked = false;
 
-    // Init flatpickr
     if (rentStartPicker) rentStartPicker.destroy();
     if (rentEndPicker) rentEndPicker.destroy();
     rentStartPicker = flatpickr('#mr-start', { dateFormat: 'Y-m-d', defaultDate: new Date() });
     rentEndPicker = flatpickr('#mr-end', { dateFormat: 'Y-m-d' });
 
-    // Update rate when monitor selection changes
     select.onchange = () => {
       const sel = allMonitors.find(m => m.id === select.value);
       if (sel) document.getElementById('mr-rate').value = sel.dailyRate;
@@ -1992,6 +2087,7 @@ import '../styles/dashboard.css';
     const endDate = document.getElementById('mr-end').value;
     const dailyRate = parseInt(document.getElementById('mr-rate').value);
     const depositHeld = document.getElementById('mr-deposit').checked;
+    const deliverNow = document.getElementById('mr-deliver-now').checked;
     const notes = document.getElementById('mr-notes').value.trim();
 
     if (!renter || !contact || !startDate) { alert('Renter, contact, and start date are required.'); return; }
@@ -2001,32 +2097,25 @@ import '../styles/dashboard.css';
       const res = await fetch('/api/monitors/rent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monitorId, renter, contact, startDate, endDate, dailyRate, depositHeld, notes }),
+        body: JSON.stringify({ monitorId, renter, contact, startDate, endDate, dailyRate, depositHeld, deliverNow, notes }),
       });
-      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to rent monitor'); return; }
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to create rental'); return; }
       document.getElementById('rent-modal').classList.remove('open');
       loadMonitors();
     } catch (err) {
       console.error('[monitors] rent error:', err);
-      alert('Failed to rent monitor');
+      alert('Failed to create rental');
     }
   });
 
   window.openRentModal = openRentModal;
 
-  window.returnMonitor = async function(rentalId) {
-    if (!confirm('Mark this monitor as returned? Revenue will be calculated automatically.')) return;
-    try {
-      const res = await fetch(`/api/monitors/return/${rentalId}`, { method: 'POST' });
-      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to return monitor'); return; }
-      const data = await res.json();
-      alert(`Monitor returned. Revenue: ฿${data.revenue.toLocaleString()}`);
-      loadMonitors();
-    } catch (err) {
-      console.error('[monitors] return error:', err);
-      alert('Failed to return monitor');
-    }
-  };
+  // New Rental button in pipeline
+  document.getElementById('btn-new-rental').addEventListener('click', () => {
+    const firstAvailable = allMonitors.find(m => m.status === 'available');
+    if (firstAvailable) openRentModal(firstAvailable.id);
+    else alert('No monitors available for rental.');
+  });
 
   window.toggleMaintenance = async function(monitorId) {
     const mon = allMonitors.find(m => m.id === monitorId);

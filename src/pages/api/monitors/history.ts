@@ -1,11 +1,11 @@
 import type { APIRoute } from 'astro';
-import { getCompletedRentals, readMonitors } from '../../../lib/monitor-rentals.ts';
+import { getFinishedRentals, readMonitors } from '../../../lib/monitor-rentals.ts';
 import { json, jsonError } from '../../../lib/api-response.ts';
 
 export const GET: APIRoute = async ({ url }) => {
   try {
     const format = url.searchParams.get('format');
-    const rentals = getCompletedRentals();
+    const rentals = getFinishedRentals();
     const monitors = readMonitors();
 
     // Sort newest first
@@ -14,7 +14,7 @@ export const GET: APIRoute = async ({ url }) => {
     if (format === 'csv') {
       const monitorName = (id: string) => monitors.find(m => m.id === id)?.name || id;
       const lines = [
-        'Monitor,Renter,Contact,Start Date,End Date,Days,Daily Rate (THB),Revenue (THB),Deposit Held,Notes',
+        'Monitor,Renter,Contact,Start Date,End Date,Days,Daily Rate (THB),Revenue (THB),Status,Deposit Held,Notes',
         ...rentals.map(r => {
           const days = r.revenue > 0 ? Math.round(r.revenue / r.dailyRate) : 0;
           return [
@@ -26,6 +26,7 @@ export const GET: APIRoute = async ({ url }) => {
             days,
             r.dailyRate,
             r.revenue,
+            r.status,
             r.depositHeld ? 'Yes' : 'No',
             `"${(r.notes || '').replace(/"/g, '""')}"`,
           ].join(',');

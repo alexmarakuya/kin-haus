@@ -73,11 +73,12 @@ export interface MonitorRental {
   renter: string;
   contact: string;
   startDate: string;
+  deliveryDate?: string;
   endDate: string;
   dailyRate: number;
   depositHeld: boolean;
   revenue: number;
-  status: 'active' | 'completed';
+  status: 'booked' | 'delivered' | 'completed' | 'cancelled';
   notes: string;
   createdAt: string;
   completedAt?: string;

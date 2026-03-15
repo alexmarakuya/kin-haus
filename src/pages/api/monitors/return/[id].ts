@@ -10,7 +10,7 @@ export const POST: APIRoute = async ({ params }) => {
     const rentals = readRentals();
     const rental = rentals.find(r => r.id === rentalId);
     if (!rental) return jsonError('Rental not found', 404);
-    if (rental.status !== 'active') return jsonError('Rental is already completed', 409);
+    if (rental.status !== 'delivered') return jsonError('Rental is not currently delivered', 409);
 
     // Complete the rental
     rental.status = 'completed';
