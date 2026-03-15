@@ -1,0 +1,7 @@
+{
+  "monitors": [
+    { "id": "MON-001", "name": "Dell 27\" QHD", "status": "available", "dailyRate": 150, "notes": "" },
+    { "id": "MON-002", "name": "LG 24\" FHD", "status": "available", "dailyRate": 100, "notes": "" }
+  ],
+  "rentals": []
+}

@@ -58,3 +58,27 @@ export interface RoomAvailability {
   nextAvailable: AvailableWindow | null;
   allWindows: AvailableWindow[];
 }
+
+export interface Monitor {
+  id: string;
+  name: string;
+  status: 'available' | 'rented' | 'maintenance';
+  dailyRate: number;
+  notes: string;
+}
+
+export interface MonitorRental {
+  id: string;
+  monitorId: string;
+  renter: string;
+  contact: string;
+  startDate: string;
+  endDate: string;
+  dailyRate: number;
+  depositHeld: boolean;
+  revenue: number;
+  status: 'active' | 'completed';
+  notes: string;
+  createdAt: string;
+  completedAt?: string;
+}

@@ -262,3 +262,43 @@ body.present-mode .present-banner { display:block; }
 
 ::-webkit-scrollbar { width:6px; height:6px; }
 ::-webkit-scrollbar-thumb { background:#d9d7d3; border-radius:3px; }
+
+/* MONITOR RENTALS */
+.monitor-summary { display:flex; gap:16px; padding:20px 28px; border-bottom:1px solid #eae8e5; flex-wrap:wrap; }
+.monitor-stat { flex:1; min-width:100px; text-align:center; padding:12px 8px; background:white; border:1px solid #dddbd7; border-radius:8px; }
+.monitor-stat-value { display:block; font-family:'Bricolage Grotesque',serif; font-size:22px; margin-bottom:2px; }
+.monitor-stat-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#8b8b85; }
+
+.monitor-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; padding:0 28px 12px; }
+.monitor-card { background:white; border:1px solid #dddbd7; border-radius:10px; padding:16px 18px; transition:box-shadow 0.12s; }
+.monitor-card:hover { box-shadow:0 2px 10px rgba(0,0,0,0.06); }
+.monitor-card-overdue { border-color:var(--airbnb); background:#fef5f5; }
+.monitor-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.monitor-card-name { font-weight:500; font-size:14px; }
+.monitor-card-id { font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8b85; margin-top:2px; }
+.monitor-card-details { margin:10px 0; padding:10px 12px; background:var(--warm); border-radius:6px; font-size:12px; display:flex; flex-direction:column; gap:4px; }
+.monitor-detail-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#8b8b85; margin-right:4px; }
+.monitor-card-actions { display:flex; gap:8px; margin-top:10px; }
+
+.monitor-badge { padding:4px 10px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
+.monitor-badge-available { background:var(--direct-light, #d4ede3); color:var(--direct); }
+.monitor-badge-rented { background:var(--conflict-light, #fde8d0); color:var(--conflict); }
+.monitor-badge-maintenance { background:var(--blocked-light, #e8e6e2); color:var(--blocked); }
+.monitor-badge-overdue { background:var(--airbnb-light, #fde8e8); color:var(--airbnb); }
+
+.monitor-table { width:100%; border-collapse:collapse; font-size:13px; }
+.monitor-table th { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#8b8b85; text-align:left; padding:8px 10px; border-bottom:1px solid #e0deda; white-space:nowrap; }
+.monitor-table td { padding:10px; border-bottom:1px solid #eae8e5; vertical-align:middle; }
+.monitor-table tbody tr:hover { background:var(--warm); }
+.overdue-row { background:#fef5f5; }
+.overdue-row:hover { background:#fde8e8 !important; }
+
+.monitor-table-wrap { overflow-x:auto; }
+
+@media (max-width:768px) {
+  .monitor-summary { flex-direction:row; flex-wrap:wrap; padding:12px 16px; gap:8px; }
+  .monitor-stat { min-width:70px; padding:10px 6px; }
+  .monitor-stat-value { font-size:18px; }
+  .monitor-grid { grid-template-columns:1fr; padding:0 16px 12px; }
+  .monitor-table-wrap { margin:0 -12px; padding:0 12px; }
+}

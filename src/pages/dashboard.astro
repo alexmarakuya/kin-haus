@@ -72,6 +72,7 @@ import '../styles/dashboard.css';
         <div class="tab" data-tab="list">Bookings</div>
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
         <div class="tab" data-tab="codes">Promo Codes</div>
+        <div class="tab" data-tab="monitors">Monitors</div>
         <div class="tab-spacer"></div>
       </div>
 
@@ -118,6 +119,38 @@ import '../styles/dashboard.css';
           <button class="btn btn-primary" id="btn-create-code" style="font-size:12px; padding:7px 16px;">+ Create Code</button>
         </div>
         <div id="codes-content" style="padding:0 28px 28px;"></div>
+      </div>
+
+      <!-- MONITORS TAB -->
+      <div id="tab-monitors" class="list-pane" style="display:none">
+        <!-- Revenue Summary -->
+        <div class="monitor-summary" id="monitor-summary">
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ms-revenue">&#x0E3F;0</span><span class="monitor-stat-label">Revenue this month</span></div>
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ms-active">0</span><span class="monitor-stat-label">Active rentals</span></div>
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ms-available">0</span><span class="monitor-stat-label">Available</span></div>
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ms-utilisation">0%</span><span class="monitor-stat-label">Utilisation</span></div>
+        </div>
+
+        <!-- Inventory Grid -->
+        <div style="padding:0 28px 12px; display:flex; justify-content:space-between; align-items:center;">
+          <div class="list-section-title" style="margin:0; border:none; padding:0;">Inventory</div>
+        </div>
+        <div class="monitor-grid" id="monitor-grid"></div>
+
+        <!-- Active Rentals Table -->
+        <div style="padding:20px 28px 12px;">
+          <div class="list-section-title" style="margin:0; border:none; padding:0;">Active Rentals</div>
+        </div>
+        <div class="monitor-table-wrap" id="active-rentals-wrap">
+          <div id="active-rentals-content" style="padding:0 28px;"></div>
+        </div>
+
+        <!-- Rental History -->
+        <div style="padding:20px 28px 12px; display:flex; justify-content:space-between; align-items:center;">
+          <div class="list-section-title" style="margin:0; border:none; padding:0;">Rental History</div>
+          <button class="btn btn-sm" id="btn-export-csv" style="font-size:11px;">Export CSV</button>
+        </div>
+        <div id="history-content" style="padding:0 28px 28px;"></div>
       </div>
 
       <div class="stats-footer" id="stats-footer"></div>
@@ -287,6 +320,31 @@ import '../styles/dashboard.css';
         <button class="btn btn-primary" id="rm-save">Save Rates</button>
       </div>
       <span id="rm-status" style="font-size:11px; color:var(--accent); display:none; margin-top:4px;">Saved!</span>
+    </div>
+  </div>
+
+  <!-- RENT MONITOR MODAL -->
+  <div class="overlay" id="rent-modal">
+    <div class="modal">
+      <div class="modal-title">Rent Monitor</div>
+      <div class="fg">
+        <label>Monitor</label>
+        <select id="mr-monitor"></select>
+      </div>
+      <div class="fg"><label>Renter Name</label><input id="mr-renter" type="text" placeholder="e.g. John Smith"></div>
+      <div class="fg"><label>Contact (phone or email)</label><input id="mr-contact" type="text" placeholder="e.g. +66 81 234 5678"></div>
+      <div class="fg"><label>Start Date</label><input id="mr-start" type="text" placeholder="Select date" readonly></div>
+      <div class="fg"><label>Expected Return Date</label><input id="mr-end" type="text" placeholder="Select date (optional)" readonly></div>
+      <div class="fg"><label>Daily Rate (THB)</label><input id="mr-rate" type="number" placeholder="e.g. 150"></div>
+      <div class="fg" style="display:flex; align-items:center; gap:8px;">
+        <input id="mr-deposit" type="checkbox">
+        <label for="mr-deposit" style="margin:0; font-size:13px;">Deposit received</label>
+      </div>
+      <div class="fg"><label>Notes (optional)</label><input id="mr-notes" type="text" placeholder="Optional note"></div>
+      <div class="modal-actions">
+        <button class="btn" id="mr-cancel">Cancel</button>
+        <button class="btn btn-primary" id="mr-save">Start Rental</button>
+      </div>
     </div>
   </div>
 
@@ -1329,9 +1387,11 @@ import '../styles/dashboard.css';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
     document.getElementById('tab-codes').style.display = tab === 'codes' ? 'block' : 'none';
+    document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
     if (tab === 'inquiries') fetchInquiries();
     if (tab === 'codes') fetchDiscountCodes();
+    if (tab === 'monitors') loadMonitors();
     render();
   }
 
@@ -1711,6 +1771,232 @@ import '../styles/dashboard.css';
       console.error('Failed to save pricing:', err);
       alert('Failed to save pricing');
     }
+  });
+
+  // ─── MONITORS ──────────────────────────────────────────────────────────────────
+  let allMonitors = [];
+  let monitorRevenue = {};
+
+  function formatDateDMY(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  async function loadMonitors() {
+    try {
+      const [monRes, revRes, histRes] = await Promise.all([
+        fetch('/api/monitors'),
+        fetch('/api/monitors/revenue'),
+        fetch('/api/monitors/history'),
+      ]);
+      const monData = await monRes.json();
+      const revData = await revRes.json();
+      const histData = await histRes.json();
+      allMonitors = monData.monitors || [];
+      monitorRevenue = revData;
+      renderMonitorSummary(revData);
+      renderMonitorGrid(allMonitors);
+      renderActiveRentals(allMonitors.filter(m => m.currentRenter));
+      renderMonitorHistory(histData.rentals || []);
+    } catch (err) {
+      console.error('[monitors] load error:', err);
+    }
+  }
+
+  function renderMonitorSummary(rev) {
+    document.getElementById('ms-revenue').innerHTML = `&#x0E3F;${(rev.totalRevenueThisMonth || 0).toLocaleString()}`;
+    document.getElementById('ms-active').textContent = rev.activeRentals || 0;
+    document.getElementById('ms-available').textContent = `${rev.availableMonitors || 0} / ${rev.totalMonitors || 0}`;
+    document.getElementById('ms-utilisation').textContent = `${rev.utilisationPercent || 0}%`;
+  }
+
+  function monitorStatusBadge(m) {
+    if (m.overdue) return '<span class="monitor-badge monitor-badge-overdue">OVERDUE</span>';
+    if (m.status === 'rented') return '<span class="monitor-badge monitor-badge-rented">RENTED</span>';
+    if (m.status === 'maintenance') return '<span class="monitor-badge monitor-badge-maintenance">MAINTENANCE</span>';
+    return '<span class="monitor-badge monitor-badge-available">AVAILABLE</span>';
+  }
+
+  function renderMonitorGrid(monitors) {
+    const grid = document.getElementById('monitor-grid');
+    if (!monitors.length) { grid.innerHTML = '<div style="padding:0 28px; color:#8b8b85; font-size:13px;">No monitors configured.</div>'; return; }
+    grid.innerHTML = monitors.map(m => {
+      const actions = [];
+      if (m.status === 'available') actions.push(`<button class="btn btn-primary btn-sm" onclick="openRentModal('${m.id}')">Rent</button>`);
+      if (m.status === 'available') actions.push(`<button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">Maintenance</button>`);
+      if (m.status === 'rented') actions.push(`<button class="btn btn-sm" onclick="returnMonitor('${m.rentalId}')">Return</button>`);
+      if (m.status === 'maintenance') actions.push(`<button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">Make Available</button>`);
+
+      let details = '';
+      if (m.currentRenter) {
+        const daysInfo = m.daysRemaining !== null && m.daysRemaining !== undefined
+          ? (m.daysRemaining < 0 ? `<span style="color:var(--airbnb)">${Math.abs(m.daysRemaining)}d overdue</span>` : `${m.daysRemaining}d remaining`)
+          : '';
+        details = `
+          <div class="monitor-card-details">
+            <div><span class="monitor-detail-label">Renter:</span> ${m.currentRenter}</div>
+            <div><span class="monitor-detail-label">Since:</span> ${formatDateDMY(m.rentalStartDate)} ${daysInfo ? ' · ' + daysInfo : ''}</div>
+            <div><span class="monitor-detail-label">Revenue so far:</span> &#x0E3F;${(m.revenueAccrued || 0).toLocaleString()}</div>
+            <div><span class="monitor-detail-label">Deposit:</span> ${m.depositHeld ? 'Held' : 'Not held'}</div>
+          </div>`;
+      }
+
+      return `
+        <div class="monitor-card ${m.overdue ? 'monitor-card-overdue' : ''}">
+          <div class="monitor-card-header">
+            <div>
+              <div class="monitor-card-name">${m.name}</div>
+              <div class="monitor-card-id">${m.id} · &#x0E3F;${m.dailyRate}/day</div>
+            </div>
+            ${monitorStatusBadge(m)}
+          </div>
+          ${details}
+          <div class="monitor-card-actions">${actions.join('')}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderActiveRentals(active) {
+    const container = document.getElementById('active-rentals-content');
+    if (!active.length) { container.innerHTML = '<div style="color:#8b8b85; font-size:13px; padding:4px 0 12px;">No active rentals.</div>'; return; }
+    container.innerHTML = `<table class="monitor-table"><thead><tr>
+      <th>Monitor</th><th>Renter</th><th>Contact</th><th>Days</th><th>Remaining</th><th>Revenue</th><th>Deposit</th><th></th>
+    </tr></thead><tbody>${active.map(m => {
+      const overdue = m.daysRemaining !== null && m.daysRemaining < 0;
+      return `<tr class="${overdue ? 'overdue-row' : ''}">
+        <td>${m.name}</td>
+        <td>${m.currentRenter}</td>
+        <td style="font-size:11px">${m.currentRenterContact || ''}</td>
+        <td>${m.daysRented || 0}d</td>
+        <td>${m.daysRemaining !== null ? (m.daysRemaining < 0 ? '<span style="color:var(--airbnb)">' + Math.abs(m.daysRemaining) + 'd overdue</span>' : m.daysRemaining + 'd') : '-'}</td>
+        <td>&#x0E3F;${(m.revenueAccrued || 0).toLocaleString()}</td>
+        <td>${m.depositHeld ? 'Held' : 'No'}</td>
+        <td><button class="btn btn-sm" onclick="returnMonitor('${m.rentalId}')" style="font-size:11px">Return</button></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  }
+
+  function renderMonitorHistory(rentals) {
+    const container = document.getElementById('history-content');
+    if (!rentals.length) { container.innerHTML = '<div style="color:#8b8b85; font-size:13px;">No completed rentals yet.</div>'; return; }
+    const monitorName = (id) => allMonitors.find(m => m.id === id)?.name || id;
+    container.innerHTML = `<table class="monitor-table"><thead><tr>
+      <th>Monitor</th><th>Renter</th><th>Dates</th><th>Days</th><th>Revenue</th><th>Notes</th>
+    </tr></thead><tbody>${rentals.map(r => {
+      const days = r.revenue > 0 ? Math.round(r.revenue / r.dailyRate) : 0;
+      return `<tr>
+        <td>${monitorName(r.monitorId)}</td>
+        <td>${r.renter}</td>
+        <td style="font-size:11px">${formatDateDMY(r.startDate)} - ${formatDateDMY(r.completedAt?.slice(0,10) || '')}</td>
+        <td>${days}d</td>
+        <td>&#x0E3F;${r.revenue.toLocaleString()}</td>
+        <td style="font-size:11px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.notes || ''}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  }
+
+  // ─── MONITOR ACTIONS ───────────────────────────────────────────────────────
+  let rentStartPicker, rentEndPicker;
+
+  function openRentModal(monitorId) {
+    const modal = document.getElementById('rent-modal');
+    const select = document.getElementById('mr-monitor');
+    select.innerHTML = allMonitors.filter(m => m.status === 'available').map(m =>
+      `<option value="${m.id}" ${m.id === monitorId ? 'selected' : ''}>${m.name} (${m.id})</option>`
+    ).join('');
+
+    // Pre-fill rate from selected monitor
+    const mon = allMonitors.find(m => m.id === monitorId);
+    document.getElementById('mr-rate').value = mon ? mon.dailyRate : '';
+    document.getElementById('mr-renter').value = '';
+    document.getElementById('mr-contact').value = '';
+    document.getElementById('mr-notes').value = '';
+    document.getElementById('mr-deposit').checked = false;
+
+    // Init flatpickr
+    if (rentStartPicker) rentStartPicker.destroy();
+    if (rentEndPicker) rentEndPicker.destroy();
+    rentStartPicker = flatpickr('#mr-start', { dateFormat: 'Y-m-d', defaultDate: new Date() });
+    rentEndPicker = flatpickr('#mr-end', { dateFormat: 'Y-m-d' });
+
+    // Update rate when monitor selection changes
+    select.onchange = () => {
+      const sel = allMonitors.find(m => m.id === select.value);
+      if (sel) document.getElementById('mr-rate').value = sel.dailyRate;
+    };
+
+    modal.classList.add('open');
+  }
+
+  document.getElementById('mr-cancel').addEventListener('click', () => {
+    document.getElementById('rent-modal').classList.remove('open');
+  });
+
+  document.getElementById('mr-save').addEventListener('click', async () => {
+    const monitorId = document.getElementById('mr-monitor').value;
+    const renter = document.getElementById('mr-renter').value.trim();
+    const contact = document.getElementById('mr-contact').value.trim();
+    const startDate = document.getElementById('mr-start').value;
+    const endDate = document.getElementById('mr-end').value;
+    const dailyRate = parseInt(document.getElementById('mr-rate').value);
+    const depositHeld = document.getElementById('mr-deposit').checked;
+    const notes = document.getElementById('mr-notes').value.trim();
+
+    if (!renter || !contact || !startDate) { alert('Renter, contact, and start date are required.'); return; }
+    if (!dailyRate || dailyRate <= 0) { alert('Please enter a valid daily rate.'); return; }
+
+    try {
+      const res = await fetch('/api/monitors/rent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monitorId, renter, contact, startDate, endDate, dailyRate, depositHeld, notes }),
+      });
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to rent monitor'); return; }
+      document.getElementById('rent-modal').classList.remove('open');
+      loadMonitors();
+    } catch (err) {
+      console.error('[monitors] rent error:', err);
+      alert('Failed to rent monitor');
+    }
+  });
+
+  window.openRentModal = openRentModal;
+
+  window.returnMonitor = async function(rentalId) {
+    if (!confirm('Mark this monitor as returned? Revenue will be calculated automatically.')) return;
+    try {
+      const res = await fetch(`/api/monitors/return/${rentalId}`, { method: 'POST' });
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to return monitor'); return; }
+      const data = await res.json();
+      alert(`Monitor returned. Revenue: ฿${data.revenue.toLocaleString()}`);
+      loadMonitors();
+    } catch (err) {
+      console.error('[monitors] return error:', err);
+      alert('Failed to return monitor');
+    }
+  };
+
+  window.toggleMaintenance = async function(monitorId) {
+    const mon = allMonitors.find(m => m.id === monitorId);
+    const action = mon?.status === 'maintenance' ? 'make available' : 'put into maintenance';
+    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${mon?.name || monitorId}?`)) return;
+    try {
+      const res = await fetch('/api/monitors/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monitorId }),
+      });
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to toggle maintenance'); return; }
+      loadMonitors();
+    } catch (err) {
+      console.error('[monitors] maintenance error:', err);
+      alert('Failed to toggle maintenance');
+    }
+  };
+
+  document.getElementById('btn-export-csv').addEventListener('click', () => {
+    window.location.href = '/api/monitors/history?format=csv';
   });
 
   // ─── INIT ─────────────────────────────────────────────────────────────────────
