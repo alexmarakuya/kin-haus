@@ -162,35 +162,40 @@ import '../styles/dashboard.css';
   <!-- ADD BOOKING MODAL -->
   <div class="overlay" id="modal">
     <div class="modal">
-      <div class="modal-title">Add Booking</div>
-      <div class="fg"><label>Guest / Name</label><input id="f-guest" type="text" placeholder="e.g. Nad, John Smith"></div>
-      <div class="fg">
-        <label>Type</label>
-        <select id="f-type">
-          <option value="direct">Direct Booking</option>
-          <option value="friend">Friend / Personal</option>
-          <option value="blocked">Blocked</option>
-          <option value="owner">Owner / Host Block</option>
-          <option value="hold">Hold (Tentative)</option>
-          <option value="waitlist">Waitlist (Backup)</option>
-        </select>
+      <div class="modal-header">
+        <div class="modal-title">Add Booking</div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
-      <div class="fg">
-        <label>Room</label>
-        <select id="f-room">
-          <option value="nest">The Nest</option>
-          <option value="master">Master Suite</option>
-          <option value="nomad">Nomad Room</option>
-          <option value="theater">Theater Room</option>
-          <option value="full">Full House</option>
-        </select>
+      <div class="modal-body">
+        <div class="fg"><label>Guest / Name</label><input id="f-guest" type="text" placeholder="e.g. Nad, John Smith"></div>
+        <div class="fg">
+          <label>Type</label>
+          <select id="f-type">
+            <option value="direct">Direct Booking</option>
+            <option value="friend">Friend / Personal</option>
+            <option value="blocked">Blocked</option>
+            <option value="owner">Owner / Host Block</option>
+            <option value="hold">Hold (Tentative)</option>
+            <option value="waitlist">Waitlist (Backup)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Room</label>
+          <select id="f-room">
+            <option value="nest">The Nest</option>
+            <option value="master">Master Suite</option>
+            <option value="nomad">Nomad Room</option>
+            <option value="theater">Theater Room</option>
+            <option value="full">Full House</option>
+          </select>
+        </div>
+        <div class="fg"><label>Check-in → Check-out</label><input id="f-dates" type="text" placeholder="Select dates" readonly></div>
+        <div id="f-nights-row" style="padding:2px 0 8px;font-size:13px;color:#8b8b85;display:none"><span id="f-nights-label"></span></div>
+        <div class="fg" id="f-rate-row"><label>Rate / night (THB)</label><input id="f-rate" type="number" placeholder="e.g. 2400"></div>
+        <div class="fg" id="f-total-row" style="padding:10px 0 0"><span id="f-total" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#52524e">Select dates to see total</span></div>
+        <div class="fg"><label>Notes</label><input id="f-notes" type="text" placeholder="Optional note"></div>
       </div>
-      <div class="fg"><label>Check-in → Check-out</label><input id="f-dates" type="text" placeholder="Select dates" readonly></div>
-      <div id="f-nights-row" style="padding:2px 0 8px;font-size:13px;color:#8b8b85;display:none"><span id="f-nights-label"></span></div>
-      <div class="fg" id="f-rate-row"><label>Rate / night (THB)</label><input id="f-rate" type="number" placeholder="e.g. 2400"></div>
-      <div class="fg" id="f-total-row" style="padding:10px 0 0"><span id="f-total" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#52524e">Select dates to see total</span></div>
-      <div class="fg"><label>Notes</label><input id="f-notes" type="text" placeholder="Optional note"></div>
-      <div class="modal-actions">
+      <div class="modal-footer">
         <button class="btn" id="btn-cancel">Cancel</button>
         <button class="btn btn-primary" id="btn-save">Save Booking</button>
       </div>
@@ -278,25 +283,30 @@ import '../styles/dashboard.css';
   <!-- CREATE PROMO CODE MODAL -->
   <div class="overlay" id="code-modal">
     <div class="modal">
-      <div class="modal-title">Create Promo Code</div>
-      <div class="fg">
-        <label>Code</label>
-        <input id="fc-code" type="text" placeholder="e.g. FRIENDS25" style="text-transform:uppercase">
+      <div class="modal-header">
+        <div class="modal-title">Create Promo Code</div>
+        <button class="modal-close" onclick="document.getElementById('code-modal').classList.remove('open')">&times;</button>
       </div>
-      <div class="fg">
-        <label>Discount</label>
-        <select id="fc-discount">
-          <option value="10">10%</option>
-          <option value="20">20%</option>
-          <option value="30">30%</option>
-          <option value="40">40%</option>
-        </select>
+      <div class="modal-body">
+        <div class="fg">
+          <label>Code</label>
+          <input id="fc-code" type="text" placeholder="e.g. FRIENDS25" style="text-transform:uppercase">
+        </div>
+        <div class="fg">
+          <label>Discount</label>
+          <select id="fc-discount">
+            <option value="10">10%</option>
+            <option value="20">20%</option>
+            <option value="30">30%</option>
+            <option value="40">40%</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Note (optional)</label>
+          <input id="fc-note" type="text" placeholder="e.g. For close friends">
+        </div>
       </div>
-      <div class="fg">
-        <label>Note (optional)</label>
-        <input id="fc-note" type="text" placeholder="e.g. For close friends">
-      </div>
-      <div class="modal-actions">
+      <div class="modal-footer">
         <button class="btn" id="fc-cancel">Cancel</button>
         <button class="btn btn-primary" id="fc-save">Create Code</button>
       </div>
@@ -305,43 +315,53 @@ import '../styles/dashboard.css';
 
   <!-- ROOM DETAIL MODAL -->
   <div class="overlay" id="room-modal">
-    <div class="modal" style="max-width:360px">
-      <div class="modal-title" id="rm-title" style="display:flex; align-items:center; gap:8px;">
-        <div class="room-dot" id="rm-dot"></div>
-        <span id="rm-name"></span>
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="rm-title" style="display:flex; align-items:center; gap:8px;">
+          <div class="room-dot" id="rm-dot"></div>
+          <span id="rm-name"></span>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('room-modal').classList.remove('open')">&times;</button>
       </div>
-      <div class="rm-section-label">Nightly Rates</div>
-      <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="rm-high" class="pricing-input" min="0" step="100"></div></div>
-      <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="rm-low" class="pricing-input" min="0" step="100"></div></div>
-      <div class="rm-section-label" style="margin-top:16px">Airbnb Listing</div>
-      <a id="rm-airbnb" class="rm-link" href="#" target="_blank" rel="noopener">View on Airbnb &#x2192;</a>
-      <div class="modal-actions">
+      <div class="modal-body">
+        <div class="rm-section-label">Nightly Rates</div>
+        <div class="pricing-row"><label>High season (Nov-Mar)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="rm-high" class="pricing-input" min="0" step="100"></div></div>
+        <div class="pricing-row"><label>Low season (Apr-Oct)</label><div class="pricing-input-wrap"><span class="pricing-currency">&#x0E3F;</span><input type="number" id="rm-low" class="pricing-input" min="0" step="100"></div></div>
+        <div class="rm-section-label" style="margin-top:16px">Airbnb Listing</div>
+        <a id="rm-airbnb" class="rm-link" href="#" target="_blank" rel="noopener">View on Airbnb &#x2192;</a>
+        <span id="rm-status" style="font-size:11px; color:var(--accent); display:none; margin-top:8px;">Saved!</span>
+      </div>
+      <div class="modal-footer">
         <button class="btn" id="rm-cancel">Cancel</button>
         <button class="btn btn-primary" id="rm-save">Save Rates</button>
       </div>
-      <span id="rm-status" style="font-size:11px; color:var(--accent); display:none; margin-top:4px;">Saved!</span>
     </div>
   </div>
 
   <!-- RENT MONITOR MODAL -->
   <div class="overlay" id="rent-modal">
     <div class="modal">
-      <div class="modal-title">Rent Monitor</div>
-      <div class="fg">
-        <label>Monitor</label>
-        <select id="mr-monitor"></select>
+      <div class="modal-header">
+        <div class="modal-title">Rent Monitor</div>
+        <button class="modal-close" onclick="document.getElementById('rent-modal').classList.remove('open')">&times;</button>
       </div>
-      <div class="fg"><label>Renter Name</label><input id="mr-renter" type="text" placeholder="e.g. John Smith"></div>
-      <div class="fg"><label>Contact (phone or email)</label><input id="mr-contact" type="text" placeholder="e.g. +66 81 234 5678"></div>
-      <div class="fg"><label>Start Date</label><input id="mr-start" type="text" placeholder="Select date" readonly></div>
-      <div class="fg"><label>Expected Return Date</label><input id="mr-end" type="text" placeholder="Select date (optional)" readonly></div>
-      <div class="fg"><label>Daily Rate (THB)</label><input id="mr-rate" type="number" placeholder="e.g. 150"></div>
-      <div class="fg" style="display:flex; align-items:center; gap:8px;">
-        <input id="mr-deposit" type="checkbox">
-        <label for="mr-deposit" style="margin:0; font-size:13px;">Deposit received</label>
+      <div class="modal-body">
+        <div class="fg">
+          <label>Monitor</label>
+          <select id="mr-monitor"></select>
+        </div>
+        <div class="fg"><label>Renter Name</label><input id="mr-renter" type="text" placeholder="e.g. John Smith"></div>
+        <div class="fg"><label>Contact (phone or email)</label><input id="mr-contact" type="text" placeholder="e.g. +66 81 234 5678"></div>
+        <div class="fg"><label>Start Date</label><input id="mr-start" type="text" placeholder="Select date" readonly></div>
+        <div class="fg"><label>Expected Return Date</label><input id="mr-end" type="text" placeholder="Select date (optional)" readonly></div>
+        <div class="fg"><label>Daily Rate (THB)</label><input id="mr-rate" type="number" placeholder="e.g. 150"></div>
+        <div class="fg" style="display:flex; align-items:center; gap:8px;">
+          <input id="mr-deposit" type="checkbox">
+          <label for="mr-deposit" style="margin:0; font-size:13px;">Deposit received</label>
+        </div>
+        <div class="fg"><label>Notes (optional)</label><input id="mr-notes" type="text" placeholder="Optional note"></div>
       </div>
-      <div class="fg"><label>Notes (optional)</label><input id="mr-notes" type="text" placeholder="Optional note"></div>
-      <div class="modal-actions">
+      <div class="modal-footer">
         <button class="btn" id="mr-cancel">Cancel</button>
         <button class="btn btn-primary" id="mr-save">Start Rental</button>
       </div>
@@ -499,6 +519,7 @@ import '../styles/dashboard.css';
     tab.addEventListener('click', function() {
       setTab(this.dataset.tab, this);
     });
+  });
   });
 
   document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -1772,8 +1793,11 @@ import '../styles/dashboard.css';
   document.getElementById('rm-cancel').addEventListener('click', () => {
     document.getElementById('room-modal').classList.remove('open');
   });
-  document.getElementById('room-modal').addEventListener('click', e => {
-    if (e.target.id === 'room-modal') document.getElementById('room-modal').classList.remove('open');
+  // Click overlay background to close for all modals
+  ['modal','code-modal','room-modal','rent-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target.id === id) document.getElementById(id).classList.remove('open');
+    });
   });
 
   document.getElementById('rm-save').addEventListener('click', async () => {
