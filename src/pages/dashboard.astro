@@ -608,9 +608,17 @@ import '../styles/dashboard.css';
             <option value="monthly">Monthly Pass (&#x0E3F;5,000)</option>
           </select>
         </div>
-        <div class="fg"><label>Name</label><input id="cp-name" type="text" placeholder="e.g. Sarah Miller"></div>
+        <div class="fg" style="position:relative;">
+          <label>Name</label>
+          <input id="cp-name" type="text" placeholder="Start typing to search guests..." autocomplete="off">
+          <input id="cp-guest" type="hidden" value="">
+          <div id="cp-suggestions" style="display:none; position:absolute; left:0; right:0; top:100%; background:white; border:1px solid #dddbd7; border-top:none; border-radius:0 0 8px 8px; max-height:180px; overflow-y:auto; z-index:10; box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>
+        </div>
+        <div id="cp-guest-badge" style="display:none; margin:-6px 0 10px; font-size:12px; color:var(--accent); display:none;">
+          <span id="cp-guest-badge-text"></span>
+          <button type="button" id="cp-guest-clear" style="background:none; border:none; color:#b5b3ad; cursor:pointer; font-size:14px; padding:0 4px;">&times;</button>
+        </div>
         <div class="fg"><label>Contact (optional)</label><input id="cp-contact" type="text" placeholder="Phone, WhatsApp, or email"></div>
-        <div class="fg"><label>Link to Guest Profile</label><select id="cp-guest"><option value="">-- Walk-in (no profile) --</option></select></div>
         <div class="fg"><label>Start Date</label><input id="cp-start" type="text" placeholder="Today" readonly></div>
         <div class="fg"><label>Amount (THB)</label><input id="cp-amount" type="number"></div>
         <div class="fg"><label>Notes (optional)</label><input id="cp-notes" type="text" placeholder="Optional note"></div>
@@ -3116,37 +3124,96 @@ import '../styles/dashboard.css';
     document.getElementById('cp-contact').value = '';
     document.getElementById('cp-notes').value = '';
     document.getElementById('cp-amount').value = DESK_PRICING.day;
-
-    // Populate guest dropdown
-    const guestSelect = document.getElementById('cp-guest');
-    guestSelect.innerHTML = '<option value="">-- Walk-in (no profile) --</option>';
-    if (allGuests && allGuests.length) {
-      allGuests.forEach(g => {
-        guestSelect.innerHTML += `<option value="${g.id}">${g.fullName}</option>`;
-      });
-    }
+    document.getElementById('cp-guest').value = '';
+    document.getElementById('cp-suggestions').style.display = 'none';
+    document.getElementById('cp-guest-badge').style.display = 'none';
 
     if (passStartPicker) passStartPicker.destroy();
     passStartPicker = flatpickr('#cp-start', { dateFormat: 'Y-m-d', defaultDate: new Date() });
 
     modal.classList.add('open');
+    document.getElementById('cp-name').focus();
   }
+
+  // Name autocomplete
+  (function() {
+    const nameInput = document.getElementById('cp-name');
+    const suggestions = document.getElementById('cp-suggestions');
+    const guestInput = document.getElementById('cp-guest');
+    const badge = document.getElementById('cp-guest-badge');
+    const badgeText = document.getElementById('cp-guest-badge-text');
+    let debounceTimer;
+
+    function selectGuest(g) {
+      nameInput.value = g.fullName;
+      guestInput.value = g.id;
+      document.getElementById('cp-contact').value = g.whatsapp || g.phone || g.email || '';
+      suggestions.style.display = 'none';
+      badge.style.display = 'block';
+      badgeText.textContent = 'Linked to ' + g.fullName;
+    }
+
+    function clearGuestLink() {
+      guestInput.value = '';
+      badge.style.display = 'none';
+    }
+
+    document.getElementById('cp-guest-clear').addEventListener('click', clearGuestLink);
+
+    nameInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      clearGuestLink();
+      const q = nameInput.value.trim().toLowerCase();
+      if (q.length < 2) { suggestions.style.display = 'none'; return; }
+
+      debounceTimer = setTimeout(() => {
+        const matches = (allGuests || []).filter(g => g.fullName.toLowerCase().includes(q)).slice(0, 6);
+        if (!matches.length) {
+          suggestions.innerHTML = '<div style="padding:10px 14px; font-size:12px; color:#8b8b85;">No matches. A new guest will be created.</div>';
+          suggestions.style.display = 'block';
+          return;
+        }
+        suggestions.innerHTML = matches.map(g => {
+          const initial = g.fullName.charAt(0).toUpperCase();
+          const detail = [g.nationality, g.email, g.phone].filter(Boolean).join(' · ');
+          return `<div class="cp-suggest-item" data-id="${g.id}" style="padding:8px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background 0.1s;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;flex-shrink:0;">${initial}</div>
+            <div><div style="font-size:13px;font-weight:500;">${g.fullName}</div>${detail ? `<div style="font-size:11px;color:#8b8b85;">${detail}</div>` : ''}</div>
+          </div>`;
+        }).join('');
+        suggestions.style.display = 'block';
+      }, 150);
+    });
+
+    suggestions.addEventListener('click', (e) => {
+      const item = e.target.closest('.cp-suggest-item');
+      if (!item) return;
+      const g = (allGuests || []).find(guest => guest.id === item.dataset.id);
+      if (g) selectGuest(g);
+    });
+
+    // Hover effect
+    suggestions.addEventListener('mouseover', (e) => {
+      const item = e.target.closest('.cp-suggest-item');
+      if (item) item.style.background = '#f4f3f1';
+    });
+    suggestions.addEventListener('mouseout', (e) => {
+      const item = e.target.closest('.cp-suggest-item');
+      if (item) item.style.background = '';
+    });
+
+    // Close suggestions on click outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#cp-suggestions') && e.target.id !== 'cp-name') {
+        suggestions.style.display = 'none';
+      }
+    });
+  })();
 
   // Update amount when type changes
   document.getElementById('cp-type').addEventListener('change', () => {
     const type = document.getElementById('cp-type').value;
     document.getElementById('cp-amount').value = DESK_PRICING[type] || 350;
-  });
-
-  // Auto-fill name/contact when guest selected
-  document.getElementById('cp-guest').addEventListener('change', () => {
-    const guestId = document.getElementById('cp-guest').value;
-    if (!guestId || !allGuests) return;
-    const g = allGuests.find(guest => guest.id === guestId);
-    if (g) {
-      document.getElementById('cp-name').value = g.fullName;
-      document.getElementById('cp-contact').value = g.whatsapp || g.phone || g.email || '';
-    }
   });
 
   document.getElementById('cp-cancel').addEventListener('click', () => {
@@ -3174,6 +3241,8 @@ import '../styles/dashboard.css';
       if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to sell pass'); return; }
       document.getElementById('pass-modal').classList.remove('open');
       loadDesks();
+      // Refresh guests list so new profile appears
+      loadGuests();
     } catch (err) {
       console.error('[desks] sell pass error:', err);
       alert('Failed to sell pass');
@@ -3181,7 +3250,7 @@ import '../styles/dashboard.css';
   });
 
   document.getElementById('btn-sell-pass').addEventListener('click', async () => {
-    // Ensure guests are loaded for the dropdown
+    // Ensure guests are loaded for autocomplete
     if (!allGuests || !allGuests.length) {
       try { await loadGuests(); } catch (e) {}
     }

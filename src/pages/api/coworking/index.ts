@@ -49,13 +49,18 @@ export const POST: APIRoute = async ({ request }) => {
     passes.push(newPass);
     writePasses(passes);
 
-    // Auto-tag guest as coworking if linked
-    if (guestId) {
-      try {
-        saveGuestProfile({ fullName: name.trim(), tags: ['coworking'] });
-      } catch (err: any) {
-        console.error('[coworking] guest tag error:', err.message);
-      }
+    // Link to existing guest or create new guest profile
+    try {
+      const guestProfile = saveGuestProfile({
+        fullName: name.trim(),
+        tags: ['coworking'],
+        ...(contact?.trim() ? { phone: contact.trim() } : {}),
+      });
+      // Update pass with the guest ID (existing or newly created)
+      newPass.guestId = guestProfile.id;
+      writePasses(passes);
+    } catch (err: any) {
+      console.error('[coworking] guest profile error:', err.message);
     }
 
     return json({ pass: newPass }, 201);
