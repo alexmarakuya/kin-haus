@@ -1,0 +1,258 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
+    { "@type": "ListItem", "position": 2, "name": "Co-Working", "item": "https://kinhaus.space/coworking" },
+  ],
+};
+---
+
+<MarketingLayout
+  title="Co-Working at Kin Haus -- Premium Workspace in Koh Phangan"
+  description="Work from a boutique villa in Koh Phangan with gigabit WiFi, 5 hot desks, pool, 4K projector, and mountain views. Limited seats for a focused, premium co-working experience. Day, week, and month passes."
+  jsonLd={jsonLd}
+>
+  <style>
+    .cw-page { padding: 60px 40px; max-width: 860px; margin: 0 auto; }
+    .cw-page h1 { font-weight: 600; font-size: 36px; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .cw-tagline { font-size: 16px; color: #64645f; line-height: 1.6; margin-bottom: 36px; max-width: 600px; }
+    .cw-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 10px; }
+
+    /* Hero image */
+    .cw-hero { width: 100%; height: 320px; border-radius: 14px; overflow: hidden; margin-bottom: 48px; }
+    .cw-hero img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Why section */
+    .cw-why { margin-bottom: 48px; }
+    .cw-why h2 { font-weight: 600; font-size: 24px; margin-bottom: 12px; }
+    .cw-why-text { font-size: 15px; color: #52524e; line-height: 1.7; margin-bottom: 16px; }
+
+    /* Passes */
+    .cw-passes { margin-bottom: 48px; }
+    .cw-passes h2 { font-weight: 600; font-size: 24px; margin-bottom: 16px; }
+    .cw-pass-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .cw-pass {
+      border: 1px solid #e4e2de;
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      transition: all 0.2s;
+      background: white;
+    }
+    .cw-pass:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-2px); }
+    .cw-pass-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .cw-pass-price { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+    .cw-pass-unit { font-size: 12px; color: #8b8b85; margin-bottom: 12px; }
+    .cw-pass-perday { font-size: 12px; color: #8b8b85; font-family: 'JetBrains Mono', monospace; }
+    .cw-pass-badge { display: inline-block; background: var(--accent); color: white; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+
+    /* Facilities */
+    .cw-facilities { margin-bottom: 48px; }
+    .cw-facilities h2 { font-weight: 600; font-size: 24px; margin-bottom: 16px; }
+    .cw-fac-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .cw-fac {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px;
+      border: 1px solid #e4e2de;
+      border-radius: 10px;
+      background: #fafaf8;
+      transition: all 0.15s;
+    }
+    .cw-fac:hover { border-color: #d0cec9; }
+    .cw-fac-icon { flex-shrink: 0; width: 22px; height: 22px; color: var(--accent); margin-top: 1px; }
+    .cw-fac-text h4 { font-size: 13px; font-weight: 600; margin: 0 0 2px; }
+    .cw-fac-text p { font-size: 12px; color: #8b8b85; margin: 0; line-height: 1.4; }
+
+    /* Gallery */
+    .cw-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 48px; border-radius: 12px; overflow: hidden; }
+    .cw-gallery img { width: 100%; height: 200px; object-fit: cover; transition: opacity 0.2s; display: block; }
+    .cw-gallery img:hover { opacity: 0.85; }
+
+    /* Note */
+    .cw-note {
+      background: #f4f3f1;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 48px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .cw-note-icon { flex-shrink: 0; width: 20px; height: 20px; color: var(--accent); margin-top: 2px; }
+    .cw-note-text { font-size: 14px; color: #52524e; line-height: 1.6; }
+    .cw-note-text strong { color: #2c2c28; }
+
+    /* CTA */
+    .cw-cta { text-align: center; padding: 40px 20px; border-top: 1px solid #e4e2de; }
+    .cw-cta h3 { font-weight: 600; font-size: 22px; margin-bottom: 6px; }
+    .cw-cta p { font-size: 14px; color: #8b8b85; margin-bottom: 16px; }
+    .cw-cta-btn {
+      display: inline-block;
+      padding: 12px 28px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .cw-cta-btn:hover { background: #245a3b; }
+
+    @media (max-width: 768px) {
+      .cw-page { padding: 40px 20px; }
+      .cw-page h1 { font-size: 28px; }
+      .cw-hero { height: 220px; margin-bottom: 32px; }
+      .cw-pass-grid { grid-template-columns: 1fr; max-width: 320px; }
+      .cw-fac-grid { grid-template-columns: 1fr 1fr; }
+      .cw-gallery { grid-template-columns: 1fr 1fr; }
+      .cw-gallery img { height: 160px; }
+      .cw-note { flex-direction: column; gap: 8px; }
+    }
+
+    @media (max-width: 480px) {
+      .cw-fac-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <div class="cw-page">
+    <div class="cw-label">Co-Working</div>
+    <h1>Work from paradise, seriously.</h1>
+    <p class="cw-tagline">A small, intentional workspace inside a boutique co-living villa. Five desks, gigabit WiFi, mountain views, and a pool for when you need to reset. No crowds, no noise, no coworking-factory vibes.</p>
+
+    <div class="cw-hero">
+      <img src="/images/property/kinhaus-workspace-and-living-room.jpg" alt="Kin Haus co-working space with desks and jungle view" loading="eager">
+    </div>
+
+    <!-- WHY -->
+    <div class="cw-why">
+      <h2>Not your average co-working space</h2>
+      <p class="cw-why-text">Most co-working spaces on the island pack you into a room with 50 strangers and sell you overpriced coffee. We do the opposite. Five hot desks in a villa designed for deep work, surrounded by nature. You'll share the space with a handful of residents and co-workers who actually want to get things done.</p>
+      <p class="cw-why-text">We keep numbers deliberately low. When the seats are full, they're full. This means you always have space, quiet, and fast internet. It also means the people around you are interesting, because they chose this over the obvious option.</p>
+    </div>
+
+    <!-- PASSES -->
+    <div class="cw-passes">
+      <h2>Passes</h2>
+      <div class="cw-pass-grid">
+        <div class="cw-pass">
+          <div class="cw-pass-name">Day Pass</div>
+          <div class="cw-pass-price">350</div>
+          <div class="cw-pass-unit">THB / day</div>
+          <div class="cw-pass-perday">~$10 / ~&euro;9</div>
+        </div>
+        <div class="cw-pass">
+          <div class="cw-pass-name">Weekly Pass</div>
+          <div class="cw-pass-price">1,500</div>
+          <div class="cw-pass-unit">THB / week</div>
+          <div class="cw-pass-perday">~215 THB/day</div>
+        </div>
+        <div class="cw-pass">
+          <div class="cw-pass-badge">Best value</div>
+          <div class="cw-pass-name">Monthly Pass</div>
+          <div class="cw-pass-price">5,000</div>
+          <div class="cw-pass-unit">THB / month</div>
+          <div class="cw-pass-perday">~167 THB/day</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACILITIES -->
+    <div class="cw-facilities">
+      <h2>What's included</h2>
+      <div class="cw-fac-grid">
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <div class="cw-fac-text">
+            <h4>5 Hot Desks</h4>
+            <p>Dedicated workstations with power outlets and comfortable seating</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+          <div class="cw-fac-text">
+            <h4>Gigabit WiFi</h4>
+            <p>Up to 1 Gbps fibre connection, reliable for video calls</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+          <div class="cw-fac-text">
+            <h4>4K Projector</h4>
+            <p>For presentations, movie nights, or expanding your screen</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <div class="cw-fac-text">
+            <h4>WiFi Printer</h4>
+            <p>Print, scan, copy. Free to use</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <div class="cw-fac-text">
+            <h4>Coffee Maker</h4>
+            <p>Help yourself all day. We keep it stocked</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="2" x2="17" y2="6"/><path d="M8 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+          <div class="cw-fac-text">
+            <h4>Filtered Water</h4>
+            <p>Filtered and cold water, always available</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12A10 10 0 1 1 12 2"/><path d="M22 2L12 12"/><path d="M16 2h6v6"/></svg>
+          <div class="cw-fac-text">
+            <h4>Infinity Pool</h4>
+            <p>Take a break, cool off, reset. Right outside</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <div class="cw-fac-text">
+            <h4>Community</h4>
+            <p>Small group of remote workers and residents. Real connections</p>
+          </div>
+        </div>
+        <div class="cw-fac">
+          <svg class="cw-fac-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <div class="cw-fac-text">
+            <h4>Mountain Views</h4>
+            <p>Look up from your screen to jungle and sea views</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GALLERY -->
+    <div class="cw-gallery">
+      <img src="/images/property/kinhaus-desk-setup-1.jpg" alt="Kin Haus desk setup with monitor" loading="lazy">
+      <img src="/images/property/kinhaus-workspace-desk-detail.jpg" alt="Workspace detail at Kin Haus" loading="lazy">
+      <img src="/images/property/kinhaus-infinity-pool-jungle-view.jpg" alt="Infinity pool with jungle view at Kin Haus" loading="lazy">
+    </div>
+
+    <!-- NOTE -->
+    <div class="cw-note">
+      <svg class="cw-note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <div class="cw-note-text">
+        <strong>Seats are limited by design.</strong> We only have 5 desks and we like it that way. If you're planning a longer stay, message us to check availability. Residents staying at Kin Haus get complimentary access to the workspace.
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cw-cta">
+      <h3>Ready to work from here?</h3>
+      <p>Drop us a message to reserve your desk or ask any questions.</p>
+      <a href="/contact" class="cw-cta-btn">Get in Touch &rarr;</a>
+    </div>
+  </div>
+</MarketingLayout>
