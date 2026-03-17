@@ -1,10 +1,49 @@
 import ical from 'node-ical';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ICAL_SOURCES, ROOMS } from './config.ts';
 import type { RoomKey } from './config.ts';
 import type { Booking } from './types.ts';
 import { isCacheValid, getCachedBookings, setCachedBookings } from './cache.ts';
 import { toDateStr } from './dates.ts';
+
+// ─── AIRBNB ARCHIVE ────────────────────────────────────────────────────────
+// Persists every Airbnb booking ever seen from iCal feeds so they survive
+// after Airbnb drops them from their export (typically ~60 days past checkout).
+const ARCHIVE_FILE = path.join(process.cwd(), 'data', 'airbnb-archive.json');
+
+function readArchive(): Booking[] {
+  try {
+    if (!fs.existsSync(ARCHIVE_FILE)) return [];
+    return JSON.parse(fs.readFileSync(ARCHIVE_FILE, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function writeArchive(bookings: Booking[]): void {
+  fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(bookings, null, 2), 'utf8');
+}
+
+/** Merge live iCal bookings into the persistent archive. Returns count of newly archived. */
+function archiveBookings(live: Booking[]): number {
+  const archive = readArchive();
+  const existingIds = new Set(archive.map((b) => b.id));
+  let added = 0;
+  for (const b of live) {
+    if (!existingIds.has(b.id)) {
+      archive.push({ ...b, archivedAt: new Date().toISOString() } as any);
+      existingIds.add(b.id);
+      added++;
+    }
+  }
+  if (added > 0) {
+    writeArchive(archive);
+    console.log(`[ical-archive] persisted ${added} new booking(s)`);
+  }
+  return added;
+}
 
 export async function fetchIcalBookings(roomKey: RoomKey, forceRefresh = false): Promise<Booking[]> {
   if (!forceRefresh && isCacheValid(roomKey)) {
@@ -58,6 +97,9 @@ export async function fetchIcalBookings(roomKey: RoomKey, forceRefresh = false):
       });
     }
 
+    // Persist to archive before caching
+    archiveBookings(bookings);
+
     setCachedBookings(roomKey, bookings);
     console.log(`[ical] ${roomKey}: ${bookings.length} events`);
     return bookings;
@@ -76,5 +118,15 @@ export async function fetchAllIcalBookings(forceRefresh = false): Promise<Bookin
   const [nest, master, nomad] = await Promise.all(
     ROOMS.map((room) => fetchIcalBookings(room, forceRefresh))
   );
-  return [...nest, ...master, ...nomad];
+  const liveBookings = [...nest, ...master, ...nomad];
+
+  // Merge in archived bookings that are no longer in the live feed
+  const liveIds = new Set(liveBookings.map((b) => b.id));
+  const archived = readArchive().filter((b) => !liveIds.has(b.id));
+
+  if (archived.length > 0) {
+    console.log(`[ical-archive] restored ${archived.length} booking(s) from archive`);
+  }
+
+  return [...liveBookings, ...archived.map((b) => ({ ...b, source: 'ical' as const }))];
 }
