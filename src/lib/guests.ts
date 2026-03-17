@@ -18,6 +18,7 @@ export function readGuests(): GuestProfile[] {
       notes: g.notes || '',
       totalStays: g.totalStays || 0,
       totalRevenue: g.totalRevenue || 0,
+      updatedAt: g.updatedAt || g.createdAt || new Date().toISOString(),
     }));
   } catch (err: any) {
     console.error('[guests] error reading file:', err.message);

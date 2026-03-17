@@ -5,7 +5,7 @@ import { json, jsonError } from '../../../lib/api-response.ts';
 export const GET: APIRoute = async () => {
   try {
     const guests = readGuests();
-    guests.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    guests.sort((a, b) => (b.updatedAt || b.createdAt || '').localeCompare(a.updatedAt || a.createdAt || ''));
     return json({ guests });
   } catch (err: any) {
     console.error('[api] /api/guests GET error:', err);
