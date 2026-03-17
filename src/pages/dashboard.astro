@@ -214,6 +214,9 @@ import '../styles/dashboard.css';
     <div class="chat-panel-header">
       <div class="chat-header-avatar">KH</div>
       <span class="chat-panel-title">KH</span>
+      <button class="chat-new-btn" id="chat-new-btn" title="New conversation" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
       <button class="chat-panel-close" id="chat-panel-close">&times;</button>
     </div>
     <div class="chat-messages" id="chat-messages">
@@ -2548,6 +2551,26 @@ import '../styles/dashboard.css';
   let chatHistory = [];
   let isStreaming = false;
 
+  function clearChat() {
+    if (isStreaming) return;
+    chatHistory = [];
+    const messagesContainer = document.getElementById('chat-messages');
+    if (messagesContainer) {
+      const welcome = messagesContainer.querySelector('#chat-welcome');
+      messagesContainer.innerHTML = '';
+      if (welcome) { welcome.style.display = ''; messagesContainer.appendChild(welcome); }
+    }
+    const newBtn = document.getElementById('chat-new-btn');
+    if (newBtn) newBtn.style.display = 'none';
+    // Re-randomize greeting
+    const hour = new Date().getHours();
+    const greetings = hour < 12 ? ['Good morning', 'Morning!'] : hour < 17 ? ['Good afternoon', 'Hey there'] : ['Good evening', 'Evening!'];
+    const welcomeTitle = document.getElementById('chat-welcome-title');
+    if (welcomeTitle) welcomeTitle.textContent = greetings[Math.floor(Math.random() * greetings.length)];
+  }
+
+  document.getElementById('chat-new-btn')?.addEventListener('click', clearChat);
+
   function scrollChatToBottom(smooth) {
     const el = document.getElementById('chat-messages');
     if (smooth) {
@@ -2842,6 +2865,8 @@ import '../styles/dashboard.css';
     // Create empty assistant bubble with avatar
     const welcome = document.getElementById('chat-welcome');
     if (welcome) welcome.style.display = 'none';
+    const newBtn = document.getElementById('chat-new-btn');
+    if (newBtn) newBtn.style.display = '';
     const container = document.getElementById('chat-messages');
     const msg = document.createElement('div');
     msg.className = 'chat-msg chat-msg-assistant';
@@ -2990,27 +3015,55 @@ import '../styles/dashboard.css';
     sendChatMessage(btn.dataset.q || btn.textContent.trim());
   });
 
-  // ─── CHAT: ALWAYS OPEN (full-screen assistant mode) ─────────────────────────
-  // Chat is the primary interface — no toggle, no close, always visible
-  document.body.style.overflow = 'hidden';
+  // ─── INIT ─────────────────────────────────────────────────────────────────────
+  const isMobileChat = window.innerWidth <= 768;
 
-  // Handle mobile virtual keyboard — resize chat panel to avoid whitespace
+  // ─── CHAT: TOGGLE PANEL (desktop) / ALWAYS OPEN (mobile) ────────────────────
   const chatPanelEl = document.getElementById('chat-panel');
-  if (window.visualViewport) {
-    let vpRAF = null;
-    const onViewportResize = () => {
-      if (vpRAF) return;
-      vpRAF = requestAnimationFrame(() => {
-        vpRAF = null;
-        const vvh = window.visualViewport.height;
-        const vvOffset = window.visualViewport.offsetTop;
-        chatPanelEl.style.height = vvh + 'px';
-        chatPanelEl.style.top = vvOffset + 'px';
-        if (isNearBottom()) scrollChatToBottom();
-      });
-    };
-    window.visualViewport.addEventListener('resize', onViewportResize);
-    window.visualViewport.addEventListener('scroll', onViewportResize);
+  const chatOverlayEl = document.getElementById('chat-overlay');
+  const chatFabEl = document.getElementById('chat-fab');
+
+  function openChat() {
+    chatPanelEl.classList.add('open');
+    chatOverlayEl.classList.add('open');
+    chatFabEl.classList.add('hidden');
+    document.getElementById('chat-input').focus();
+  }
+
+  function closeChat() {
+    chatPanelEl.classList.remove('open');
+    chatOverlayEl.classList.remove('open');
+    chatFabEl.classList.remove('hidden');
+  }
+
+  if (isMobileChat) {
+    // Mobile: always open, full-screen, body scroll locked
+    chatPanelEl.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('chat-input').focus();
+
+    // Handle mobile virtual keyboard — resize chat panel to avoid whitespace
+    if (window.visualViewport) {
+      let vpRAF = null;
+      const onViewportResize = () => {
+        if (vpRAF) return;
+        vpRAF = requestAnimationFrame(() => {
+          vpRAF = null;
+          const vvh = window.visualViewport.height;
+          const vvOffset = window.visualViewport.offsetTop;
+          chatPanelEl.style.height = vvh + 'px';
+          chatPanelEl.style.top = vvOffset + 'px';
+          if (isNearBottom()) scrollChatToBottom();
+        });
+      };
+      window.visualViewport.addEventListener('resize', onViewportResize);
+      window.visualViewport.addEventListener('scroll', onViewportResize);
+    }
+  } else {
+    // Desktop: toggle via FAB + close button + overlay click
+    chatFabEl.addEventListener('click', openChat);
+    document.getElementById('chat-panel-close').addEventListener('click', closeChat);
+    chatOverlayEl.addEventListener('click', closeChat);
   }
 
   // Scroll-to-bottom button
@@ -3024,11 +3077,8 @@ import '../styles/dashboard.css';
     scrollBtn.classList.remove('visible');
   });
 
-  document.getElementById('chat-input').focus();
-
-  // ─── INIT ─────────────────────────────────────────────────────────────────────
+  // ─── DASHBOARD INIT ─────────────────────────────────────────────────────────
   // Mobile = chat-only mode, skip all dashboard initialization
-  const isMobileChat = window.innerWidth <= 768;
   if (!isMobileChat) {
     const savedTab = localStorage.getItem('kin-active-tab');
     if (savedTab) {
