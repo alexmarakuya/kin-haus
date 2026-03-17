@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { readManualBookings, writeManualBookings, readOverrides, writeOverrides } from '../../../lib/bookings.ts';
 import { VALID_BOOKING_TYPES, VALID_ROOMS } from '../../../lib/constants.ts';
 import { json, jsonError } from '../../../lib/api-response.ts';
+import { saveGuestProfile, syncGuestStats } from '../../../lib/guests.ts';
 
 export const PATCH: APIRoute = async ({ params, request }) => {
   const { id } = params;
@@ -58,6 +59,25 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (guest !== undefined) overrides[id!].guest = guest;
     if (notes !== undefined) overrides[id!].notes = notes;
     writeOverrides(overrides);
+  }
+
+  // Auto-create or update guest profile when guest name is set
+  const skipNames = ['guest', 'blocked', 'owner', 'hold', ''];
+  const guestName = guest || (manual ? manual.guest : undefined);
+  if (guestName && !skipNames.includes(guestName.toLowerCase()) && !guestName.startsWith('Guest ···')) {
+    try {
+      const guestProfile = saveGuestProfile({
+        fullName: guestName,
+        bookingIds: [id!],
+        preferredRoom: room || (manual ? manual.room : undefined),
+        source: manual ? (manual.type === 'direct' ? 'direct' : manual.type) : 'airbnb',
+      });
+      const allBookings = readManualBookings();
+      syncGuestStats(guestProfile.id, allBookings);
+      console.log(`[guests] auto-linked booking ${id} to guest profile ${guestProfile.id} (${guestProfile.fullName})`);
+    } catch (err: any) {
+      console.error('[guests] auto-link error:', err.message);
+    }
   }
 
   console.log(`[bookings] updated: ${id} — amount=${amount}, guest=${guest}`);

@@ -6,6 +6,7 @@ import { filterByDateRange } from '../../../lib/dates.ts';
 import { getLastSyncTimes } from '../../../lib/cache.ts';
 import { VALID_BOOKING_TYPES, VALID_ROOMS } from '../../../lib/constants.ts';
 import { json, jsonError } from '../../../lib/api-response.ts';
+import { saveGuestProfile, syncGuestStats } from '../../../lib/guests.ts';
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -77,6 +78,29 @@ export const POST: APIRoute = async ({ request }) => {
 
   bookings.push(newBooking);
   writeManualBookings(bookings);
+
+  // Auto-create or link guest profile (skip generic names and blocks)
+  const skipNames = ['guest', 'blocked', 'owner', 'hold'];
+  if (newBooking.guest && !skipNames.includes(newBooking.guest.toLowerCase())) {
+    try {
+      const guestProfile = saveGuestProfile({
+        fullName: newBooking.guest,
+        bookingIds: [newBooking.id],
+        preferredRoom: newBooking.room,
+        source: newBooking.type === 'direct' ? 'direct' : newBooking.type,
+        totalStays: 1,
+        totalRevenue: newBooking.amount || 0,
+        firstStay: newBooking.checkin,
+        lastStay: newBooking.checkin,
+      });
+      // Re-sync stats from all linked bookings
+      const allBookings = readManualBookings();
+      syncGuestStats(guestProfile.id, allBookings);
+      console.log(`[guests] auto-linked booking ${newBooking.id} to guest profile ${guestProfile.id} (${guestProfile.fullName})`);
+    } catch (err: any) {
+      console.error('[guests] auto-create error:', err.message);
+    }
+  }
 
   console.log(`[bookings] added: ${newBooking.id} — ${newBooking.guest} (${room}, ${checkin}–${checkout})`);
   return json(newBooking, 201);
