@@ -81,6 +81,7 @@ import '../styles/dashboard.css';
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
         <div class="tab" data-tab="guests">Guests</div>
         <div class="tab" data-tab="monitors">Monitors</div>
+        <div class="tab" data-tab="desks">Desks</div>
         <div class="tab-spacer"></div>
       </div>
 
@@ -197,6 +198,30 @@ import '../styles/dashboard.css';
             </div>
             <div class="kanban-col-cards" id="history-content"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- DESKS TAB -->
+      <div id="tab-desks" class="list-pane" style="display:none">
+        <div class="desk-summary" id="desk-summary">
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ds-available">5 / 5</span><span class="monitor-stat-label">Desks free today</span></div>
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ds-active">0</span><span class="monitor-stat-label">Active passes</span></div>
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ds-revenue">&#x0E3F;0</span><span class="monitor-stat-label">Revenue this month</span></div>
+          <div class="monitor-stat"><span class="monitor-stat-value" id="ds-utilisation">0%</span><span class="monitor-stat-label">Utilisation</span></div>
+        </div>
+        <div class="desk-today" id="desk-today">
+          <div class="desk-today-header">
+            <span class="kanban-col-title">Today</span>
+            <button class="btn btn-primary btn-sm" id="btn-sell-pass" style="padding:4px 10px; font-size:11px;">+ Sell Pass</button>
+          </div>
+          <div class="desk-visual" id="desk-visual"></div>
+          <div class="desk-checkin-cards" id="desk-checkins"></div>
+        </div>
+        <div class="desk-pass-section">
+          <div class="desk-pass-section-title">Active Passes</div>
+          <div class="desk-pass-list" id="desk-active-passes"></div>
+          <div class="desk-pass-section-title" style="margin-top:24px;">Recent / Expired</div>
+          <div class="desk-pass-list" id="desk-past-passes"></div>
         </div>
       </div>
 
@@ -563,6 +588,36 @@ import '../styles/dashboard.css';
       <div class="modal-footer">
         <button class="btn" id="mr-cancel">Cancel</button>
         <button class="btn btn-primary" id="mr-save">Create Rental</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELL PASS MODAL -->
+  <div class="overlay" id="pass-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Sell Co-Working Pass</div>
+        <button class="modal-close" onclick="document.getElementById('pass-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="fg">
+          <label>Pass Type</label>
+          <select id="cp-type">
+            <option value="day">Day Pass (&#x0E3F;350)</option>
+            <option value="weekly">Weekly Pass (&#x0E3F;1,500)</option>
+            <option value="monthly">Monthly Pass (&#x0E3F;5,000)</option>
+          </select>
+        </div>
+        <div class="fg"><label>Name</label><input id="cp-name" type="text" placeholder="e.g. Sarah Miller"></div>
+        <div class="fg"><label>Contact (optional)</label><input id="cp-contact" type="text" placeholder="Phone, WhatsApp, or email"></div>
+        <div class="fg"><label>Link to Guest Profile</label><select id="cp-guest"><option value="">-- Walk-in (no profile) --</option></select></div>
+        <div class="fg"><label>Start Date</label><input id="cp-start" type="text" placeholder="Today" readonly></div>
+        <div class="fg"><label>Amount (THB)</label><input id="cp-amount" type="number"></div>
+        <div class="fg"><label>Notes (optional)</label><input id="cp-notes" type="text" placeholder="Optional note"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cp-cancel">Cancel</button>
+        <button class="btn btn-primary" id="cp-save">Sell Pass</button>
       </div>
     </div>
   </div>
@@ -1643,10 +1698,12 @@ import '../styles/dashboard.css';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
     document.getElementById('tab-guests').style.display = tab === 'guests' ? 'block' : 'none';
     document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
+    document.getElementById('tab-desks').style.display = tab === 'desks' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
     if (tab === 'inquiries') fetchInquiries();
     if (tab === 'guests') loadGuests();
     if (tab === 'monitors') loadMonitors();
+    if (tab === 'desks') loadDesks();
     render();
   }
 
@@ -2000,7 +2057,7 @@ import '../styles/dashboard.css';
     document.getElementById('room-modal').classList.remove('open');
   });
   // Click overlay background to close for all modals
-  ['modal','code-modal','room-modal','rent-modal'].forEach(id => {
+  ['modal','code-modal','room-modal','rent-modal','pass-modal'].forEach(id => {
     document.getElementById(id).addEventListener('click', e => {
       if (e.target.id === id) document.getElementById(id).classList.remove('open');
     });
@@ -2894,6 +2951,241 @@ import '../styles/dashboard.css';
 
   document.getElementById('btn-export-csv').addEventListener('click', () => {
     window.location.href = '/api/monitors/history?format=csv';
+  });
+
+  // ─── DESKS (CO-WORKING) ────────────────────────────────────────────────────────
+  let allPasses = [];
+  let deskData = {};
+  const DESK_PRICING = { day: 350, weekly: 1500, monthly: 5000 };
+  const TOTAL_DESKS = 5;
+
+  async function loadDesks() {
+    try {
+      const res = await fetch('/api/coworking');
+      const data = await res.json();
+      allPasses = data.passes || [];
+      deskData = data;
+      renderDeskSummary(data.revenue || {});
+      renderDeskToday(data.today || {});
+      renderDeskPasses();
+    } catch (err) {
+      console.error('[desks] load error:', err);
+    }
+  }
+
+  function renderDeskSummary(rev) {
+    document.getElementById('ds-available').textContent = `${rev.desksAvailableToday ?? TOTAL_DESKS} / ${TOTAL_DESKS}`;
+    document.getElementById('ds-active').textContent = rev.activePasses || 0;
+    document.getElementById('ds-revenue').innerHTML = `&#x0E3F;${(rev.totalRevenueThisMonth || 0).toLocaleString()}`;
+    document.getElementById('ds-utilisation').textContent = `${rev.utilisationPercent || 0}%`;
+  }
+
+  function renderDeskToday(todayInfo) {
+    const checkedIn = todayInfo.checkedIn || 0;
+    const available = todayInfo.desksAvailable ?? TOTAL_DESKS;
+    const t = new Date().toISOString().slice(0, 10);
+
+    // Desk visual
+    const visual = document.getElementById('desk-visual');
+    const todayPasses = allPasses.filter(p => p.status === 'active' && p.checkins && p.checkins.includes(t));
+    let html = '';
+    for (let i = 1; i <= TOTAL_DESKS; i++) {
+      const pass = todayPasses[i - 1];
+      if (pass) {
+        const initial = pass.name.charAt(0).toUpperCase();
+        html += `<div class="desk-slot occupied" title="${pass.name}"><span class="desk-slot-num">${initial}</span></div>`;
+      } else {
+        html += `<div class="desk-slot"><span class="desk-slot-num">${i}</span></div>`;
+      }
+    }
+    visual.innerHTML = html;
+
+    // Checkin cards
+    const cards = document.getElementById('desk-checkins');
+    if (!todayPasses.length) {
+      cards.innerHTML = '<div class="desk-empty">No one checked in yet today</div>';
+    } else {
+      cards.innerHTML = todayPasses.map(p => {
+        const initial = p.name.charAt(0).toUpperCase();
+        const badge = `<span class="pass-badge pass-badge-${p.type}">${p.type}</span>`;
+        const guestLink = p.guestId ? ` <span style="color:var(--accent);cursor:pointer;font-size:11px;" onclick="event.stopPropagation();openGuestPanel('${p.guestId}')">profile</span>` : '';
+        return `<div class="desk-checkin-card">
+          <div class="desk-checkin-avatar">${initial}</div>
+          <div><div style="font-weight:600;">${p.name} ${badge}${guestLink}</div>
+          <div style="font-size:11px;color:#8b8b85;">${p.contact || ''}</div></div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function deskDaysLeft(endDate) {
+    const end = new Date(endDate + 'T00:00:00');
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const diff = Math.ceil((end - now) / 86400000);
+    if (diff < 0) return 'expired';
+    if (diff === 0) return 'last day';
+    return `${diff}d left`;
+  }
+
+  function renderDeskPasses() {
+    const active = allPasses.filter(p => p.status === 'active');
+    const past = allPasses.filter(p => p.status !== 'active').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 20);
+    const t = new Date().toISOString().slice(0, 10);
+
+    const borderColors = { day: '#e65100', weekly: '#1565c0', monthly: '#2e7d32' };
+
+    const activeEl = document.getElementById('desk-active-passes');
+    if (!active.length) {
+      activeEl.innerHTML = '<div class="desk-empty">No active passes</div>';
+    } else {
+      activeEl.innerHTML = active.map(p => {
+        const checkedInToday = p.checkins && p.checkins.includes(t);
+        const showCheckin = p.type !== 'day' && !checkedInToday;
+        const daysInfo = deskDaysLeft(p.endDate);
+        const guestLink = p.guestId ? `<span style="color:var(--accent);cursor:pointer;font-size:11px;margin-left:4px;" onclick="event.stopPropagation();openGuestPanel('${p.guestId}')">&#x1F464;</span>` : '';
+        return `<div class="desk-pass-card" style="border-left-color:${borderColors[p.type] || '#ccc'}">
+          <div class="desk-pass-card-header">
+            <div class="desk-pass-card-name">${p.name}${guestLink} <span class="pass-badge pass-badge-${p.type}">${p.type}</span></div>
+          </div>
+          <div class="desk-pass-card-dates">${fmtDateShort(p.startDate)} &ndash; ${fmtDateShort(p.endDate)} &middot; ${daysInfo}</div>
+          <div class="desk-pass-card-meta">&#x0E3F;${p.amount.toLocaleString()}${p.contact ? ' &middot; ' + p.contact : ''}${checkedInToday ? ' &middot; &#x2714; Checked in' : ''}</div>
+          <div class="desk-pass-card-actions">
+            ${showCheckin ? `<button class="btn btn-primary btn-sm" onclick="deskCheckin('${p.id}')">Check in</button>` : ''}
+            <button class="btn btn-sm" onclick="deskCancelPass('${p.id}')">Cancel</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    const pastEl = document.getElementById('desk-past-passes');
+    if (!past.length) {
+      pastEl.innerHTML = '<div class="desk-empty">No history yet</div>';
+    } else {
+      pastEl.innerHTML = past.map(p => {
+        const statusLabel = p.status === 'cancelled' ? 'Cancelled' : 'Expired';
+        return `<div class="desk-pass-card desk-pass-card-expired" style="border-left-color:${borderColors[p.type] || '#ccc'}">
+          <div class="desk-pass-card-header">
+            <div class="desk-pass-card-name">${p.name} <span class="pass-badge pass-badge-${p.type}">${p.type}</span></div>
+          </div>
+          <div class="desk-pass-card-dates">${fmtDateShort(p.startDate)} &ndash; ${fmtDateShort(p.endDate)} &middot; ${statusLabel}</div>
+          <div class="desk-pass-card-meta">&#x0E3F;${p.amount.toLocaleString()}${p.contact ? ' &middot; ' + p.contact : ''}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ─── DESK ACTIONS ────────────────────────────────────────────────────────
+  let passStartPicker;
+
+  window.deskCheckin = async function(passId) {
+    try {
+      const res = await fetch('/api/coworking/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passId }),
+      });
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Check-in failed'); return; }
+      loadDesks();
+    } catch (err) {
+      console.error('[desks] checkin error:', err);
+      alert('Check-in failed');
+    }
+  };
+
+  window.deskCancelPass = async function(passId) {
+    if (!confirm('Cancel this pass?')) return;
+    try {
+      const res = await fetch(`/api/coworking/${passId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to cancel'); return; }
+      loadDesks();
+    } catch (err) {
+      console.error('[desks] cancel error:', err);
+      alert('Failed to cancel pass');
+    }
+  };
+
+  function openSellPassModal() {
+    const modal = document.getElementById('pass-modal');
+    document.getElementById('cp-type').value = 'day';
+    document.getElementById('cp-name').value = '';
+    document.getElementById('cp-contact').value = '';
+    document.getElementById('cp-notes').value = '';
+    document.getElementById('cp-amount').value = DESK_PRICING.day;
+
+    // Populate guest dropdown
+    const guestSelect = document.getElementById('cp-guest');
+    guestSelect.innerHTML = '<option value="">-- Walk-in (no profile) --</option>';
+    if (allGuests && allGuests.length) {
+      allGuests.forEach(g => {
+        guestSelect.innerHTML += `<option value="${g.id}">${g.fullName}</option>`;
+      });
+    }
+
+    if (passStartPicker) passStartPicker.destroy();
+    passStartPicker = flatpickr('#cp-start', { dateFormat: 'Y-m-d', defaultDate: new Date() });
+
+    modal.classList.add('open');
+  }
+
+  // Update amount when type changes
+  document.getElementById('cp-type').addEventListener('change', () => {
+    const type = document.getElementById('cp-type').value;
+    document.getElementById('cp-amount').value = DESK_PRICING[type] || 350;
+  });
+
+  // Auto-fill name/contact when guest selected
+  document.getElementById('cp-guest').addEventListener('change', () => {
+    const guestId = document.getElementById('cp-guest').value;
+    if (!guestId || !allGuests) return;
+    const g = allGuests.find(guest => guest.id === guestId);
+    if (g) {
+      document.getElementById('cp-name').value = g.fullName;
+      document.getElementById('cp-contact').value = g.whatsapp || g.phone || g.email || '';
+    }
+  });
+
+  document.getElementById('cp-cancel').addEventListener('click', () => {
+    document.getElementById('pass-modal').classList.remove('open');
+  });
+
+  document.getElementById('cp-save').addEventListener('click', async () => {
+    const name = document.getElementById('cp-name').value.trim();
+    const type = document.getElementById('cp-type').value;
+    const contact = document.getElementById('cp-contact').value.trim();
+    const guestId = document.getElementById('cp-guest').value;
+    const startDate = document.getElementById('cp-start').value;
+    const amount = parseInt(document.getElementById('cp-amount').value);
+    const notes = document.getElementById('cp-notes').value.trim();
+
+    if (!name) { alert('Name is required.'); return; }
+    if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+
+    try {
+      const res = await fetch('/api/coworking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type, contact, guestId: guestId || undefined, startDate, amount, notes }),
+      });
+      if (!res.ok) { const err = await res.json(); alert(err.error || 'Failed to sell pass'); return; }
+      document.getElementById('pass-modal').classList.remove('open');
+      loadDesks();
+    } catch (err) {
+      console.error('[desks] sell pass error:', err);
+      alert('Failed to sell pass');
+    }
+  });
+
+  document.getElementById('btn-sell-pass').addEventListener('click', async () => {
+    // Ensure guests are loaded for the dropdown
+    if (!allGuests || !allGuests.length) {
+      try { await loadGuests(); } catch (e) {}
+    }
+    openSellPassModal();
   });
 
   // ─── CHAT ──────────────────────────────────────────────────────────────────────

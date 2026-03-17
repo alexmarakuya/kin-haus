@@ -86,6 +86,22 @@ export interface GuestProfile {
   updatedAt: string;
 }
 
+export interface CoworkingPass {
+  id: string;
+  guestId?: string;
+  name: string;
+  contact?: string;
+  type: 'day' | 'weekly' | 'monthly';
+  amount: number;
+  startDate: string;
+  endDate: string;
+  status: 'active' | 'expired' | 'cancelled';
+  checkins: string[];
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Monitor {
   id: string;
   name: string;
