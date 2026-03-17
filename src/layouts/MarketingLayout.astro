@@ -227,7 +227,7 @@ const currentPath = Astro.url.pathname;
     }
 
     /* Lightbox */
-    .room-hero img, .room-gallery img { cursor: pointer; }
+    .room-hero img, .room-gallery img, .cw-gallery img, .cw-gallery img { cursor: pointer; }
     .lightbox {
       position: fixed; inset: 0; z-index: 1000;
       background: rgba(0,0,0,0.92);
@@ -376,7 +376,7 @@ const currentPath = Astro.url.pathname;
     let idx = 0;
 
     function collectImages() {
-      images = Array.from(document.querySelectorAll('.room-hero img, .room-gallery img'));
+      images = Array.from(document.querySelectorAll('.room-hero img, .room-gallery img, .cw-gallery img'));
     }
 
     function show(i) {
@@ -394,7 +394,7 @@ const currentPath = Astro.url.pathname;
     }
 
     document.addEventListener('click', function(e) {
-      const img = e.target.closest('.room-hero img, .room-gallery img');
+      const img = e.target.closest('.room-hero img, .room-gallery img, .cw-gallery img');
       if (img) {
         collectImages();
         const i = images.indexOf(img);
