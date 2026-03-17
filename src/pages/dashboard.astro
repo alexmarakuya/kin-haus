@@ -6,6 +6,14 @@ import '../styles/dashboard.css';
 <BaseLayout title="Kin Haus — Occupancy Hub">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr" is:inline></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kin Haus">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#2c6e49">
+  <link rel="manifest" href="/manifest.json">
   <style>
     .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
     .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange,
@@ -71,6 +79,7 @@ import '../styles/dashboard.css';
         <div class="tab active" data-tab="calendar">Calendar</div>
         <div class="tab" data-tab="list">Bookings</div>
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
+        <div class="tab" data-tab="guests">Guests</div>
         <div class="tab" data-tab="monitors">Monitors</div>
         <div class="tab-spacer"></div>
       </div>
@@ -120,6 +129,27 @@ import '../styles/dashboard.css';
         <div id="codes-content" style="padding:0 28px 28px;"></div>
       </div>
 
+      <!-- GUESTS TAB -->
+      <div id="tab-guests" class="list-pane" style="display:none">
+        <div class="guest-toolbar">
+          <div class="guest-toolbar-left">
+            <div class="list-section-title" style="margin:0; border:none; padding:0;">Guests <span class="guest-count" id="guest-count"></span></div>
+            <div class="guest-filter-chips" id="guest-filter-chips">
+              <button class="filter-chip active" data-gf="all">All</button>
+              <button class="filter-chip" data-gf="in-house">In-house</button>
+              <button class="filter-chip" data-gf="upcoming">Upcoming</button>
+              <button class="filter-chip" data-gf="returning">Returning</button>
+              <button class="filter-chip" data-gf="vip">VIP</button>
+            </div>
+          </div>
+          <div class="guest-toolbar-right">
+            <input type="text" id="guest-search" placeholder="Search..." style="font-size:12px; padding:6px 12px; border:1px solid #dddbd7; border-radius:8px; width:160px; font-family:inherit;">
+            <button class="btn btn-primary" id="btn-add-guest" style="font-size:12px; padding:7px 16px;">+ Add Guest</button>
+          </div>
+        </div>
+        <div id="guests-content" style="padding:0 28px 28px;"></div>
+      </div>
+
       <!-- MONITORS TAB -->
       <div id="tab-monitors" class="list-pane" style="display:none">
         <!-- Revenue Summary -->
@@ -130,42 +160,40 @@ import '../styles/dashboard.css';
           <div class="monitor-stat"><span class="monitor-stat-value" id="ms-utilisation">0%</span><span class="monitor-stat-label">Utilisation</span></div>
         </div>
 
-        <!-- Pipeline -->
-        <div class="monitor-pipeline" id="monitor-pipeline">
-          <!-- Booked -->
-          <div class="pipeline-section" id="pipeline-booked">
-            <div class="pipeline-header">
-              <span class="pipeline-title">Booked</span>
-              <span class="pipeline-count" id="count-booked">0</span>
+        <!-- Kanban Pipeline -->
+        <div class="kanban" id="monitor-pipeline">
+          <!-- Available -->
+          <div class="kanban-col" id="pipeline-available">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Available</span>
+              <button class="btn btn-primary btn-sm" id="btn-new-rental" style="padding:4px 10px; font-size:11px;">+ New Rental</button>
             </div>
-            <div class="pipeline-cards" id="cards-booked"></div>
+            <div class="kanban-col-cards" id="cards-available"></div>
+          </div>
+
+          <!-- Booked -->
+          <div class="kanban-col" id="pipeline-booked">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Booked <span class="pipeline-count" id="count-booked">0</span></span>
+            </div>
+            <div class="kanban-col-cards" id="cards-booked"></div>
           </div>
 
           <!-- Delivered -->
-          <div class="pipeline-section" id="pipeline-delivered">
-            <div class="pipeline-header">
-              <span class="pipeline-title">Delivered</span>
-              <span class="pipeline-count" id="count-delivered">0</span>
+          <div class="kanban-col" id="pipeline-delivered">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Delivered <span class="pipeline-count" id="count-delivered">0</span></span>
             </div>
-            <div class="pipeline-cards" id="cards-delivered"></div>
+            <div class="kanban-col-cards" id="cards-delivered"></div>
           </div>
 
-          <!-- Available Monitors -->
-          <div class="pipeline-section" id="pipeline-available">
-            <div class="pipeline-header">
-              <span class="pipeline-title">Available Monitors</span>
-              <button class="btn btn-primary btn-sm" id="btn-new-rental">+ New Rental</button>
+          <!-- History -->
+          <div class="kanban-col kanban-col-history" id="pipeline-history">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">History</span>
+              <button class="btn btn-sm" id="btn-export-csv" style="padding:4px 10px; font-size:11px;">CSV</button>
             </div>
-            <div class="pipeline-cards" id="cards-available"></div>
-          </div>
-
-          <!-- History (collapsible) -->
-          <div class="pipeline-section">
-            <div class="pipeline-header pipeline-toggle" id="history-toggle">
-              <span class="pipeline-title">History <span class="pipeline-chevron" id="history-chevron">&#x25B8;</span></span>
-              <button class="btn btn-sm" id="btn-export-csv" style="font-size:11px;">Export CSV</button>
-            </div>
-            <div id="history-content" style="display:none"></div>
+            <div class="kanban-col-cards" id="history-content"></div>
           </div>
         </div>
       </div>
@@ -175,6 +203,116 @@ import '../styles/dashboard.css';
   </div>
 
   <div class="tooltip" id="tooltip"></div>
+
+  <!-- CHAT FAB + PANEL -->
+  <button class="chat-fab" id="chat-fab" aria-label="Open chat">
+    <svg class="chat-fab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+
+  <div class="chat-overlay" id="chat-overlay"></div>
+  <div class="chat-panel" id="chat-panel">
+    <div class="chat-panel-header">
+      <div class="chat-header-avatar">KH</div>
+      <span class="chat-panel-title">KH</span>
+      <button class="chat-panel-close" id="chat-panel-close">&times;</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-welcome" id="chat-welcome">
+        <div class="chat-welcome-icon">KH</div>
+        <div class="chat-welcome-title" id="chat-welcome-title">Hey there</div>
+        <div class="chat-welcome-sub">Your Kin Haus villa manager. Ask me anything.</div>
+        <div class="chat-suggestions" id="chat-suggestions">
+          <button class="chat-suggestion" data-q="Add a booking">Add a booking</button>
+          <button class="chat-suggestion" data-q="When is The Nest available next?">Availability</button>
+          <button class="chat-suggestion" data-q="What's our occupancy this month?">Occupancy</button>
+          <button class="chat-suggestion" data-q="How's our revenue looking this month?">Revenue</button>
+        </div>
+      </div>
+    </div>
+    <button class="chat-scroll-btn" id="chat-scroll-btn" aria-label="Scroll to latest">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="chat-image-preview" id="chat-image-preview" style="display:none">
+      <img id="chat-image-thumb" alt="Preview">
+      <button class="chat-image-remove" id="chat-image-remove" aria-label="Remove image">&times;</button>
+    </div>
+    <div class="chat-input-area" id="chat-input-area">
+      <button class="chat-attach" id="chat-attach" aria-label="Attach image">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <input type="file" id="chat-file-input" accept="image/*" style="display:none">
+      <textarea id="chat-input" placeholder="Ask anything..." rows="1" autocomplete="off" autocorrect="on" autocapitalize="sentences" enterkeyhint="send"></textarea>
+      <button class="chat-send" id="chat-send" disabled aria-label="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- GUEST DETAIL PANEL -->
+  <div class="detail-panel" id="guest-panel">
+    <div class="detail-panel-header">
+      <div class="detail-panel-title" id="gp-title">Guest Profile</div>
+      <button class="detail-panel-close" id="gp-close">&times;</button>
+    </div>
+    <div class="detail-panel-body">
+      <div class="gp-section">
+        <div class="gp-section-title">Identity</div>
+        <div class="fg"><label>Full Name</label><input id="gp-name" type="text" placeholder="Full name as on passport"></div>
+        <div class="gp-row-2">
+          <div class="fg"><label>Nationality</label><input id="gp-nationality" type="text" placeholder="e.g. British"></div>
+          <div class="fg"><label>Gender</label><select id="gp-gender"><option value="">-</option><option value="M">Male</option><option value="F">Female</option></select></div>
+        </div>
+        <div class="gp-row-2">
+          <div class="fg"><label>Passport #</label><input id="gp-passport" type="text" placeholder="AB1234567"></div>
+          <div class="fg"><label>Date of Birth</label><input id="gp-dob" type="date"></div>
+        </div>
+      </div>
+
+      <div class="gp-section">
+        <div class="gp-section-title">Contact</div>
+        <div class="fg"><label>Email</label><input id="gp-email" type="email" placeholder="guest@example.com"></div>
+        <div class="gp-row-2">
+          <div class="fg"><label>Phone</label><input id="gp-phone" type="text" placeholder="+66..."></div>
+          <div class="fg"><label>WhatsApp</label><input id="gp-whatsapp" type="text" placeholder="+66..."></div>
+        </div>
+      </div>
+
+      <div class="gp-section">
+        <div class="gp-section-title">Preferences</div>
+        <div class="fg"><label>Preferred Room</label><select id="gp-room"><option value="">No preference</option><option value="nest">The Nest</option><option value="master">Master Suite</option><option value="nomad">Nomad Room</option></select></div>
+        <div class="fg"><label>Preferences & Requests</label><textarea id="gp-preferences" rows="2" placeholder="Dietary needs, habits, special requests..."></textarea></div>
+        <div class="fg"><label>Source</label><select id="gp-source"><option value="">Unknown</option><option value="airbnb">Airbnb</option><option value="direct">Direct / website</option><option value="referral">Referral</option><option value="repeat">Returning guest</option><option value="whatsapp">WhatsApp</option></select></div>
+      </div>
+
+      <div class="gp-section">
+        <div class="gp-section-title">Tags</div>
+        <div class="gp-tags" id="gp-tags"></div>
+        <div class="gp-tag-add">
+          <input id="gp-tag-input" type="text" placeholder="Add tag..." style="font-size:12px; padding:4px 8px; border:1px solid #dddbd7; border-radius:6px; width:120px;">
+          <button class="btn btn-sm" id="gp-tag-add-btn">+</button>
+        </div>
+      </div>
+
+      <div class="gp-section">
+        <div class="gp-section-title">Notes</div>
+        <div class="fg"><textarea id="gp-notes" rows="3" placeholder="Internal notes..."></textarea></div>
+      </div>
+
+      <div class="gp-section" id="gp-history-section">
+        <div class="gp-section-title">Stay History</div>
+        <div id="gp-history"></div>
+      </div>
+
+      <div class="gp-stats" id="gp-stats"></div>
+    </div>
+    <div class="detail-panel-footer">
+      <button class="btn btn-danger" id="gp-delete">Delete</button>
+      <div class="detail-panel-footer-right">
+        <button class="btn" id="gp-cancel">Cancel</button>
+        <button class="btn btn-primary" id="gp-save">Save</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ADD BOOKING MODAL -->
   <div class="overlay" id="modal">
@@ -1463,9 +1601,11 @@ import '../styles/dashboard.css';
     document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'flex' : 'none';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
+    document.getElementById('tab-guests').style.display = tab === 'guests' ? 'block' : 'none';
     document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
     if (tab === 'inquiries') fetchInquiries();
+    if (tab === 'guests') loadGuests();
     if (tab === 'monitors') loadMonitors();
     render();
   }
@@ -1851,11 +1991,304 @@ import '../styles/dashboard.css';
     }
   });
 
+  // ─── GUESTS CRM ─────────────────────────────────────────────────────────────
+  let allGuests = [];
+  let guestSearchQuery = '';
+  let guestFilterTag = 'all';
+  let editingGuestId = null;
+  let gpTags = [];
+
+  async function loadGuests() {
+    try {
+      const res = await fetch('/api/guests');
+      const data = await res.json();
+      allGuests = data.guests || [];
+      renderGuests();
+    } catch (err) {
+      console.error('[guests] load error:', err);
+    }
+  }
+
+  function getGuestBookings(g) {
+    return (g.bookingIds || []).map(bid => allBookings.find(b => b.id === bid)).filter(Boolean);
+  }
+
+  function guestStatus(g) {
+    const today = new Date().toISOString().slice(0, 10);
+    const linked = getGuestBookings(g);
+    const current = linked.find(b => b.checkin <= today && b.checkout > today);
+    if (current) return 'in-house';
+    const upcoming = linked.find(b => b.checkin > today);
+    if (upcoming) return 'upcoming';
+    if ((g.tags || []).includes('returning') || g.totalStays >= 2) return 'returning';
+    if ((g.tags || []).includes('vip')) return 'vip';
+    return 'none';
+  }
+
+  function renderGuests() {
+    const container = document.getElementById('guests-content');
+    const countEl = document.getElementById('guest-count');
+    const today = new Date().toISOString().slice(0, 10);
+    let guests = allGuests;
+
+    // Filter by tag/status
+    if (guestFilterTag !== 'all') {
+      guests = guests.filter(g => {
+        const s = guestStatus(g);
+        if (guestFilterTag === 'in-house') return s === 'in-house';
+        if (guestFilterTag === 'upcoming') return s === 'upcoming';
+        if (guestFilterTag === 'returning') return (g.tags || []).includes('returning') || g.totalStays >= 2;
+        if (guestFilterTag === 'vip') return (g.tags || []).includes('vip');
+        return true;
+      });
+    }
+
+    // Search
+    if (guestSearchQuery) {
+      const q = guestSearchQuery.toLowerCase();
+      guests = guests.filter(g =>
+        g.fullName.toLowerCase().includes(q) ||
+        (g.nationality || '').toLowerCase().includes(q) ||
+        (g.passportNumber || '').toLowerCase().includes(q) ||
+        (g.email || '').toLowerCase().includes(q) ||
+        (g.phone || '').toLowerCase().includes(q)
+      );
+    }
+
+    countEl.textContent = guests.length ? `(${guests.length})` : '';
+
+    if (!guests.length) {
+      container.innerHTML = guestSearchQuery
+        ? '<div style="color:#8b8b85; font-size:13px; padding:20px 0;">No guests matching your search</div>'
+        : '<div style="color:#8b8b85; font-size:13px; padding:20px 0;">No guest profiles yet. Scan a passport in the chat or add one manually.</div>';
+      return;
+    }
+
+    container.innerHTML = `<div class="guest-grid">${guests.map(g => {
+      const linked = getGuestBookings(g);
+      const currentStay = linked.find(b => b.checkin <= today && b.checkout > today);
+      const upcomingStay = linked.find(b => b.checkin > today);
+      const pastStays = linked.filter(b => b.checkout <= today).length;
+      const status = guestStatus(g);
+
+      const statusMap = {
+        'in-house': '<span class="guest-status guest-status-current">In-house</span>',
+        'upcoming': '<span class="guest-status guest-status-upcoming">Upcoming</span>',
+        'returning': '<span class="guest-status guest-status-returning">Returning</span>',
+        'vip': '<span class="guest-status guest-status-vip">VIP</span>',
+      };
+      const statusTag = statusMap[status] || (pastStays > 0 ? `<span class="guest-status guest-status-past">${pastStays} stay${pastStays > 1 ? 's' : ''}</span>` : '');
+
+      const genderIcon = g.gender === 'M' ? '&#9794;' : g.gender === 'F' ? '&#9792;' : '';
+      const tags = (g.tags || []).map(t => `<span class="guest-tag">${t}</span>`).join('');
+
+      let stayInfo = '';
+      if (currentStay) stayInfo = `<div class="guest-card-stay">In ${ROOM_LABELS[currentStay.room] || currentStay.room} until ${fmtDateShort(currentStay.checkout)}</div>`;
+      else if (upcomingStay) stayInfo = `<div class="guest-card-stay">Next: ${ROOM_LABELS[upcomingStay.room] || upcomingStay.room} from ${fmtDateShort(upcomingStay.checkin)}</div>`;
+
+      const revenueDisplay = g.totalRevenue > 0 ? `<span class="guest-card-revenue">&#x0E3F;${g.totalRevenue.toLocaleString()}</span>` : '';
+      const stayCount = g.totalStays > 0 ? `${g.totalStays} stay${g.totalStays > 1 ? 's' : ''}` : '';
+      const meta = [stayCount, revenueDisplay].filter(Boolean).join(' &middot; ');
+
+      return `<div class="guest-card" data-id="${g.id}" onclick="openGuestPanel('${g.id}')">
+        <div class="guest-card-header">
+          <div class="guest-card-avatar">${g.fullName.charAt(0).toUpperCase()}</div>
+          <div class="guest-card-info">
+            <div class="guest-card-name">${g.fullName} ${genderIcon ? '<span class="guest-gender">' + genderIcon + '</span>' : ''}</div>
+            <div class="guest-card-detail">${g.nationality || 'Unknown'}${g.source ? ' &middot; via ' + g.source : ''}</div>
+          </div>
+          ${statusTag}
+        </div>
+        ${stayInfo}
+        ${meta ? `<div class="guest-card-meta">${meta}</div>` : ''}
+        ${tags ? `<div class="guest-card-tags">${tags}</div>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  // Search
+  document.getElementById('guest-search')?.addEventListener('input', (e) => {
+    guestSearchQuery = e.target.value;
+    renderGuests();
+  });
+
+  // Filter chips
+  document.getElementById('guest-filter-chips')?.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-gf]');
+    if (!chip) return;
+    guestFilterTag = chip.dataset.gf;
+    document.querySelectorAll('#guest-filter-chips .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    renderGuests();
+  });
+
+  // Add guest - opens empty panel
+  document.getElementById('btn-add-guest')?.addEventListener('click', () => {
+    openGuestPanel(null);
+  });
+
+  // ─── GUEST DETAIL PANEL ─────────────────────────────────────────────────────
+  function openGuestPanel(id) {
+    editingGuestId = id;
+    const panel = document.getElementById('guest-panel');
+    const g = id ? allGuests.find(g => g.id === id) : null;
+
+    document.getElementById('gp-title').textContent = g ? g.fullName : 'New Guest';
+    document.getElementById('gp-name').value = g?.fullName || '';
+    document.getElementById('gp-nationality').value = g?.nationality || '';
+    document.getElementById('gp-gender').value = g?.gender || '';
+    document.getElementById('gp-passport').value = g?.passportNumber || '';
+    document.getElementById('gp-dob').value = g?.dateOfBirth || '';
+    document.getElementById('gp-email').value = g?.email || '';
+    document.getElementById('gp-phone').value = g?.phone || '';
+    document.getElementById('gp-whatsapp').value = g?.whatsapp || '';
+    document.getElementById('gp-room').value = g?.preferredRoom || '';
+    document.getElementById('gp-preferences').value = g?.preferences || '';
+    document.getElementById('gp-source').value = g?.source || '';
+    document.getElementById('gp-notes').value = g?.notes || '';
+
+    // Tags
+    gpTags = g?.tags ? [...g.tags] : [];
+    renderGpTags();
+
+    // Delete button only for existing
+    document.getElementById('gp-delete').style.display = g ? '' : 'none';
+
+    // Stay history
+    const historyEl = document.getElementById('gp-history');
+    const historySection = document.getElementById('gp-history-section');
+    const statsEl = document.getElementById('gp-stats');
+    if (g) {
+      const linked = getGuestBookings(g);
+      if (linked.length) {
+        historySection.style.display = '';
+        historyEl.innerHTML = linked.sort((a, b) => b.checkin.localeCompare(a.checkin)).map(b => {
+          const nights = Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000);
+          return `<div class="gp-history-row">
+            <span class="gp-history-room">${ROOM_LABELS[b.room] || b.room}</span>
+            <span>${fmtDateShort(b.checkin)} - ${fmtDateShort(b.checkout)}</span>
+            <span>${nights}n</span>
+            <span>${b.amount > 0 ? '&#x0E3F;' + b.amount.toLocaleString() : '-'}</span>
+            <span class="gp-history-type" style="color:var(--${b.type})">${b.type}</span>
+          </div>`;
+        }).join('');
+      } else {
+        historySection.style.display = 'none';
+      }
+
+      const stats = [];
+      if (g.totalStays > 0) stats.push(`${g.totalStays} stay${g.totalStays > 1 ? 's' : ''}`);
+      if (g.totalRevenue > 0) stats.push(`&#x0E3F;${g.totalRevenue.toLocaleString()} total revenue`);
+      if (g.firstStay) stats.push(`First stay: ${fmtDateShort(g.firstStay)}`);
+      if (g.lastStay && g.lastStay !== g.firstStay) stats.push(`Last stay: ${fmtDateShort(g.lastStay)}`);
+      statsEl.innerHTML = stats.length ? `<div class="gp-stats-inner">${stats.join(' &middot; ')}</div>` : '';
+    } else {
+      historySection.style.display = 'none';
+      statsEl.innerHTML = '';
+    }
+
+    panel.classList.add('open');
+    if (!g) document.getElementById('gp-name').focus();
+  }
+
+  function closeGuestPanel() {
+    document.getElementById('guest-panel').classList.remove('open');
+    editingGuestId = null;
+  }
+
+  function renderGpTags() {
+    const container = document.getElementById('gp-tags');
+    container.innerHTML = gpTags.map(t =>
+      `<span class="gp-tag">${t} <button onclick="removeGpTag('${t}')">&times;</button></span>`
+    ).join('') || '<span style="color:#b5b3ad; font-size:12px;">No tags</span>';
+  }
+
+  window.removeGpTag = function(tag) {
+    gpTags = gpTags.filter(t => t !== tag);
+    renderGpTags();
+  };
+
+  window.openGuestPanel = openGuestPanel;
+
+  document.getElementById('gp-close')?.addEventListener('click', closeGuestPanel);
+  document.getElementById('gp-cancel')?.addEventListener('click', closeGuestPanel);
+
+  document.getElementById('gp-tag-add-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('gp-tag-input');
+    const tag = input.value.trim().toLowerCase();
+    if (tag && !gpTags.includes(tag)) {
+      gpTags.push(tag);
+      renderGpTags();
+    }
+    input.value = '';
+  });
+
+  document.getElementById('gp-tag-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('gp-tag-add-btn').click();
+    }
+  });
+
+  // Save guest
+  document.getElementById('gp-save')?.addEventListener('click', async () => {
+    const payload = {
+      fullName: document.getElementById('gp-name').value.trim(),
+      nationality: document.getElementById('gp-nationality').value.trim(),
+      gender: document.getElementById('gp-gender').value,
+      passportNumber: document.getElementById('gp-passport').value.trim(),
+      dateOfBirth: document.getElementById('gp-dob').value,
+      email: document.getElementById('gp-email').value.trim(),
+      phone: document.getElementById('gp-phone').value.trim(),
+      whatsapp: document.getElementById('gp-whatsapp').value.trim(),
+      preferredRoom: document.getElementById('gp-room').value,
+      preferences: document.getElementById('gp-preferences').value.trim(),
+      source: document.getElementById('gp-source').value,
+      notes: document.getElementById('gp-notes').value.trim(),
+      tags: gpTags,
+    };
+
+    if (!payload.fullName) { alert('Name is required'); return; }
+
+    try {
+      if (editingGuestId) {
+        await fetch(`/api/guests/${editingGuestId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch('/api/guests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+      closeGuestPanel();
+      loadGuests();
+    } catch (err) {
+      console.error('[guests] save error:', err);
+      alert('Failed to save guest');
+    }
+  });
+
+  // Delete guest
+  document.getElementById('gp-delete')?.addEventListener('click', async () => {
+    if (!editingGuestId || !confirm('Delete this guest profile? This cannot be undone.')) return;
+    try {
+      await fetch(`/api/guests/${editingGuestId}`, { method: 'DELETE' });
+      closeGuestPanel();
+      loadGuests();
+    } catch (err) {
+      console.error('[guests] delete error:', err);
+      alert('Failed to delete guest');
+    }
+  });
+
   // ─── MONITORS ──────────────────────────────────────────────────────────────────
   let allMonitors = [];
   let allRentals = [];
   let monitorRevenue = {};
-  let historyOpen = false;
 
   function formatDateDMY(dateStr) {
     if (!dateStr) return '';
@@ -1910,25 +2343,39 @@ import '../styles/dashboard.css';
     document.getElementById('count-booked').textContent = booked.length;
     document.getElementById('count-delivered').textContent = delivered.length;
 
+    // Available monitors
+    const availContainer = document.getElementById('cards-available');
+    const allAvail = [...available, ...maintenance];
+    if (!allAvail.length) {
+      availContainer.innerHTML = '<div class="pipeline-empty">All rented out</div>';
+    } else {
+      availContainer.innerHTML = allAvail.map(m => {
+        const isMain = m.status === 'maintenance';
+        return `<div class="monitor-avail-card">
+          <div class="monitor-avail-name">${m.name}</div>
+          <div class="monitor-avail-rate">&#x0E3F;${m.dailyRate}/day${isMain ? ' · Maintenance' : ''}</div>
+          <div class="monitor-avail-actions">
+            ${m.status === 'available' ? `<button class="btn btn-primary btn-sm" onclick="openRentModal('${m.id}')">Rent</button>` : ''}
+            <button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">${isMain ? 'Activate' : 'Maint.'}</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
     // Booked cards
     const bookedContainer = document.getElementById('cards-booked');
     if (!booked.length) {
-      bookedContainer.innerHTML = '<div class="pipeline-empty">No booked rentals</div>';
+      bookedContainer.innerHTML = '<div class="pipeline-empty">No bookings</div>';
     } else {
       bookedContainer.innerHTML = booked.map(r => {
         const mon = monitors.find(m => m.id === r.monitorId);
         return `<div class="rental-card">
-          <div class="rental-card-top">
-            <div>
-              <div class="rental-card-renter">${r.renter}</div>
-              <div class="rental-card-monitor">${mon?.name || r.monitorId} · &#x0E3F;${r.dailyRate}/day</div>
-              <div class="rental-card-dates">Booked for ${fmtDateShort(r.startDate)}${r.endDate ? ' → ' + fmtDateShort(r.endDate) : ''}</div>
-              <div class="rental-card-meta">Contact: ${r.contact}${r.depositHeld ? ' · Deposit: Held' : ''}</div>
-            </div>
-            <span class="monitor-badge monitor-badge-booked">BOOKED</span>
-          </div>
+          <div class="rental-card-renter">${r.renter}</div>
+          <div class="rental-card-monitor">${mon?.name || r.monitorId} · &#x0E3F;${r.dailyRate}/day</div>
+          <div class="rental-card-dates">${fmtDateShort(r.startDate)}${r.endDate ? ' → ' + fmtDateShort(r.endDate) : ''}</div>
+          <div class="rental-card-meta">${r.contact}${r.depositHeld ? ' · Deposit held' : ''}</div>
           <div class="rental-card-actions">
-            <button class="btn btn-primary btn-sm" onclick="advanceRental('${r.id}','deliver')">Mark Delivered</button>
+            <button class="btn btn-primary btn-sm" onclick="advanceRental('${r.id}','deliver')">Deliver</button>
             <button class="btn btn-sm" onclick="advanceRental('${r.id}','cancel')">Cancel</button>
           </div>
         </div>`;
@@ -1938,7 +2385,7 @@ import '../styles/dashboard.css';
     // Delivered cards
     const deliveredContainer = document.getElementById('cards-delivered');
     if (!delivered.length) {
-      deliveredContainer.innerHTML = '<div class="pipeline-empty">No delivered monitors</div>';
+      deliveredContainer.innerHTML = '<div class="pipeline-empty">None out</div>';
     } else {
       deliveredContainer.innerHTML = delivered.map(r => {
         const mon = monitors.find(m => m.id === r.monitorId);
@@ -1948,43 +2395,15 @@ import '../styles/dashboard.css';
         const revenue = enriched?.revenueAccrued || 0;
         const overdue = enriched?.overdue || false;
         const daysInfo = daysRemaining !== null && daysRemaining !== undefined
-          ? (daysRemaining < 0 ? `<span style="color:var(--airbnb)">${Math.abs(daysRemaining)}d overdue</span>` : `${daysRemaining}d remaining`)
+          ? (daysRemaining < 0 ? `<span style="color:var(--airbnb)">${Math.abs(daysRemaining)}d overdue</span>` : `${daysRemaining}d left`)
           : '';
         return `<div class="rental-card ${overdue ? 'rental-card-overdue' : ''}">
-          <div class="rental-card-top">
-            <div>
-              <div class="rental-card-renter">${r.renter}</div>
-              <div class="rental-card-monitor">${mon?.name || r.monitorId} · &#x0E3F;${r.dailyRate}/day</div>
-              <div class="rental-card-dates">${fmtDateShort(r.deliveryDate || r.startDate)} → ${r.endDate ? fmtDateShort(r.endDate) : 'open'} · ${daysRented}d so far${daysInfo ? ' · ' + daysInfo : ''}</div>
-              <div class="rental-card-meta">Revenue: &#x0E3F;${revenue.toLocaleString()}${r.depositHeld ? ' · Deposit: Held' : ''}</div>
-            </div>
-            <span class="monitor-badge ${overdue ? 'monitor-badge-overdue' : 'monitor-badge-delivered'}">${overdue ? 'OVERDUE' : 'DELIVERED'}</span>
-          </div>
+          <div class="rental-card-renter">${r.renter}</div>
+          <div class="rental-card-monitor">${mon?.name || r.monitorId}</div>
+          <div class="rental-card-dates">${daysRented}d${daysInfo ? ' · ' + daysInfo : ''}</div>
+          <div class="rental-card-meta">&#x0E3F;${revenue.toLocaleString()}${r.depositHeld ? ' · Deposit' : ''}</div>
           <div class="rental-card-actions">
-            <button class="btn btn-primary btn-sm" onclick="advanceRental('${r.id}','return')">Mark Returned</button>
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    // Available monitors
-    const availContainer = document.getElementById('cards-available');
-    const allAvail = [...available, ...maintenance];
-    if (!allAvail.length) {
-      availContainer.innerHTML = '<div class="pipeline-empty">All monitors are rented out</div>';
-    } else {
-      availContainer.innerHTML = allAvail.map(m => {
-        const isMain = m.status === 'maintenance';
-        return `<div class="monitor-avail-card">
-          <div class="monitor-avail-info">
-            <div>
-              <div class="monitor-avail-name">${m.name}</div>
-              <div class="monitor-avail-rate">${m.id} · &#x0E3F;${m.dailyRate}/day${isMain ? ' · Maintenance' : ''}</div>
-            </div>
-          </div>
-          <div class="monitor-avail-actions">
-            ${m.status === 'available' ? `<button class="btn btn-primary btn-sm" onclick="openRentModal('${m.id}')">New Rental</button>` : ''}
-            <button class="btn btn-sm" onclick="toggleMaintenance('${m.id}')">${isMain ? 'Make Available' : 'Maintenance'}</button>
+            <button class="btn btn-primary btn-sm" onclick="advanceRental('${r.id}','return')">Return</button>
           </div>
         </div>`;
       }).join('');
@@ -1997,33 +2416,19 @@ import '../styles/dashboard.css';
   function renderMonitorHistory(rentals) {
     const container = document.getElementById('history-content');
     if (!rentals.length) {
-      container.innerHTML = '<div style="color:#8b8b85; font-size:13px; padding:12px 0;">No completed rentals yet.</div>';
+      container.innerHTML = '<div class="pipeline-empty">No history yet</div>';
       return;
     }
-    container.innerHTML = `<table class="monitor-table" style="margin-top:12px"><thead><tr>
-      <th>Monitor</th><th>Renter</th><th>Dates</th><th>Days</th><th>Revenue</th><th>Status</th><th>Notes</th>
-    </tr></thead><tbody>${rentals.map(r => {
+    container.innerHTML = rentals.map(r => {
       const days = r.revenue > 0 ? Math.round(r.revenue / r.dailyRate) : 0;
       const isCancelled = r.status === 'cancelled';
-      return `<tr style="${isCancelled ? 'opacity:0.5' : ''}">
-        <td>${monitorName(r.monitorId)}</td>
-        <td>${r.renter}</td>
-        <td style="font-size:11px">${formatDateDMY(r.startDate)} - ${formatDateDMY(r.completedAt?.slice(0,10) || '')}</td>
-        <td>${days}d</td>
-        <td>${isCancelled ? '-' : '&#x0E3F;' + r.revenue.toLocaleString()}</td>
-        <td><span class="monitor-badge ${isCancelled ? 'monitor-badge-cancelled' : 'monitor-badge-available'}">${r.status}</span></td>
-        <td style="font-size:11px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.notes || ''}</td>
-      </tr>`;
-    }).join('')}</tbody></table>`;
+      return `<div class="history-card ${isCancelled ? 'history-card-cancelled' : ''}">
+        <div class="history-card-name">${r.renter}</div>
+        <div class="history-card-detail">${monitorName(r.monitorId)} · ${days}d</div>
+        <div class="history-card-detail">${isCancelled ? 'Cancelled' : '&#x0E3F;' + r.revenue.toLocaleString()}</div>
+      </div>`;
+    }).join('');
   }
-
-  // History toggle
-  document.getElementById('history-toggle').addEventListener('click', (e) => {
-    if (e.target.closest('.btn')) return; // don't toggle when clicking export
-    historyOpen = !historyOpen;
-    document.getElementById('history-content').style.display = historyOpen ? 'block' : 'none';
-    document.getElementById('history-chevron').classList.toggle('open', historyOpen);
-  });
 
   // ─── MONITOR ACTIONS ───────────────────────────────────────────────────────
   let rentStartPicker, rentEndPicker;
@@ -2139,10 +2544,501 @@ import '../styles/dashboard.css';
     window.location.href = '/api/monitors/history?format=csv';
   });
 
+  // ─── CHAT ──────────────────────────────────────────────────────────────────────
+  let chatHistory = [];
+  let isStreaming = false;
+
+  function scrollChatToBottom(smooth) {
+    const el = document.getElementById('chat-messages');
+    if (smooth) {
+      requestAnimationFrame(() => { el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); });
+    } else {
+      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    }
+  }
+
+  function isNearBottom() {
+    const el = document.getElementById('chat-messages');
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+
+  function renderMarkdown(text) {
+    if (typeof marked !== 'undefined' && marked.parse) {
+      return marked.parse(text, { breaks: true });
+    }
+    // Fallback: basic escaping
+    return text.replace(/</g, '&lt;').replace(/\n/g, '<br>');
+  }
+
+  // ─── ACTION CARD RENDERING ─────────────────────────────────────────────────
+  const ACTION_PATTERNS = {
+    bookingType: /\[SELECT:booking-type\]/g,
+    room: /\[SELECT:room\]/g,
+    datepicker: /\[DATEPICKER:checkin-checkout(?::(\w+))?\]/g,
+    confirm: /\[CONFIRM:booking\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^\]]+)\]/g,
+  };
+
+  const BOOKING_TYPE_OPTIONS = [
+    { value: 'direct', label: 'Direct' },
+    { value: 'friend', label: 'Friend' },
+    { value: 'owner', label: 'Owner' },
+    { value: 'hold', label: 'Hold' },
+    { value: 'blocked', label: 'Blocked' },
+    { value: 'waitlist', label: 'Waitlist' },
+  ];
+
+  const ROOM_OPTIONS = [
+    { value: 'nest', label: 'The Nest' },
+    { value: 'master', label: 'Master Suite' },
+    { value: 'nomad', label: 'Nomad Room' },
+    { value: 'theater', label: 'Theater Room' },
+    { value: 'full', label: 'Full House' },
+  ];
+
+  // ROOM_LABELS already declared at top of script (line ~442)
+  const TYPE_LABELS = { direct: 'Direct', friend: 'Friend', owner: 'Owner', hold: 'Hold', blocked: 'Blocked', waitlist: 'Waitlist' };
+
+  function processActionCards(html, bubble) {
+    // Replace [SELECT:booking-type]
+    html = html.replace(ACTION_PATTERNS.bookingType, () => {
+      const btns = BOOKING_TYPE_OPTIONS.map(o =>
+        `<button class="chat-action-btn" data-action="booking-type" data-value="${o.value}">${o.label}</button>`
+      ).join('');
+      return `<div class="chat-action-card"><div class="chat-action-label">Booking Type</div><div class="chat-action-buttons">${btns}</div></div>`;
+    });
+
+    // Replace [SELECT:room]
+    html = html.replace(ACTION_PATTERNS.room, () => {
+      const btns = ROOM_OPTIONS.map(o =>
+        `<button class="chat-action-btn" data-action="room" data-value="${o.value}">${o.label}</button>`
+      ).join('');
+      return `<div class="chat-action-card"><div class="chat-action-label">Room</div><div class="chat-action-buttons">${btns}</div></div>`;
+    });
+
+    // Replace [DATEPICKER:checkin-checkout:TYPE]
+    html = html.replace(ACTION_PATTERNS.datepicker, (_, bookingType) => {
+      const id = 'dp-' + Date.now();
+      return `<div class="chat-action-card"><div class="chat-action-label">Select Dates</div><div class="chat-datepicker-wrap" id="${id}" data-booking-type="${bookingType || 'direct'}"></div></div>`;
+    });
+
+    // Replace [CONFIRM:booking|type|room|checkin|checkout|guest|amount]
+    html = html.replace(ACTION_PATTERNS.confirm, (_, type, room, checkin, checkout, guest, amount) => {
+      const ci = new Date(checkin + 'T12:00:00');
+      const co = new Date(checkout + 'T12:00:00');
+      const nights = Math.round((co - ci) / 86400000);
+      const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      const fmtAmt = Number(amount).toLocaleString();
+      return `<div class="chat-action-card chat-confirm-card">
+        <div class="chat-confirm-row"><span>Type</span><span>${TYPE_LABELS[type] || type}</span></div>
+        <div class="chat-confirm-row"><span>Room</span><span>${ROOM_LABELS[room] || room}</span></div>
+        <div class="chat-confirm-row"><span>Dates</span><span>${fmtDate(checkin)} - ${fmtDate(checkout)} (${nights} nights)</span></div>
+        <div class="chat-confirm-row"><span>Guest</span><span>${guest}</span></div>
+        <div class="chat-confirm-row"><span>Amount</span><span>${fmtAmt} THB</span></div>
+        <div class="chat-action-buttons">
+          <button class="chat-action-btn confirm" data-action="confirm-booking">Confirm Booking</button>
+          <button class="chat-action-btn cancel" data-action="cancel-booking">Cancel</button>
+        </div>
+      </div>`;
+    });
+
+    return html;
+  }
+
+  // Initialize Flatpickr date pickers that appear in action cards
+  function initDatePickers(bubble) {
+    bubble.querySelectorAll('.chat-datepicker-wrap').forEach(wrap => {
+      if (wrap.dataset.initialized) return;
+      wrap.dataset.initialized = 'true';
+      const bookingType = wrap.dataset.bookingType || 'direct';
+      const isWaitlist = bookingType === 'waitlist';
+
+      const fp = flatpickr(wrap, {
+        mode: 'range',
+        inline: true,
+        minDate: 'today',
+        dateFormat: 'Y-m-d',
+        onChange: (dates) => {
+          if (dates.length === 2) {
+            const [ci, co] = dates;
+            const ciStr = ci.toISOString().split('T')[0];
+            const coStr = co.toISOString().split('T')[0];
+            // Disable picker after selection
+            fp.set('clickOpens', false);
+            wrap.style.opacity = '0.6';
+            wrap.style.pointerEvents = 'none';
+            // Send dates as user message
+            sendChatMessage(`Check-in: ${ciStr}, Check-out: ${coStr}`);
+          }
+        },
+      });
+
+      // Try to load booked dates for room context
+      // Look for room selection in chat history
+      const lastRoomMsg = chatHistory.filter(m => m.role === 'user').reverse()
+        .find(m => ROOM_OPTIONS.some(r => m.content.toLowerCase().includes(r.label.toLowerCase())));
+      if (lastRoomMsg) {
+        const room = ROOM_OPTIONS.find(r => lastRoomMsg.content.toLowerCase().includes(r.label.toLowerCase()));
+        if (room && ['nest', 'master', 'nomad'].includes(room.value)) {
+          fetch(`/api/availability/${room.value}`)
+            .then(r => r.json())
+            .then(data => {
+              if (data.bookedDates) {
+                const dates = data.bookedDates;
+                fp.set('onDayCreate', (dObj, dStr, fpInst, dayElem) => {
+                  const d = dayElem.dateObj.toISOString().split('T')[0];
+                  if (dates.includes(d)) {
+                    dayElem.classList.add('booked');
+                    if (isWaitlist) {
+                      dayElem.classList.add('waitlist-mode');
+                    } else {
+                      dayElem.classList.add('flatpickr-disabled');
+                    }
+                  }
+                });
+                fp.redraw();
+              }
+            })
+            .catch(() => {}); // Silent fail
+        }
+      }
+    });
+  }
+
+  // Delegate clicks on action buttons
+  document.getElementById('chat-messages').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chat-action-btn');
+    if (!btn || btn.disabled || btn.classList.contains('selected')) return;
+
+    const action = btn.dataset.action;
+    const value = btn.dataset.value;
+
+    if (action === 'booking-type' || action === 'room') {
+      // Mark selected, disable others
+      const card = btn.closest('.chat-action-card');
+      card.querySelectorAll('.chat-action-btn').forEach(b => {
+        b.disabled = true;
+        b.classList.remove('selected');
+      });
+      btn.classList.add('selected');
+      btn.disabled = false;
+
+      // Send as user message
+      const label = action === 'room' ? (ROOM_LABELS[value] || value) : (TYPE_LABELS[value] || value);
+      sendChatMessage(label);
+    } else if (action === 'confirm-booking') {
+      const card = btn.closest('.chat-action-card');
+      card.querySelectorAll('.chat-action-btn').forEach(b => b.disabled = true);
+      btn.classList.add('selected');
+      sendChatMessage('Yes, confirm this booking');
+    } else if (action === 'cancel-booking') {
+      const card = btn.closest('.chat-action-card');
+      card.querySelectorAll('.chat-action-btn').forEach(b => b.disabled = true);
+      btn.classList.add('selected');
+      sendChatMessage('Cancel, don\'t create this booking');
+    }
+  });
+
+  function appendChatMessage(role, content, imageDataUrl) {
+    const welcome = document.getElementById('chat-welcome');
+    if (welcome) welcome.style.display = 'none';
+    const container = document.getElementById('chat-messages');
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg chat-msg-' + role;
+
+    // Assistant avatar
+    if (role === 'assistant') {
+      const avatar = document.createElement('div');
+      avatar.className = 'chat-avatar';
+      avatar.textContent = 'KH';
+      msg.appendChild(avatar);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble chat-bubble-' + role;
+    if (role === 'assistant') {
+      let html = renderMarkdown(content);
+      html = processActionCards(html, bubble);
+      bubble.innerHTML = html;
+      requestAnimationFrame(() => initDatePickers(bubble));
+    } else {
+      // User message: show image if attached
+      if (imageDataUrl) {
+        const img = document.createElement('img');
+        img.src = imageDataUrl;
+        img.className = 'chat-user-image';
+        img.alt = 'Attached image';
+        bubble.appendChild(img);
+      }
+      if (content) {
+        const textEl = document.createElement('span');
+        textEl.textContent = content;
+        bubble.appendChild(textEl);
+      }
+    }
+    msg.appendChild(bubble);
+    container.appendChild(msg);
+    scrollChatToBottom(true);
+    return bubble;
+  }
+
+  function showToolIndicator(name) {
+    const container = document.getElementById('chat-messages');
+    let indicator = document.getElementById('chat-tool-indicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'chat-tool-indicator';
+      indicator.className = 'chat-tool-indicator';
+      container.appendChild(indicator);
+    }
+    const labels = {
+      check_availability: 'Checking availability...',
+      list_bookings: 'Looking up bookings...',
+      get_monthly_stats: 'Calculating stats...',
+      calculate_price: 'Calculating price...',
+      lookup_pricing: 'Checking rates...',
+      validate_promo_code: 'Validating code...',
+      list_inquiries: 'Checking inquiries...',
+      get_monitors: 'Checking monitors...',
+      get_monitor_revenue: 'Getting revenue data...',
+      create_booking: 'Creating booking...',
+    };
+    indicator.textContent = labels[name] || 'Thinking...';
+    indicator.style.display = 'block';
+    scrollChatToBottom();
+  }
+
+  function removeToolIndicator() {
+    const indicator = document.getElementById('chat-tool-indicator');
+    if (indicator) indicator.style.display = 'none';
+  }
+
+  async function sendChatMessage(text, imageDataUrl) {
+    if ((!text.trim() && !imageDataUrl) || isStreaming) return;
+    isStreaming = true;
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send');
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    // Clear image preview
+    pendingImage = null;
+    document.getElementById('chat-image-preview').style.display = 'none';
+
+    // Build message content (text-only or multipart with image)
+    let messageContent;
+    if (imageDataUrl) {
+      messageContent = [];
+      if (text.trim()) messageContent.push({ type: 'text', text: text.trim() });
+      messageContent.push({ type: 'image_url', image_url: { url: imageDataUrl, detail: 'low' } });
+    } else {
+      messageContent = text.trim();
+    }
+
+    // Add user message
+    chatHistory.push({ role: 'user', content: messageContent });
+    appendChatMessage('user', text.trim(), imageDataUrl);
+
+    // Create empty assistant bubble with avatar
+    const welcome = document.getElementById('chat-welcome');
+    if (welcome) welcome.style.display = 'none';
+    const container = document.getElementById('chat-messages');
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg chat-msg-assistant';
+    const avatar = document.createElement('div');
+    avatar.className = 'chat-avatar';
+    avatar.textContent = 'KH';
+    msg.appendChild(avatar);
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble chat-bubble-assistant';
+    bubble.innerHTML = '<span class="chat-typing"><span class="chat-typing-mid"></span></span>';
+    msg.appendChild(bubble);
+    container.appendChild(msg);
+    scrollChatToBottom();
+
+    let fullContent = '';
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatHistory }),
+      });
+
+      if (!res.ok) {
+        bubble.innerHTML = renderMarkdown('Sorry, something went wrong. Please try again.');
+        isStreaming = false;
+        sendBtn.disabled = false;
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') continue;
+
+          try {
+            const data = JSON.parse(payload);
+            if (data.type === 'delta') {
+              fullContent += data.content;
+              let html = renderMarkdown(fullContent);
+              html = processActionCards(html, bubble);
+              bubble.innerHTML = html;
+              requestAnimationFrame(() => initDatePickers(bubble));
+              scrollChatToBottom();
+            } else if (data.type === 'tool') {
+              showToolIndicator(data.name);
+            } else if (data.type === 'done') {
+              removeToolIndicator();
+            } else if (data.type === 'error') {
+              fullContent = data.content || 'Something went wrong.';
+              bubble.innerHTML = renderMarkdown(fullContent);
+            }
+          } catch {}
+        }
+      }
+
+      removeToolIndicator();
+      if (!fullContent) {
+        fullContent = 'No response received.';
+        bubble.innerHTML = renderMarkdown(fullContent);
+      }
+      chatHistory.push({ role: 'assistant', content: fullContent });
+
+    } catch (err) {
+      console.error('[chat] error:', err);
+      bubble.innerHTML = renderMarkdown('Connection error. Please try again.');
+    }
+
+    isStreaming = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  // ─── IMAGE UPLOAD ──────────────────────────────────────────────────────────
+  let pendingImage = null; // base64 data URL
+  const fileInput = document.getElementById('chat-file-input');
+  const attachBtn = document.getElementById('chat-attach');
+  const imagePreview = document.getElementById('chat-image-preview');
+  const imageThumb = document.getElementById('chat-image-thumb');
+  const imageRemove = document.getElementById('chat-image-remove');
+
+  attachBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingImage = reader.result;
+      imageThumb.src = pendingImage;
+      imagePreview.style.display = 'flex';
+      chatSend.disabled = false;
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = ''; // reset so same file can be re-selected
+  });
+  imageRemove.addEventListener('click', () => {
+    pendingImage = null;
+    imagePreview.style.display = 'none';
+    if (!chatInput.value.trim()) chatSend.disabled = true;
+  });
+
+  // ─── TIME-OF-DAY GREETING ──────────────────────────────────────────────────
+  const hour = new Date().getHours();
+  const greetings = hour < 12 ? ['Good morning', 'Morning!'] : hour < 17 ? ['Good afternoon', 'Hey there'] : ['Good evening', 'Evening!'];
+  const welcomeTitle = document.getElementById('chat-welcome-title');
+  if (welcomeTitle) welcomeTitle.textContent = greetings[Math.floor(Math.random() * greetings.length)];
+
+  // Chat input handlers
+  const chatInput = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send');
+
+  chatInput.addEventListener('input', () => {
+    chatSend.disabled = !chatInput.value.trim() && !pendingImage;
+    // Auto-resize
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+  });
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage(chatInput.value, pendingImage);
+    }
+  });
+
+  chatSend.addEventListener('click', () => {
+    sendChatMessage(chatInput.value, pendingImage);
+  });
+
+  // Suggestion buttons (event delegation for reliability)
+  document.getElementById('chat-suggestions')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.chat-suggestion');
+    if (!btn || isStreaming) return;
+    sendChatMessage(btn.dataset.q || btn.textContent.trim());
+  });
+
+  // ─── CHAT: ALWAYS OPEN (full-screen assistant mode) ─────────────────────────
+  // Chat is the primary interface — no toggle, no close, always visible
+  document.body.style.overflow = 'hidden';
+
+  // Handle mobile virtual keyboard — resize chat panel to avoid whitespace
+  const chatPanelEl = document.getElementById('chat-panel');
+  if (window.visualViewport) {
+    let vpRAF = null;
+    const onViewportResize = () => {
+      if (vpRAF) return;
+      vpRAF = requestAnimationFrame(() => {
+        vpRAF = null;
+        const vvh = window.visualViewport.height;
+        const vvOffset = window.visualViewport.offsetTop;
+        chatPanelEl.style.height = vvh + 'px';
+        chatPanelEl.style.top = vvOffset + 'px';
+        if (isNearBottom()) scrollChatToBottom();
+      });
+    };
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    window.visualViewport.addEventListener('scroll', onViewportResize);
+  }
+
+  // Scroll-to-bottom button
+  const scrollBtn = document.getElementById('chat-scroll-btn');
+  const messagesEl = document.getElementById('chat-messages');
+  messagesEl.addEventListener('scroll', () => {
+    scrollBtn.classList.toggle('visible', !isNearBottom());
+  });
+  scrollBtn.addEventListener('click', () => {
+    scrollChatToBottom(true);
+    scrollBtn.classList.remove('visible');
+  });
+
+  document.getElementById('chat-input').focus();
+
   // ─── INIT ─────────────────────────────────────────────────────────────────────
-  fetchPricing(); // Load rates before first render
-  loadBookings();
-  fetchInquiries(); // Load inquiries on startup for badge count
-  setInterval(() => loadBookings(), 30 * 60 * 1000);
+  // Mobile = chat-only mode, skip all dashboard initialization
+  const isMobileChat = window.innerWidth <= 768;
+  if (!isMobileChat) {
+    const savedTab = localStorage.getItem('kin-active-tab');
+    if (savedTab) {
+      const tabEl = document.querySelector(`[data-tab="${savedTab}"]`);
+      if (tabEl) setTab(savedTab, tabEl);
+    }
+    fetchPricing();
+    loadBookings();
+    fetchInquiries();
+    setInterval(() => loadBookings(), 30 * 60 * 1000);
+  }
   </script>
 </BaseLayout>

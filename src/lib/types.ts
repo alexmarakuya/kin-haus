@@ -59,6 +59,30 @@ export interface RoomAvailability {
   allWindows: AvailableWindow[];
 }
 
+export interface GuestProfile {
+  id: string;
+  fullName: string;
+  nationality?: string;
+  passportNumber?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  tags: string[];               // e.g. "returning", "vip", "long-stay", "referred"
+  preferredRoom?: string;       // room slug they prefer
+  preferences: string;          // free-text: dietary, habits, special requests
+  notes: string;                // internal operator notes
+  bookingIds: string[];
+  totalStays: number;
+  totalRevenue: number;
+  firstStay?: string;           // ISO date of first check-in
+  lastStay?: string;            // ISO date of most recent check-in
+  source?: string;              // how they found us: "airbnb", "direct", "referral", "repeat"
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Monitor {
   id: string;
   name: string;
