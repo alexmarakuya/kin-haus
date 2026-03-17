@@ -21,6 +21,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (body.email !== undefined) guest.email = body.email.trim() || undefined;
     if (body.phone !== undefined) guest.phone = body.phone.trim() || undefined;
     if (body.whatsapp !== undefined) guest.whatsapp = body.whatsapp.trim() || undefined;
+    if (body.instagram !== undefined) guest.instagram = body.instagram.trim() || undefined;
+    if (body.linkedin !== undefined) guest.linkedin = body.linkedin.trim() || undefined;
+    if (body.website !== undefined) guest.website = body.website.trim() || undefined;
 
     // Preferences & notes
     if (body.preferredRoom !== undefined) guest.preferredRoom = body.preferredRoom.trim() || undefined;

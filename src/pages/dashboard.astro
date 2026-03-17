@@ -140,10 +140,12 @@ import '../styles/dashboard.css';
               <button class="filter-chip" data-gf="upcoming">Upcoming</button>
               <button class="filter-chip" data-gf="returning">Returning</button>
               <button class="filter-chip" data-gf="vip">VIP</button>
+              <button class="filter-chip" data-gf="coworking">Co-working</button>
             </div>
           </div>
           <div class="guest-toolbar-right">
             <input type="text" id="guest-search" placeholder="Search..." style="font-size:12px; padding:6px 12px; border:1px solid #dddbd7; border-radius:8px; width:160px; font-family:inherit;">
+            <button class="btn" id="btn-import-guests" style="font-size:12px; padding:7px 16px;" title="Create guest profiles from existing bookings">Import from bookings</button>
             <button class="btn btn-primary" id="btn-add-guest" style="font-size:12px; padding:7px 16px;">+ Add Guest</button>
           </div>
         </div>
@@ -253,61 +255,96 @@ import '../styles/dashboard.css';
 
   <!-- GUEST DETAIL PANEL -->
   <div class="detail-panel" id="guest-panel">
-    <div class="detail-panel-header">
-      <div class="detail-panel-title" id="gp-title">Guest Profile</div>
-      <button class="detail-panel-close" id="gp-close">&times;</button>
+    <!-- Profile header (persistent) -->
+    <div class="gp-profile-header" id="gp-profile-header">
+      <div class="gp-header-top">
+        <div class="gp-header-info">
+          <div class="gp-avatar" id="gp-avatar">?</div>
+          <div>
+            <div class="gp-header-name"><span id="gp-header-name">Guest</span> <span id="gp-header-status"></span></div>
+            <div class="gp-header-meta" id="gp-header-meta"></div>
+          </div>
+        </div>
+        <button class="detail-panel-close" id="gp-close">&times;</button>
+      </div>
+      <div class="gp-header-stats" id="gp-header-stats"></div>
+      <div class="gp-quick-actions" id="gp-quick-actions"></div>
     </div>
-    <div class="detail-panel-body">
-      <div class="gp-section">
-        <div class="gp-section-title">Identity</div>
-        <div class="fg"><label>Full Name</label><input id="gp-name" type="text" placeholder="Full name as on passport"></div>
-        <div class="gp-row-2">
-          <div class="fg"><label>Nationality</label><input id="gp-nationality" type="text" placeholder="e.g. British"></div>
-          <div class="fg"><label>Gender</label><select id="gp-gender"><option value="">-</option><option value="M">Male</option><option value="F">Female</option></select></div>
-        </div>
-        <div class="gp-row-2">
-          <div class="fg"><label>Passport #</label><input id="gp-passport" type="text" placeholder="AB1234567"></div>
-          <div class="fg"><label>Date of Birth</label><input id="gp-dob" type="date"></div>
-        </div>
-      </div>
 
-      <div class="gp-section">
-        <div class="gp-section-title">Contact</div>
-        <div class="fg"><label>Email</label><input id="gp-email" type="email" placeholder="guest@example.com"></div>
-        <div class="gp-row-2">
-          <div class="fg"><label>Phone</label><input id="gp-phone" type="text" placeholder="+66..."></div>
-          <div class="fg"><label>WhatsApp</label><input id="gp-whatsapp" type="text" placeholder="+66..."></div>
-        </div>
-      </div>
-
-      <div class="gp-section">
-        <div class="gp-section-title">Preferences</div>
-        <div class="fg"><label>Preferred Room</label><select id="gp-room"><option value="">No preference</option><option value="nest">The Nest</option><option value="master">Master Suite</option><option value="nomad">Nomad Room</option></select></div>
-        <div class="fg"><label>Preferences & Requests</label><textarea id="gp-preferences" rows="2" placeholder="Dietary needs, habits, special requests..."></textarea></div>
-        <div class="fg"><label>Source</label><select id="gp-source"><option value="">Unknown</option><option value="airbnb">Airbnb</option><option value="direct">Direct / website</option><option value="referral">Referral</option><option value="repeat">Returning guest</option><option value="whatsapp">WhatsApp</option></select></div>
-      </div>
-
-      <div class="gp-section">
-        <div class="gp-section-title">Tags</div>
-        <div class="gp-tags" id="gp-tags"></div>
-        <div class="gp-tag-add">
-          <input id="gp-tag-input" type="text" placeholder="Add tag..." style="font-size:12px; padding:4px 8px; border:1px solid #dddbd7; border-radius:6px; width:120px;">
-          <button class="btn btn-sm" id="gp-tag-add-btn">+</button>
-        </div>
-      </div>
-
-      <div class="gp-section">
-        <div class="gp-section-title">Notes</div>
-        <div class="fg"><textarea id="gp-notes" rows="3" placeholder="Internal notes..."></textarea></div>
-      </div>
-
-      <div class="gp-section" id="gp-history-section">
-        <div class="gp-section-title">Stay History</div>
-        <div id="gp-history"></div>
-      </div>
-
-      <div class="gp-stats" id="gp-stats"></div>
+    <!-- Tab bar -->
+    <div class="gp-tab-bar">
+      <div class="gp-tab active" data-gp-tab="profile">Profile</div>
+      <div class="gp-tab" data-gp-tab="stays" id="gp-tab-stays-btn">Stays</div>
+      <div class="gp-tab-spacer"></div>
+      <button class="btn btn-sm" id="gp-edit-btn" style="margin:auto 0;">Edit</button>
     </div>
+
+    <!-- Profile tab -->
+    <div class="gp-tab-content active" id="gp-tab-profile">
+      <div class="detail-panel-body">
+        <!-- VIEW MODE -->
+        <div id="gp-view-content"></div>
+        <!-- EDIT MODE -->
+        <div id="gp-edit-content" style="display:none;">
+          <div class="gp-section">
+            <div class="gp-section-title">Identity</div>
+            <div class="fg"><label>Full Name</label><input id="gp-name" type="text" placeholder="Full name as on passport"></div>
+            <div class="gp-row-2">
+              <div class="fg"><label>Nationality</label><input id="gp-nationality" type="text" placeholder="e.g. British"></div>
+              <div class="fg"><label>Gender</label><select id="gp-gender"><option value="">-</option><option value="M">Male</option><option value="F">Female</option></select></div>
+            </div>
+            <div class="gp-row-2">
+              <div class="fg"><label>Passport #</label><input id="gp-passport" type="text" placeholder="AB1234567"></div>
+              <div class="fg"><label>Date of Birth</label><input id="gp-dob" type="date"></div>
+            </div>
+          </div>
+          <div class="gp-section">
+            <div class="gp-section-title">Contact</div>
+            <div class="fg"><label>Email</label><input id="gp-email" type="email" placeholder="guest@example.com"></div>
+            <div class="gp-row-2">
+              <div class="fg"><label>Phone</label><input id="gp-phone" type="text" placeholder="+66..."></div>
+              <div class="fg"><label>WhatsApp</label><input id="gp-whatsapp" type="text" placeholder="+66..."></div>
+            </div>
+          </div>
+          <div class="gp-section">
+            <div class="gp-section-title">Social</div>
+            <div class="fg"><label>Instagram</label><input id="gp-instagram" type="text" placeholder="@handle or URL"></div>
+            <div class="gp-row-2">
+              <div class="fg"><label>LinkedIn</label><input id="gp-linkedin" type="text" placeholder="LinkedIn URL"></div>
+              <div class="fg"><label>Website</label><input id="gp-website" type="text" placeholder="https://..."></div>
+            </div>
+          </div>
+          <div class="gp-section">
+            <div class="gp-section-title">Preferences</div>
+            <div class="fg"><label>Preferred Room</label><select id="gp-room"><option value="">No preference</option><option value="nest">The Nest</option><option value="master">Master Suite</option><option value="nomad">Nomad Room</option></select></div>
+            <div class="fg"><label>Preferences & Requests</label><textarea id="gp-preferences" rows="2" placeholder="Dietary needs, habits, special requests..."></textarea></div>
+            <div class="fg"><label>Source</label><select id="gp-source"><option value="">Unknown</option><option value="airbnb">Airbnb</option><option value="direct">Direct / website</option><option value="referral">Referral</option><option value="repeat">Returning guest</option><option value="whatsapp">WhatsApp</option></select></div>
+          </div>
+          <div class="gp-section">
+            <div class="gp-section-title">Tags</div>
+            <div class="gp-tags" id="gp-tags"></div>
+            <div class="gp-tag-add">
+              <input id="gp-tag-input" type="text" placeholder="Add tag..." style="font-size:12px; padding:4px 8px; border:1px solid #dddbd7; border-radius:6px; width:120px;">
+              <button class="btn btn-sm" id="gp-tag-add-btn">+</button>
+            </div>
+          </div>
+          <div class="gp-section">
+            <div class="gp-section-title">Notes</div>
+            <div class="fg"><textarea id="gp-notes" rows="3" placeholder="Internal notes..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stays tab -->
+    <div class="gp-tab-content" id="gp-tab-stays">
+      <div class="detail-panel-body">
+        <div id="gp-stays-summary"></div>
+        <div id="gp-stays-list"></div>
+      </div>
+    </div>
+
+    <!-- Footer (only visible in edit mode) -->
     <div class="detail-panel-footer">
       <button class="btn btn-danger" id="gp-delete">Delete</button>
       <div class="detail-panel-footer-right">
@@ -2042,6 +2079,7 @@ import '../styles/dashboard.css';
         if (guestFilterTag === 'upcoming') return s === 'upcoming';
         if (guestFilterTag === 'returning') return (g.tags || []).includes('returning') || g.totalStays >= 2;
         if (guestFilterTag === 'vip') return (g.tags || []).includes('vip');
+        if (guestFilterTag === 'coworking') return (g.tags || []).includes('coworking');
         return true;
       });
     }
@@ -2080,7 +2118,9 @@ import '../styles/dashboard.css';
         'returning': '<span class="guest-status guest-status-returning">Returning</span>',
         'vip': '<span class="guest-status guest-status-vip">VIP</span>',
       };
-      const statusTag = statusMap[status] || (pastStays > 0 ? `<span class="guest-status guest-status-past">${pastStays} stay${pastStays > 1 ? 's' : ''}</span>` : '');
+      const isCoworking = (g.tags || []).includes('coworking');
+      const coworkingBadge = isCoworking ? '<span class="guest-status guest-status-coworking">Co-working</span>' : '';
+      const statusTag = (statusMap[status] || (pastStays > 0 ? `<span class="guest-status guest-status-past">${pastStays} stay${pastStays > 1 ? 's' : ''}</span>` : '')) + coworkingBadge;
 
       const genderIcon = g.gender === 'M' ? '&#9794;' : g.gender === 'F' ? '&#9792;' : '';
       const tags = (g.tags || []).map(t => `<span class="guest-tag">${t}</span>`).join('');
@@ -2125,18 +2165,194 @@ import '../styles/dashboard.css';
     renderGuests();
   });
 
+  // Import guests from existing bookings
+  document.getElementById('btn-import-guests')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-import-guests');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+    try {
+      const res = await fetch('/api/guests/import', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Import failed');
+      btn.textContent = `${data.imported} new, ${data.updated} updated`;
+      await loadGuests();
+      setTimeout(() => { btn.textContent = 'Import from bookings'; btn.disabled = false; }, 3000);
+    } catch (err) {
+      console.error('[guests] import error:', err);
+      btn.textContent = 'Import failed';
+      setTimeout(() => { btn.textContent = 'Import from bookings'; btn.disabled = false; }, 3000);
+    }
+  });
+
   // Add guest - opens empty panel
   document.getElementById('btn-add-guest')?.addEventListener('click', () => {
     openGuestPanel(null);
   });
 
   // ─── GUEST DETAIL PANEL ─────────────────────────────────────────────────────
-  function openGuestPanel(id) {
-    editingGuestId = id;
-    const panel = document.getElementById('guest-panel');
-    const g = id ? allGuests.find(g => g.id === id) : null;
+  let gpEditMode = false;
 
-    document.getElementById('gp-title').textContent = g ? g.fullName : 'New Guest';
+  function relativeDate(dateStr) {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr.length <= 10 ? dateStr + 'T00:00:00' : dateStr);
+    const diffMs = date - now;
+    const diffDays = Math.round(diffMs / 86400000);
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'tomorrow';
+    if (diffDays === -1) return 'yesterday';
+    if (diffDays > 1 && diffDays <= 30) return `in ${diffDays} days`;
+    if (diffDays < -1 && diffDays >= -30) return `${Math.abs(diffDays)} days ago`;
+    const absDays = Math.abs(diffDays);
+    if (absDays <= 60) { const w = Math.round(absDays / 7); return diffDays > 0 ? `in ${w} week${w > 1 ? 's' : ''}` : `${w} week${w > 1 ? 's' : ''} ago`; }
+    const diffMonths = Math.round(absDays / 30);
+    if (diffMonths <= 12) return diffDays > 0 ? `in ${diffMonths} month${diffMonths > 1 ? 's' : ''}` : `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+    const diffYears = Math.round(absDays / 365);
+    return diffDays > 0 ? `in ${diffYears} year${diffYears > 1 ? 's' : ''}` : `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+  }
+
+  function instagramUrl(val) {
+    if (!val) return '';
+    if (val.startsWith('http')) return val;
+    const handle = val.replace(/^@/, '');
+    return `https://www.instagram.com/${handle}`;
+  }
+
+  function instagramHandle(val) {
+    if (!val) return '';
+    if (val.includes('instagram.com/')) {
+      const parts = val.split('instagram.com/');
+      return '@' + parts[1].split(/[?/]/)[0];
+    }
+    return val.startsWith('@') ? val : '@' + val;
+  }
+
+  const GENDER_LABELS = { 'M': 'Male', 'F': 'Female' };
+  const SOURCE_LABELS = { 'airbnb': 'Airbnb', 'direct': 'Direct', 'referral': 'Referral', 'repeat': 'Returning', 'whatsapp': 'WhatsApp' };
+
+  function renderGpViewMode(g) {
+    const el = document.getElementById('gp-view-content');
+    if (!g) { el.innerHTML = ''; return; }
+
+    let html = '';
+
+    // Identity
+    const identityFields = [];
+    if (g.nationality) identityFields.push(['Nationality', g.nationality]);
+    if (g.gender) identityFields.push(['Gender', GENDER_LABELS[g.gender] || g.gender]);
+    if (g.passportNumber) identityFields.push(['Passport', g.passportNumber]);
+    if (g.dateOfBirth) identityFields.push(['Date of Birth', fmtDateShort(g.dateOfBirth)]);
+    if (identityFields.length) {
+      html += `<div class="gp-view-section"><div class="gp-view-label">Identity</div><div class="gp-view-row-2">`;
+      identityFields.forEach(([label, value]) => {
+        html += `<div><div class="gp-view-label" style="font-size:9px;">${label}</div><div class="gp-view-value">${value}</div></div>`;
+      });
+      html += `</div></div>`;
+    }
+
+    // Contact
+    html += `<div class="gp-view-section"><div class="gp-view-label">Contact</div><div class="gp-view-row-2">`;
+    html += g.email
+      ? `<div><div class="gp-view-label" style="font-size:9px;">Email</div><div class="gp-view-value"><a href="mailto:${g.email}">${g.email}</a></div></div>`
+      : `<div><div class="gp-view-empty" data-gp-add="email">+ Add email</div></div>`;
+    html += g.phone
+      ? `<div><div class="gp-view-label" style="font-size:9px;">Phone</div><div class="gp-view-value">${g.phone}</div></div>`
+      : `<div><div class="gp-view-empty" data-gp-add="phone">+ Add phone</div></div>`;
+    html += `</div><div class="gp-view-row-2">`;
+    html += g.whatsapp
+      ? `<div><div class="gp-view-label" style="font-size:9px;">WhatsApp</div><div class="gp-view-value"><a href="https://wa.me/${g.whatsapp.replace(/[^0-9]/g,'')}" target="_blank">${g.whatsapp}</a></div></div>`
+      : `<div><div class="gp-view-empty" data-gp-add="whatsapp">+ Add WhatsApp</div></div>`;
+    html += `<div></div></div></div>`;
+
+    // Social
+    const socialLinks = [];
+    if (g.instagram) socialLinks.push(`<a class="gp-social-link" href="${instagramUrl(g.instagram)}" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>${instagramHandle(g.instagram)}</a>`);
+    if (g.linkedin) socialLinks.push(`<a class="gp-social-link" href="${g.linkedin}" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>`);
+    if (g.website) socialLinks.push(`<a class="gp-social-link" href="${g.website}" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>Website</a>`);
+    if (socialLinks.length) {
+      html += `<div class="gp-view-section"><div class="gp-view-label">Social</div><div>${socialLinks.join('')}</div></div>`;
+    }
+
+    // Preferences
+    const prefParts = [];
+    if (g.preferredRoom) prefParts.push(['Preferred Room', ROOM_LABELS[g.preferredRoom] || g.preferredRoom]);
+    if (g.source) prefParts.push(['Source', SOURCE_LABELS[g.source] || g.source]);
+    if (g.preferences) prefParts.push(['Preferences', g.preferences]);
+    if (prefParts.length) {
+      html += `<div class="gp-view-section"><div class="gp-view-label">Preferences</div>`;
+      prefParts.forEach(([label, value]) => {
+        html += `<div class="gp-view-label" style="font-size:9px;">${label}</div><div class="gp-view-value">${value}</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Tags
+    if (g.tags && g.tags.length) {
+      html += `<div class="gp-view-section"><div class="gp-view-label">Tags</div><div class="gp-view-tags">${g.tags.map(t => `<span class="gp-tag">${t}</span>`).join('')}</div></div>`;
+    }
+
+    // Notes
+    if (g.notes) {
+      html += `<div class="gp-view-section"><div class="gp-view-label">Notes</div><div class="gp-view-value" style="white-space:pre-wrap;">${g.notes}</div></div>`;
+    }
+
+    el.innerHTML = html;
+  }
+
+  function renderGpStaysTab(g) {
+    const summaryEl = document.getElementById('gp-stays-summary');
+    const listEl = document.getElementById('gp-stays-list');
+    if (!g) { summaryEl.innerHTML = ''; listEl.innerHTML = '<div class="gp-stays-empty">No stays recorded yet</div>'; return; }
+
+    const linked = getGuestBookings(g).sort((a, b) => b.checkin.localeCompare(a.checkin));
+
+    // Summary
+    const stats = [];
+    if (g.totalStays > 0) stats.push(`<span>${g.totalStays} stay${g.totalStays > 1 ? 's' : ''}</span>`);
+    if (g.totalRevenue > 0) stats.push(`<span>&#x0E3F;${g.totalRevenue.toLocaleString()}</span>`);
+    if (g.firstStay) stats.push(`<span>First: ${fmtDateShort(g.firstStay)}</span>`);
+    if (g.lastStay && g.lastStay !== g.firstStay) stats.push(`<span>Last: ${fmtDateShort(g.lastStay)}</span>`);
+    summaryEl.innerHTML = stats.length ? `<div class="gp-stays-summary">${stats.join('')}</div>` : '';
+
+    // Cards
+    if (!linked.length) {
+      listEl.innerHTML = '<div class="gp-stays-empty">No stays recorded yet</div>';
+      return;
+    }
+
+    listEl.innerHTML = linked.map(b => {
+      const nights = Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000);
+      const rel = relativeDate(b.checkin);
+      return `<div class="gp-stay-card" style="border-left-color:var(--${b.type})">
+        <div class="gp-stay-header">
+          <span class="gp-stay-room">${ROOM_LABELS[b.room] || b.room}</span>
+          <span class="gp-stay-type" style="color:var(--${b.type})">${b.type}</span>
+        </div>
+        <div class="gp-stay-dates">${fmtDateShort(b.checkin)} &ndash; ${fmtDateShort(b.checkout)}${rel ? ` <span class="gp-stay-relative">&middot; ${rel}</span>` : ''}</div>
+        <div class="gp-stay-meta">${nights} night${nights !== 1 ? 's' : ''}${b.amount > 0 ? ` &middot; &#x0E3F;${b.amount.toLocaleString()}` : ''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function setGpEditMode(editing) {
+    gpEditMode = editing;
+    const panel = document.getElementById('guest-panel');
+    const editBtn = document.getElementById('gp-edit-btn');
+    if (editing) {
+      panel.classList.add('gp-edit-mode');
+      document.getElementById('gp-view-content').style.display = 'none';
+      document.getElementById('gp-edit-content').style.display = '';
+      editBtn.textContent = 'Cancel';
+    } else {
+      panel.classList.remove('gp-edit-mode');
+      document.getElementById('gp-view-content').style.display = '';
+      document.getElementById('gp-edit-content').style.display = 'none';
+      editBtn.textContent = 'Edit';
+    }
+  }
+
+  function populateGpEditForm(g) {
     document.getElementById('gp-name').value = g?.fullName || '';
     document.getElementById('gp-nationality').value = g?.nationality || '';
     document.getElementById('gp-gender').value = g?.gender || '';
@@ -2145,49 +2361,105 @@ import '../styles/dashboard.css';
     document.getElementById('gp-email').value = g?.email || '';
     document.getElementById('gp-phone').value = g?.phone || '';
     document.getElementById('gp-whatsapp').value = g?.whatsapp || '';
+    document.getElementById('gp-instagram').value = g?.instagram || '';
+    document.getElementById('gp-linkedin').value = g?.linkedin || '';
+    document.getElementById('gp-website').value = g?.website || '';
     document.getElementById('gp-room').value = g?.preferredRoom || '';
     document.getElementById('gp-preferences').value = g?.preferences || '';
     document.getElementById('gp-source').value = g?.source || '';
     document.getElementById('gp-notes').value = g?.notes || '';
+  }
 
-    // Tags
-    gpTags = g?.tags ? [...g.tags] : [];
-    renderGpTags();
+  function openGuestPanel(id) {
+    editingGuestId = id;
+    const panel = document.getElementById('guest-panel');
+    const g = id ? allGuests.find(g => g.id === id) : null;
 
-    // Delete button only for existing
-    document.getElementById('gp-delete').style.display = g ? '' : 'none';
+    // ── Profile header ──
+    document.getElementById('gp-avatar').textContent = g ? g.fullName.charAt(0).toUpperCase() : '?';
+    document.getElementById('gp-header-name').textContent = g ? g.fullName : 'New Guest';
 
-    // Stay history
-    const historyEl = document.getElementById('gp-history');
-    const historySection = document.getElementById('gp-history-section');
-    const statsEl = document.getElementById('gp-stats');
+    // Status badge
+    const statusEl = document.getElementById('gp-header-status');
     if (g) {
-      const linked = getGuestBookings(g);
-      if (linked.length) {
-        historySection.style.display = '';
-        historyEl.innerHTML = linked.sort((a, b) => b.checkin.localeCompare(a.checkin)).map(b => {
-          const nights = Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000);
-          return `<div class="gp-history-row">
-            <span class="gp-history-room">${ROOM_LABELS[b.room] || b.room}</span>
-            <span>${fmtDateShort(b.checkin)} - ${fmtDateShort(b.checkout)}</span>
-            <span>${nights}n</span>
-            <span>${b.amount > 0 ? '&#x0E3F;' + b.amount.toLocaleString() : '-'}</span>
-            <span class="gp-history-type" style="color:var(--${b.type})">${b.type}</span>
-          </div>`;
-        }).join('');
-      } else {
-        historySection.style.display = 'none';
-      }
-
-      const stats = [];
-      if (g.totalStays > 0) stats.push(`${g.totalStays} stay${g.totalStays > 1 ? 's' : ''}`);
-      if (g.totalRevenue > 0) stats.push(`&#x0E3F;${g.totalRevenue.toLocaleString()} total revenue`);
-      if (g.firstStay) stats.push(`First stay: ${fmtDateShort(g.firstStay)}`);
-      if (g.lastStay && g.lastStay !== g.firstStay) stats.push(`Last stay: ${fmtDateShort(g.lastStay)}`);
-      statsEl.innerHTML = stats.length ? `<div class="gp-stats-inner">${stats.join(' &middot; ')}</div>` : '';
+      const status = guestStatus(g);
+      const statusMap = {
+        'in-house': '<span class="guest-status guest-status-current">In-house</span>',
+        'upcoming': '<span class="guest-status guest-status-upcoming">Upcoming</span>',
+        'returning': '<span class="guest-status guest-status-returning">Returning</span>',
+        'vip': '<span class="guest-status guest-status-vip">VIP</span>',
+      };
+      statusEl.innerHTML = statusMap[status] || '';
     } else {
-      historySection.style.display = 'none';
-      statsEl.innerHTML = '';
+      statusEl.innerHTML = '';
+    }
+
+    // Meta line
+    const metaParts = [];
+    if (g?.nationality) metaParts.push(g.nationality);
+    if (g?.source) metaParts.push('via ' + (SOURCE_LABELS[g.source] || g.source));
+    document.getElementById('gp-header-meta').textContent = metaParts.join(' \u00b7 ');
+
+    // Stats
+    const statsEl = document.getElementById('gp-header-stats');
+    if (g) {
+      const parts = [];
+      if (g.totalStays > 0) parts.push(`<span class="gp-header-stat">${g.totalStays} stay${g.totalStays > 1 ? 's' : ''}</span>`);
+      if (g.totalRevenue > 0) parts.push(`<span class="gp-header-stat">&#x0E3F;${g.totalRevenue.toLocaleString()}</span>`);
+      if (g.createdAt) parts.push(`<span class="gp-header-stat">Member ${relativeDate(g.createdAt) || 'since ' + fmtDateShort(g.createdAt)}</span>`);
+      statsEl.innerHTML = parts.join('');
+      statsEl.style.display = parts.length ? '' : 'none';
+    } else {
+      statsEl.style.display = 'none';
+    }
+
+    // Quick actions
+    const actionsEl = document.getElementById('gp-quick-actions');
+    if (g) {
+      let btns = '';
+      if (g.whatsapp) btns += `<a class="gp-quick-btn" href="https://wa.me/${g.whatsapp.replace(/[^0-9]/g,'')}" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>WhatsApp</a>`;
+      if (g.email) btns += `<a class="gp-quick-btn" href="mailto:${g.email}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg>Email</a>`;
+      if (g.instagram) btns += `<a class="gp-quick-btn" href="${instagramUrl(g.instagram)}" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/></svg>Instagram</a>`;
+      if (g.linkedin) btns += `<a class="gp-quick-btn" href="${g.linkedin}" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>`;
+      btns += `<button class="gp-quick-btn" id="gp-tm30-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>TM30</button>`;
+      actionsEl.innerHTML = btns;
+      actionsEl.style.display = '';
+    } else {
+      actionsEl.innerHTML = '';
+      actionsEl.style.display = 'none';
+    }
+
+    // ── Tabs reset ──
+    document.querySelectorAll('.gp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.gp-tab[data-gp-tab="profile"]').classList.add('active');
+    document.querySelectorAll('.gp-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('gp-tab-profile').classList.add('active');
+
+    const staysBtn = document.getElementById('gp-tab-stays-btn');
+    const editBtn = document.getElementById('gp-edit-btn');
+
+    if (g) {
+      // Existing guest: render view + populate edit form in background + render stays
+      renderGpViewMode(g);
+      populateGpEditForm(g);
+      gpTags = g.tags ? [...g.tags] : [];
+      renderGpTags();
+      renderGpStaysTab(g);
+      setGpEditMode(false);
+      staysBtn.classList.remove('disabled');
+      editBtn.style.display = '';
+      document.getElementById('gp-delete').style.display = '';
+    } else {
+      // New guest: straight to edit mode, no stays
+      renderGpViewMode(null);
+      populateGpEditForm(null);
+      gpTags = [];
+      renderGpTags();
+      renderGpStaysTab(null);
+      setGpEditMode(true);
+      staysBtn.classList.add('disabled');
+      editBtn.style.display = 'none';
+      document.getElementById('gp-delete').style.display = 'none';
     }
 
     panel.classList.add('open');
@@ -2195,15 +2467,29 @@ import '../styles/dashboard.css';
   }
 
   function closeGuestPanel() {
-    document.getElementById('guest-panel').classList.remove('open');
+    const panel = document.getElementById('guest-panel');
+    panel.classList.remove('open', 'gp-edit-mode');
     editingGuestId = null;
+    gpEditMode = false;
+    // Reset to profile tab
+    document.querySelectorAll('.gp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.gp-tab[data-gp-tab="profile"]')?.classList.add('active');
+    document.querySelectorAll('.gp-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('gp-tab-profile')?.classList.add('active');
   }
 
   function renderGpTags() {
     const container = document.getElementById('gp-tags');
-    container.innerHTML = gpTags.map(t =>
-      `<span class="gp-tag">${t} <button onclick="removeGpTag('${t}')">&times;</button></span>`
-    ).join('') || '<span style="color:#b5b3ad; font-size:12px;">No tags</span>';
+    if (!container) return;
+    if (gpEditMode) {
+      container.innerHTML = gpTags.map(t =>
+        `<span class="gp-tag">${t} <button onclick="removeGpTag('${t}')">&times;</button></span>`
+      ).join('') || '<span style="color:#b5b3ad; font-size:12px;">No tags</span>';
+    } else {
+      container.innerHTML = gpTags.map(t =>
+        `<span class="gp-tag">${t}</span>`
+      ).join('') || '<span style="color:#b5b3ad; font-size:12px;">No tags</span>';
+    }
   }
 
   window.removeGpTag = function(tag) {
@@ -2213,8 +2499,58 @@ import '../styles/dashboard.css';
 
   window.openGuestPanel = openGuestPanel;
 
+  // Tab switching
+  document.querySelectorAll('.gp-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.classList.contains('disabled')) return;
+      document.querySelectorAll('.gp-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.gp-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.gpTab;
+      document.getElementById('gp-tab-' + target).classList.add('active');
+      // Show edit button only on profile tab
+      document.getElementById('gp-edit-btn').style.display = target === 'profile' ? '' : 'none';
+    });
+  });
+
+  // Edit toggle
+  document.getElementById('gp-edit-btn')?.addEventListener('click', () => {
+    if (gpEditMode) {
+      // Cancel edit — re-render view mode
+      const g = editingGuestId ? allGuests.find(g => g.id === editingGuestId) : null;
+      if (g) {
+        gpTags = [...g.tags || []];
+        renderGpViewMode(g);
+        setGpEditMode(false);
+      }
+    } else {
+      setGpEditMode(true);
+    }
+  });
+
+  // Empty-state "Add" link clicks
+  document.getElementById('gp-view-content')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('gp-view-empty') || e.target.closest('.gp-view-empty')) {
+      setGpEditMode(true);
+    }
+  });
+
   document.getElementById('gp-close')?.addEventListener('click', closeGuestPanel);
-  document.getElementById('gp-cancel')?.addEventListener('click', closeGuestPanel);
+
+  document.getElementById('gp-cancel')?.addEventListener('click', () => {
+    if (editingGuestId) {
+      // Return to view mode for existing guest
+      const g = allGuests.find(g => g.id === editingGuestId);
+      if (g) {
+        gpTags = [...g.tags || []];
+        populateGpEditForm(g);
+        renderGpViewMode(g);
+        setGpEditMode(false);
+        return;
+      }
+    }
+    closeGuestPanel();
+  });
 
   document.getElementById('gp-tag-add-btn')?.addEventListener('click', () => {
     const input = document.getElementById('gp-tag-input');
@@ -2244,6 +2580,9 @@ import '../styles/dashboard.css';
       email: document.getElementById('gp-email').value.trim(),
       phone: document.getElementById('gp-phone').value.trim(),
       whatsapp: document.getElementById('gp-whatsapp').value.trim(),
+      instagram: document.getElementById('gp-instagram').value.trim(),
+      linkedin: document.getElementById('gp-linkedin').value.trim(),
+      website: document.getElementById('gp-website').value.trim(),
       preferredRoom: document.getElementById('gp-room').value,
       preferences: document.getElementById('gp-preferences').value.trim(),
       source: document.getElementById('gp-source').value,
@@ -2254,21 +2593,31 @@ import '../styles/dashboard.css';
     if (!payload.fullName) { alert('Name is required'); return; }
 
     try {
+      let savedGuest;
       if (editingGuestId) {
-        await fetch(`/api/guests/${editingGuestId}`, {
+        const res = await fetch(`/api/guests/${editingGuestId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        const data = await res.json();
+        savedGuest = data.guest;
       } else {
-        await fetch('/api/guests', {
+        const res = await fetch('/api/guests', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        const data = await res.json();
+        savedGuest = data.guest;
       }
-      closeGuestPanel();
-      loadGuests();
+      await loadGuests();
+      if (editingGuestId && savedGuest) {
+        // Re-open in view mode with fresh data
+        openGuestPanel(editingGuestId);
+      } else {
+        closeGuestPanel();
+      }
     } catch (err) {
       console.error('[guests] save error:', err);
       alert('Failed to save guest');
@@ -2798,10 +3147,29 @@ import '../styles/dashboard.css';
         bubble.appendChild(textEl);
       }
     }
+    if (role === 'assistant') addCopyButton(bubble);
     msg.appendChild(bubble);
     container.appendChild(msg);
     scrollChatToBottom(true);
     return bubble;
+  }
+
+  function addCopyButton(bubble) {
+    const btn = document.createElement('button');
+    btn.className = 'chat-copy-btn';
+    btn.title = 'Copy to clipboard';
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    btn.addEventListener('click', () => {
+      const text = bubble.innerText || bubble.textContent || '';
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => {
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        }, 2000);
+      });
+    });
+    bubble.style.position = 'relative';
+    bubble.appendChild(btn);
   }
 
   function showToolIndicator(name) {
@@ -2941,6 +3309,7 @@ import '../styles/dashboard.css';
         bubble.innerHTML = renderMarkdown(fullContent);
       }
       chatHistory.push({ role: 'assistant', content: fullContent });
+      addCopyButton(bubble);
 
     } catch (err) {
       console.error('[chat] error:', err);

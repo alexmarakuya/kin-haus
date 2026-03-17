@@ -65,6 +65,9 @@ export function saveGuestProfile(profile: Partial<GuestProfile> & { fullName: st
     if (profile.email) existing.email = profile.email;
     if (profile.phone) existing.phone = profile.phone;
     if (profile.whatsapp) existing.whatsapp = profile.whatsapp;
+    if (profile.instagram) existing.instagram = profile.instagram;
+    if (profile.linkedin) existing.linkedin = profile.linkedin;
+    if (profile.website) existing.website = profile.website;
     if (profile.preferredRoom) existing.preferredRoom = profile.preferredRoom;
     if (profile.preferences) existing.preferences = existing.preferences ? `${existing.preferences}\n${profile.preferences}` : profile.preferences;
     if (profile.notes) existing.notes = existing.notes ? `${existing.notes}\n${profile.notes}` : profile.notes;
@@ -93,6 +96,9 @@ export function saveGuestProfile(profile: Partial<GuestProfile> & { fullName: st
     email: profile.email,
     phone: profile.phone,
     whatsapp: profile.whatsapp,
+    instagram: profile.instagram,
+    linkedin: profile.linkedin,
+    website: profile.website,
     tags: profile.tags || [],
     preferredRoom: profile.preferredRoom,
     preferences: profile.preferences || '',

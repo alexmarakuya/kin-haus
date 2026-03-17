@@ -69,6 +69,9 @@ export interface GuestProfile {
   email?: string;
   phone?: string;
   whatsapp?: string;
+  instagram?: string;           // Instagram handle or URL
+  linkedin?: string;            // LinkedIn URL
+  website?: string;             // Personal website URL
   tags: string[];               // e.g. "returning", "vip", "long-stay", "referred"
   preferredRoom?: string;       // room slug they prefer
   preferences: string;          // free-text: dietary, habits, special requests

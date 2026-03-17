@@ -16,7 +16,7 @@ export const GET: APIRoute = async () => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { fullName, nationality, passportNumber, dateOfBirth, gender, email, phone, whatsapp, tags, preferredRoom, preferences, notes, source } = body;
+    const { fullName, nationality, passportNumber, dateOfBirth, gender, email, phone, whatsapp, instagram, linkedin, website, tags, preferredRoom, preferences, notes, source } = body;
 
     if (!fullName || !fullName.trim()) {
       return jsonError('fullName is required');
@@ -31,6 +31,9 @@ export const POST: APIRoute = async ({ request }) => {
       email: email?.trim(),
       phone: phone?.trim(),
       whatsapp: whatsapp?.trim(),
+      instagram: instagram?.trim(),
+      linkedin: linkedin?.trim(),
+      website: website?.trim(),
       tags: tags || [],
       preferredRoom: preferredRoom?.trim(),
       preferences: preferences?.trim() || '',
