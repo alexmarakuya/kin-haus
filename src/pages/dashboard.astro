@@ -960,9 +960,19 @@ import '../styles/dashboard.css';
     }
   }
 
+  function getDismissedConflicts() {
+    try { return JSON.parse(localStorage.getItem('kin-dismissed-conflicts') || '[]'); } catch { return []; }
+  }
+
   function showConflictAlerts(bookings) {
     const alerts = document.getElementById('alerts');
-    const conflicts = bookings.filter(b => b.conflict);
+    const allConflicts = bookings.filter(b => b.conflict);
+    const dismissed = getDismissedConflicts();
+    const conflicts = allConflicts.filter(b => !dismissed.includes(b.id));
+
+    // Always update the tab-bar badge
+    updateConflictBadge(allConflicts.length);
+
     if (conflicts.length === 0) { alerts.innerHTML = ''; return; }
     const details = conflicts.map(b => {
       const room = ROOM_LABELS[b.room] || b.room;
@@ -979,6 +989,11 @@ import '../styles/dashboard.css';
       <div class="conflict-details" id="conflict-details" style="display:none">${details}</div>
     </div>`;
     document.getElementById('conflict-dismiss').addEventListener('click', () => {
+      // Persist dismissed conflict IDs
+      const ids = conflicts.map(b => b.id);
+      const prev = getDismissedConflicts();
+      const merged = [...new Set([...prev, ...ids])];
+      localStorage.setItem('kin-dismissed-conflicts', JSON.stringify(merged));
       document.getElementById('conflict-banner').remove();
     });
     document.getElementById('conflict-show').addEventListener('click', () => {
@@ -996,6 +1011,27 @@ import '../styles/dashboard.css';
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => openBookingDetail(el.dataset.id));
     });
+  }
+
+  function updateConflictBadge(count) {
+    let badge = document.getElementById('conflict-tab-badge');
+    if (count === 0) {
+      if (badge) badge.remove();
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'conflict-tab-badge';
+      badge.className = 'conflict-badge';
+      badge.addEventListener('click', () => {
+        // Clear dismissed, re-show banner
+        localStorage.removeItem('kin-dismissed-conflicts');
+        showConflictAlerts(allBookings);
+      });
+      const spacer = document.querySelector('.tab-spacer');
+      spacer.parentNode.insertBefore(badge, spacer);
+    }
+    badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${count}`;
   }
 
   function showError(msg) {
