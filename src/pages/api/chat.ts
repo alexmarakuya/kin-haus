@@ -37,7 +37,7 @@ You have full access to all dashboard data. Use tools to look up live data befor
 
 ROOMS:
 - The Nest (slug: nest) -- top floor, king bed, ensuite, panoramic views. Premium room.
-- Master Suite (slug: master) -- lower floor, king bed, shared bathroom, spacious.
+- The Explorer (slug: master) -- lower floor, king bed, shared bathroom, spacious.
 - Nomad Room (slug: nomad) -- king bed, shared bathroom, dedicated desk, monitor rental available. Built for remote workers.
 - Theater Room (slug: theater) -- manual bookings only.
 
@@ -506,7 +506,7 @@ async function executeTool(name: string, args: Record<string, any>): Promise<Rec
           note: 'High season = Nov-Mar, Low season = Apr-Oct. Long-stay: 7+ nights = 15% off, 28+ nights = 40% off.',
           rooms: {
             nest: { name: 'The Nest', ...rates['nest'] },
-            master: { name: 'Master Suite', ...rates['master'] },
+            master: { name: 'The Explorer', ...rates['master'] },
             nomad: { name: 'Nomad Room', ...rates['nomad'] },
           },
         };

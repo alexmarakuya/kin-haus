@@ -5,24 +5,24 @@ const jsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "HotelRoom",
-    "name": "Nomad Room at Kin Haus",
-    "description": "Workspace-ready room with dedicated desk, king-size bed, and fast WiFi for digital nomads at Kin Haus co-living villa, Koh Phangan.",
-    "url": "https://kinhaus.space/rooms/nomad-room",
-    "image": "https://kinhaus.space/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg",
+    "name": "The Explorer at Kin Haus",
+    "description": "Spacious lower-floor suite with king-size bed, full-size wardrobe, desk, and sunrise views at Kin Haus co-living villa, Koh Phangan.",
+    "url": "https://kinhaus.space/rooms/the-explorer",
+    "image": "https://kinhaus.space/images/rooms/kinhaus-master-teak-headboard.jpg",
     "bed": { "@type": "BedDetails", "typeOfBed": "King", "numberOfBeds": 1 },
     "occupancy": { "@type": "QuantitativeValue", "value": 2 },
     "amenityFeature": [
-      { "@type": "LocationFeatureSpecification", "name": "Dedicated Desk", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Shared Bathroom", "value": true },
       { "@type": "LocationFeatureSpecification", "name": "Air Conditioning", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Fast WiFi (500+ Mbps)", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Blackout Blinds", "value": true },
-      { "@type": "LocationFeatureSpecification", "name": "Monitor Rental Available", "value": true }
+      { "@type": "LocationFeatureSpecification", "name": "Desk", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Full-Size Closet", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Sunrise Views", "value": true }
     ],
     "offers": {
       "@type": "Offer",
       "priceCurrency": "THB",
-      "price": "1680",
-      "description": "Low season rate (Apr-Oct). High season: 2,400 THB/night.",
+      "price": "2240",
+      "description": "Low season rate (Apr-Oct). High season: 3,200 THB/night.",
       "availability": "https://schema.org/InStock"
     },
     "containedInPlace": { "@type": "LodgingBusiness", "name": "Kin Haus", "url": "https://kinhaus.space" }
@@ -33,15 +33,15 @@ const jsonLd = [
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://kinhaus.space/" },
       { "@type": "ListItem", "position": 2, "name": "Rooms", "item": "https://kinhaus.space/rooms" },
-      { "@type": "ListItem", "position": 3, "name": "Nomad Room", "item": "https://kinhaus.space/rooms/nomad-room" }
+      { "@type": "ListItem", "position": 3, "name": "The Explorer", "item": "https://kinhaus.space/rooms/the-explorer" }
     ]
   }
 ];
 ---
 
 <MarketingLayout
-  title="Nomad Room -- Workspace-Ready Room for Remote Workers | Kin Haus, Koh Phangan"
-  description="Book the Nomad Room at Kin Haus: dedicated desk, king-size bed, and 500+ Mbps WiFi built for remote work. From 1,680 THB/night in Koh Phangan, Thailand."
+  title="The Explorer -- King-Size Room with Desk | Kin Haus, Koh Phangan"
+  description="Book the The Explorer at Kin Haus: spacious king-size room with desk, full closet, and sunrise views. From 2,240 THB/night in Koh Phangan, Thailand."
   jsonLd={jsonLd}
 >
   <style>
@@ -113,17 +113,17 @@ const jsonLd = [
     }
   </style>
 
-  <div class="room-page" data-thb-high="2400" data-thb-low="1680" data-room-slug="nomad">
-    <h1>Nomad Room</h1>
-    <div class="room-rate" data-thb="2400" data-price-tpl="{price} / night (high season)">&#x0E3F;2,400 / night (high season)</div>
-    <div class="room-season" data-thb="1680" data-price-tpl="Low season (Apr-Oct): {price} / night">Low season (Apr-Oct): &#x0E3F;1,680 / night</div>
-    <div class="room-hero"><img src="/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg" alt="Nomad Room at Kin Haus"></div>
+  <div class="room-page" data-thb-high="3200" data-thb-low="2240" data-room-slug="master">
+    <h1>The Explorer</h1>
+    <div class="room-rate" data-thb="3200" data-price-tpl="{price} / night (high season)">&#x0E3F;3,200 / night (high season)</div>
+    <div class="room-season" data-thb="2240" data-price-tpl="Low season (Apr-Oct): {price} / night">Low season (Apr-Oct): &#x0E3F;2,240 / night</div>
+    <div class="room-hero"><img src="/images/rooms/kinhaus-master-teak-headboard.jpg" alt="The Explorer at Kin Haus"></div>
 
     <div class="room-galleries">
       <div class="room-gallery-label">Bedroom</div>
       <div class="room-gallery">
-        <img src="/images/rooms/kinhaus-nomad-bedroom-desk-setup.jpg" alt="Nomad Room desk" loading="lazy">
-        <img src="/images/rooms/kinhaus-nomad-desk-monitor-and-speakers.jpg" alt="Nomad Room workstation" loading="lazy">
+        <img src="/images/rooms/kinhaus-master-desk-and-windows.jpg" alt="The Explorer desk" loading="lazy">
+        <img src="/images/rooms/kinhaus-master-walk-in-closet-mirrored-wardrobes.jpg" alt="The Explorer closet" loading="lazy">
       </div>
       <div class="room-gallery-label">Shared Bathroom</div>
       <div class="room-gallery">
@@ -133,30 +133,30 @@ const jsonLd = [
       </div>
     </div>
 
-    <p class="room-desc">A cozy, workspace-ready room ideal for digital nomads. Compact but thoughtfully designed with a dedicated desk area and fast WiFi. Shares a balcony with the The Explorer and a bathroom between both rooms.</p>
+    <p class="room-desc">Spacious lower-floor suite with a king-size bed, full-size wardrobe, and sunrise views. Shares a balcony with the Nomad Room and a bathroom between both rooms. A great choice for guests who want comfort and easy access.</p>
 
     <div class="room-features">
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></svg></span>King-size bed</span>
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><line x1="10" x2="8" y1="5" y2="7"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="7" x2="7" y1="19" y2="21"/><line x1="17" x2="17" y1="19" y2="21"/></svg></span>Shared bathroom</span>
-      <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></span>Dedicated desk</span>
-      <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg></span>Air conditioning</span>
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3 2 5v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z"/><path d="M6 8h4"/><path d="M6 18h4"/><path d="m12 3-2 2v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z"/><path d="M14 8h4"/><path d="M14 18h4"/><path d="m20 3-2 2v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z"/></svg></span>Shared balcony</span>
+      <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg></span>Air conditioning</span>
+      <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></span>Desk</span>
+      <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/></svg></span>Full-size closet</span>
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg></span>Sunrise views</span>
-      <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>Blackout blinds</span>
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg></span>Fast WiFi</span>
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="4" rx="2"/><path d="M7 20h10"/><path d="M9 16v4"/><path d="M15 16v4"/></svg></span>Monitor rental on request</span>
     </div>
 
-    <button class="avail-cta" data-room="nomad">Check Availability</button>
+    <button class="avail-cta" data-room="master">Check Availability</button>
 
     <div class="room-quick-facts">
       <h2>Quick Facts</h2>
       <ul>
         <li><strong>Bed:</strong> King-size</li>
         <li><strong>Bathroom:</strong> Shared (between 2 rooms)</li>
-        <li><strong>High season:</strong> 2,400 THB/night (Nov-Mar)</li>
-        <li><strong>Low season:</strong> 1,680 THB/night (Apr-Oct)</li>
-        <li><strong>Best for:</strong> Digital nomads, remote workers</li>
+        <li><strong>High season:</strong> 3,200 THB/night (Nov-Mar)</li>
+        <li><strong>Low season:</strong> 2,240 THB/night (Apr-Oct)</li>
+        <li><strong>Best for:</strong> Couples, comfort seekers</li>
         <li><strong>Check-in:</strong> 3 PM / Check-out: 12 PM</li>
       </ul>
     </div>
@@ -170,18 +170,18 @@ const jsonLd = [
           <img src="/images/rooms/kinhaus-nest-1.jpg" alt="The Nest at Kin Haus" loading="lazy">
           <span><strong>The Nest</strong> -- from 3,500 THB/night</span>
         </a>
-        <a href="/rooms/the-explorer" class="related-room-link">
-          <img src="/images/rooms/kinhaus-master-teak-headboard.jpg" alt="The Explorer at Kin Haus" loading="lazy">
-          <span><strong>The Explorer</strong> -- from 2,240 THB/night</span>
+        <a href="/rooms/nomad-room" class="related-room-link">
+          <img src="/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg" alt="Nomad Room at Kin Haus" loading="lazy">
+          <span><strong>Nomad Room</strong> -- from 1,680 THB/night</span>
         </a>
       </div>
     </div>
   </div>
 
   <div class="sticky-cta" id="stickyCta">
-    <span class="sticky-cta-name">Nomad Room</span>
-    <span class="sticky-cta-price" data-thb="2400" data-price-tpl="from {price}/night">from &#x0E3F;2,400/night</span>
-    <button class="sticky-cta-btn" data-room="nomad">Check Availability</button>
+    <span class="sticky-cta-name">The Explorer</span>
+    <span class="sticky-cta-price" data-thb="3200" data-price-tpl="from {price}/night">from &#x0E3F;3,200/night</span>
+    <button class="sticky-cta-btn" data-room="master">Check Availability</button>
   </div>
 
   <script>

@@ -14,7 +14,7 @@ export default defineConfig({
         'https://kinhaus.space/',
         'https://kinhaus.space/rooms',
         'https://kinhaus.space/rooms/the-nest',
-        'https://kinhaus.space/rooms/master-suite',
+        'https://kinhaus.space/rooms/the-explorer',
         'https://kinhaus.space/rooms/nomad-room',
         'https://kinhaus.space/contact',
         'https://kinhaus.space/location',

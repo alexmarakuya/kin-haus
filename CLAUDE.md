@@ -59,7 +59,7 @@ kin-haus/
       contact.astro           # Contact form
       location.astro          # Villa location + amenities
       events.astro            # Events / lifestyle
-      rooms/                  # Room detail pages (the-nest, master-suite, nomad-room)
+      rooms/                  # Room detail pages (the-nest, the-explorer, nomad-room)
       blog/                   # Blog posts
       api/                    # REST API routes
         auth.ts               # POST login (set session cookie)
@@ -102,13 +102,13 @@ kin-haus/
 | Room | Slug | Airbnb Listing ID | High Season Rate | Low Season Rate |
 |------|------|-------------------|-----------------|-----------------|
 | The Nest | `nest` | 1511809226602265595 | 5,000 THB | 3,500 THB |
-| Master Suite | `master` | 1618003971883950106 | 3,200 THB | 2,240 THB |
+| The Explorer | `master` | 1618003971883950106 | 3,200 THB | 2,240 THB |
 | Nomad Room | `nomad` | 1618012678467611754 | 2,400 THB | 1,680 THB |
 | Theater Room | `theater` | (manual only) | N/A | N/A |
 
 - High season: Nov-Mar. Low season: Apr-Oct (30% discount).
 - Rates stored in `data/pricing.json`, editable from the dashboard.
-- Room names: always "The Nest", "Master Suite", "Nomad Room" (exact capitalisation).
+- Room names: always "The Nest", "The Explorer", "Nomad Room" (exact capitalisation).
 
 ---
 
@@ -327,6 +327,6 @@ Domain: `kinhaus.space` (production), `staging.kinhaus.space` (staging).
 ## Style Notes
 
 - No em dashes in any generated copy
-- Rooms: "The Nest", "Master Suite", "Nomad Room" (exact capitalisation)
+- Rooms: "The Nest", "The Explorer", "Nomad Room" (exact capitalisation)
 - Location: Thongsala, Koh Phangan (not Ban Tai)
 - Currency display: THB primary, EUR/USD secondary (user-toggleable, EUR_RATE=37, USD_RATE=34)

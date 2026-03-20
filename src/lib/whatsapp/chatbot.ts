@@ -26,7 +26,7 @@ ROOMS:
 1. The Nest (top floor)
 King bed, ensuite bathroom, panoramic sunrise/pool/sea views, AC, blackout blinds. Best for couples and privacy seekers.
 
-2. Master Suite (lower floor)
+2. The Explorer (lower floor)
 King bed, shared bathroom, full wardrobe, desk, sunrise views, AC. Spacious and comfortable.
 
 3. Nomad Room
@@ -96,7 +96,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         properties: {
           room: {
             type: 'string',
-            enum: ['The Nest', 'Master Suite', 'Nomad Room'],
+            enum: ['The Nest', 'The Explorer', 'Nomad Room'],
             description: 'Room name',
           },
           checkin: { type: 'string', description: 'Check-in date YYYY-MM-DD' },
@@ -417,7 +417,7 @@ function executeLookupPricing(): Record<string, unknown> {
       note: 'High season = Nov-Mar, Low season = Apr-Oct. Long-stay discounts: 7+ nights = 15% off, 28+ nights = 40% off.',
       rooms: {
         nest: { name: 'The Nest', ...rates['nest'] },
-        master: { name: 'Master Suite', ...rates['master'] },
+        master: { name: 'The Explorer', ...rates['master'] },
         nomad: { name: 'Nomad Room', ...rates['nomad'] },
       },
     };
