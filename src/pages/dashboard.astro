@@ -1087,7 +1087,7 @@ import '../styles/dashboard.css';
 
       const lbl = document.createElement('div');
       lbl.className = 'row-lbl';
-      const shortName = {nest:'Nest',master:'Master',nomad:'Nomad',theater:'Theater'}[room];
+      const shortName = {nest:'Nest',master:'Explorer',nomad:'Nomad',theater:'Theater'}[room];
       lbl.innerHTML = `<div class="row-lbl-dot" style="background:${ROOM_COLORS[room]}"></div>${shortName}`;
       row.appendChild(lbl);
 
