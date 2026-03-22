@@ -498,6 +498,48 @@ body.present-mode .present-banner { display:block; }
   .hk-popover { width:300px; }
 }
 
+/* ─── TODAY VIEW ──────────────────────────────────────────────────────────── */
+.today-view { padding:0; }
+.today-header { padding:24px 28px 16px; border-bottom:1px solid #eae8e5; }
+.today-date { font-size:20px; font-weight:600; color:var(--ink); }
+.today-occ { font-size:13px; color:#8c8a84; margin-top:4px; }
+.today-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+.today-section { padding:20px 28px; border-bottom:1px solid #f0eeeb; border-right:1px solid #f0eeeb; }
+.today-section:nth-child(2n) { border-right:none; }
+.today-section-title { font-size:13px; font-weight:600; color:#52524e; display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.today-room-card { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f8f7f5; }
+.today-room-card:last-child { border-bottom:none; }
+.today-room-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.today-room-info { flex:1; min-width:0; }
+.today-room-name { font-size:13px; font-weight:500; }
+.today-room-guest { font-size:12px; color:#8c8a84; }
+.today-guest-card { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f8f7f5; cursor:pointer; border-radius:6px; transition:background 0.1s; }
+.today-guest-card:hover { background:#fafaf8; }
+.today-guest-card:last-child { border-bottom:none; }
+.today-guest-avatar { width:32px; height:32px; border-radius:50%; background:var(--warm); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#52524e; flex-shrink:0; }
+.today-guest-info { flex:1; min-width:0; }
+.today-guest-name { font-size:13px; font-weight:500; }
+.today-guest-detail { font-size:11px; color:#8c8a84; }
+.today-task-card { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f8f7f5; }
+.today-task-card:last-child { border-bottom:none; }
+.today-task-info { flex:1; min-width:0; }
+.today-task-title { font-size:13px; }
+.today-task-detail { font-size:11px; color:#8c8a84; }
+.today-badge { font-size:10px; font-weight:600; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; }
+.today-badge-checkin { background:#d4ede3; color:#1a6b3c; }
+.today-badge-checkout { background:#fde8e8; color:#b42a1e; }
+.today-badge-turnover { background:#fef3cd; color:#856404; }
+.today-badge-occupied { background:#e8f0fe; color:#1a56db; }
+.today-badge-empty { background:#f0eeeb; color:#8c8a84; }
+.today-empty { padding:12px 0; color:#b5b3ad; font-size:13px; }
+
+@media (max-width:768px) {
+  .today-grid { grid-template-columns:1fr; }
+  .today-section { border-right:none; }
+  .today-header { padding:16px 20px 12px; }
+  .today-section { padding:16px 20px; }
+}
+
 /* ─── DESKS (CO-WORKING) ──────────────────────────────────────────────────── */
 .desk-summary { display:flex; gap:16px; padding:20px 28px; border-bottom:1px solid #eae8e5; flex-wrap:wrap; }
 .desk-today { padding:20px 28px; border-bottom:1px solid #eae8e5; }

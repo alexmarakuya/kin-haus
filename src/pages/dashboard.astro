@@ -76,6 +76,7 @@ import '../styles/dashboard.css';
 
     <div class="main">
       <div class="tab-bar">
+        <div class="tab" data-tab="today">Today</div>
         <div class="tab active" data-tab="calendar">Calendar</div>
         <div class="tab" data-tab="list">Bookings</div>
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
@@ -231,6 +232,11 @@ import '../styles/dashboard.css';
           <div class="desk-pass-section-title" style="margin-top:24px;">Recent / Expired</div>
           <div class="desk-pass-list" id="desk-past-passes"></div>
         </div>
+      </div>
+
+      <!-- TODAY TAB -->
+      <div id="tab-today" class="list-pane" style="display:none">
+        <div class="today-view" id="today-view"></div>
       </div>
 
       <div class="stats-footer" id="stats-footer"></div>
@@ -2028,6 +2034,7 @@ import '../styles/dashboard.css';
     localStorage.setItem('kin-active-tab', tab);
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+    document.getElementById('tab-today').style.display = tab === 'today' ? 'block' : 'none';
     document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'flex' : 'none';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
@@ -2035,6 +2042,7 @@ import '../styles/dashboard.css';
     document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
     document.getElementById('tab-desks').style.display = tab === 'desks' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
+    if (tab === 'today') renderTodayView();
     if (tab === 'inquiries') fetchInquiries();
     if (tab === 'guests') loadGuests();
     if (tab === 'monitors') loadMonitors();
@@ -4227,6 +4235,192 @@ import '../styles/dashboard.css';
       renderHkList();
     }
   });
+
+  // ─── TODAY VIEW ──────────────────────────────────────────────────────────────
+  function renderTodayView() {
+    const container = document.getElementById('today-view');
+    if (!container) return;
+
+    const today = todayStr;
+    const todayDate = new Date(today + 'T12:00:00');
+    const dayName = todayDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    const allBk = allBookings || [];
+
+    // Categorize bookings for today
+    const checkingIn = allBk.filter(b => b.checkin === today && b.type !== 'blocked' && b.type !== 'waitlist');
+    const checkingOut = allBk.filter(b => b.checkout === today && b.type !== 'blocked' && b.type !== 'waitlist');
+    const staying = allBk.filter(b => today >= b.checkin && today < b.checkout && b.checkin !== today && b.type !== 'blocked' && b.type !== 'waitlist');
+
+    // Room status
+    const rooms = ['nest', 'master', 'nomad'];
+    const roomStatus = rooms.map(room => {
+      const occupied = allBk.find(b => (b.room === room || b.room === 'full') && today >= b.checkin && today < b.checkout && b.type !== 'blocked' && b.type !== 'waitlist');
+      const departing = allBk.find(b => (b.room === room || b.room === 'full') && b.checkout === today && b.type !== 'blocked' && b.type !== 'waitlist');
+      const arriving = allBk.find(b => (b.room === room || b.room === 'full') && b.checkin === today && b.type !== 'blocked' && b.type !== 'waitlist');
+      return { room, occupied, departing, arriving };
+    });
+
+    // Housekeeping tasks for today
+    const todayTasks = (allHkTasks || []).filter(t => t.date === today);
+    const pendingTasks = todayTasks.filter(t => t.status === 'pending');
+    const inProgressTasks = todayTasks.filter(t => t.status === 'in_progress');
+    const doneTasks = todayTasks.filter(t => t.status === 'done');
+
+    // Empty rooms
+    const emptyRooms = roomStatus.filter(r => !r.occupied && !r.arriving);
+    const occupiedCount = rooms.length - emptyRooms.length;
+
+    let html = `
+      <div class="today-header">
+        <div class="today-date">${dayName}</div>
+        <div class="today-occ">${occupiedCount}/${rooms.length} rooms occupied</div>
+      </div>
+
+      <div class="today-grid">
+        <!-- ROOM STATUS -->
+        <div class="today-section">
+          <div class="today-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Room Status
+          </div>
+          ${roomStatus.map(r => {
+            const label = ROOM_LABELS[r.room] || r.room;
+            const color = ROOM_COLORS[r.room] || '#999';
+            let status = '', statusClass = '';
+            if (r.arriving && r.departing) {
+              status = 'Turnover';
+              statusClass = 'today-badge-turnover';
+            } else if (r.arriving) {
+              status = 'Check-in';
+              statusClass = 'today-badge-checkin';
+            } else if (r.departing) {
+              status = 'Check-out';
+              statusClass = 'today-badge-checkout';
+            } else if (r.occupied) {
+              status = 'Occupied';
+              statusClass = 'today-badge-occupied';
+            } else {
+              status = 'Empty';
+              statusClass = 'today-badge-empty';
+            }
+            const guest = r.occupied ? (presentMode ? scrambleName(r.occupied.guest || '') : (r.occupied.guest || '')) : (r.arriving ? (presentMode ? scrambleName(r.arriving.guest || '') : (r.arriving.guest || '')) : '');
+            return `<div class="today-room-card">
+              <div class="today-room-dot" style="background:${color}"></div>
+              <div class="today-room-info">
+                <div class="today-room-name">${label}</div>
+                ${guest ? `<div class="today-room-guest">${guest}</div>` : ''}
+              </div>
+              <span class="today-badge ${statusClass}">${status}</span>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <!-- CHECK-INS -->
+        <div class="today-section">
+          <div class="today-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Checking In (${checkingIn.length})
+          </div>
+          ${checkingIn.length ? checkingIn.map(b => {
+            const name = presentMode ? scrambleName(b.guest || 'Guest') : (b.guest || 'Guest');
+            const room = ROOM_LABELS[b.room] || b.room;
+            const nights = Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000);
+            return `<div class="today-guest-card" onclick="openBookingDetail('${b.id}')">
+              <div class="today-guest-avatar">${(b.guest || '?').charAt(0).toUpperCase()}</div>
+              <div class="today-guest-info">
+                <div class="today-guest-name">${name}</div>
+                <div class="today-guest-detail">${room} &middot; ${nights} night${nights !== 1 ? 's' : ''} &middot; until ${new Date(b.checkout + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' })}</div>
+              </div>
+              <span class="today-badge today-badge-checkin">Arriving</span>
+            </div>`;
+          }).join('') : '<div class="today-empty">No check-ins today</div>'}
+        </div>
+
+        <!-- CHECK-OUTS -->
+        <div class="today-section">
+          <div class="today-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Checking Out (${checkingOut.length})
+          </div>
+          ${checkingOut.length ? checkingOut.map(b => {
+            const name = presentMode ? scrambleName(b.guest || 'Guest') : (b.guest || 'Guest');
+            const room = ROOM_LABELS[b.room] || b.room;
+            return `<div class="today-guest-card" onclick="openBookingDetail('${b.id}')">
+              <div class="today-guest-avatar">${(b.guest || '?').charAt(0).toUpperCase()}</div>
+              <div class="today-guest-info">
+                <div class="today-guest-name">${name}</div>
+                <div class="today-guest-detail">${room}</div>
+              </div>
+              <span class="today-badge today-badge-checkout">Departing</span>
+            </div>`;
+          }).join('') : '<div class="today-empty">No check-outs today</div>'}
+        </div>
+
+        <!-- STAYING -->
+        <div class="today-section">
+          <div class="today-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Staying (${staying.length})
+          </div>
+          ${staying.length ? staying.map(b => {
+            const name = presentMode ? scrambleName(b.guest || 'Guest') : (b.guest || 'Guest');
+            const room = ROOM_LABELS[b.room] || b.room;
+            const daysLeft = Math.round((new Date(b.checkout) - new Date(today)) / 86400000);
+            return `<div class="today-guest-card" onclick="openBookingDetail('${b.id}')">
+              <div class="today-guest-avatar">${(b.guest || '?').charAt(0).toUpperCase()}</div>
+              <div class="today-guest-info">
+                <div class="today-guest-name">${name}</div>
+                <div class="today-guest-detail">${room} &middot; ${daysLeft} night${daysLeft !== 1 ? 's' : ''} left</div>
+              </div>
+              <span class="today-badge today-badge-occupied">In-house</span>
+            </div>`;
+          }).join('') : '<div class="today-empty">No guests staying</div>'}
+        </div>
+
+        <!-- HOUSEKEEPING -->
+        <div class="today-section">
+          <div class="today-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M12 3v12"/><path d="M9 6l3-3 3 3"/></svg>
+            Housekeeping (${pendingTasks.length + inProgressTasks.length} pending)
+          </div>
+          ${todayTasks.length ? todayTasks.map(t => {
+            const icon = HK_TYPE_ICONS[t.type] || '\u{1F4CC}';
+            const room = ROOM_LABELS[t.room] || t.room;
+            const statusLabel = t.status === 'pending' ? 'Pending' : t.status === 'in_progress' ? 'In progress' : 'Done';
+            const statusClass = t.status === 'pending' ? 'today-badge-checkout' : t.status === 'in_progress' ? 'today-badge-turnover' : 'today-badge-empty';
+            return `<div class="today-task-card">
+              <span class="hk-status-dot" style="background:${HK_STATUS_COLORS[t.status]}"></span>
+              <div class="today-task-info">
+                <div class="today-task-title">${icon} ${t.title}</div>
+                <div class="today-task-detail">${room}</div>
+              </div>
+              <span class="today-badge ${statusClass}">${statusLabel}</span>
+            </div>`;
+          }).join('') : '<div class="today-empty">No housekeeping tasks today</div>'}
+        </div>
+
+        <!-- EMPTY ROOMS -->
+        ${emptyRooms.length ? `<div class="today-section">
+          <div class="today-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Available Rooms (${emptyRooms.length})
+          </div>
+          ${emptyRooms.map(r => {
+            const label = ROOM_LABELS[r.room] || r.room;
+            const color = ROOM_COLORS[r.room] || '#999';
+            return `<div class="today-room-card">
+              <div class="today-room-dot" style="background:${color}"></div>
+              <div class="today-room-info"><div class="today-room-name">${label}</div></div>
+              <span class="today-badge today-badge-empty">Available</span>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
 
   // ─── INIT ─────────────────────────────────────────────────────────────────────
   const isMobileChat = window.innerWidth <= 768;
