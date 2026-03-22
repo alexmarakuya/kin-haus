@@ -721,6 +721,12 @@ import '../styles/dashboard.css';
   // types, or pricing defaults.
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const ROOMS = ['nest','master','nomad','theater'];
+
+  // ─── HTML ESCAPE (XSS prevention) ──────────────────────────────────────────
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
   const ROOM_LABELS = { nest:'The Nest', master:'The Explorer', nomad:'The Nomad', theater:'Theater Room', full:'Full House' };
   const ROOM_COLORS = { nest:'var(--nest)', master:'var(--master)', nomad:'var(--nomad)', theater:'var(--theater)', full:'#8a6f9e' };
   const TYPE_CLASS = { airbnb:'c-airbnb', direct:'c-direct', friend:'c-friend', blocked:'c-blocked', owner:'c-owner', hold:'c-hold', waitlist:'c-waitlist' };
@@ -786,7 +792,7 @@ import '../styles/dashboard.css';
   }
 
   function displayName(booking) {
-    return presentMode ? scrambleName(booking.guest || 'Guest') : (booking.guest || '');
+    return esc(presentMode ? scrambleName(booking.guest || 'Guest') : (booking.guest || ''));
   }
 
   // ─── DRAG STATE ─────────────────────────────────────────────────────────────
@@ -1085,7 +1091,7 @@ import '../styles/dashboard.css';
     if (conflicts.length === 0) { alerts.innerHTML = ''; return; }
     const details = conflicts.map(b => {
       const room = ROOM_LABELS[b.room] || b.room;
-      return `<div class="conflict-item" data-id="${b.id}"><strong>${b.guest || 'Guest'}</strong> in ${room} (${b.checkin} to ${b.checkout})</div>`;
+      return `<div class="conflict-item" data-id="${b.id}"><strong>${esc(b.guest || 'Guest')}</strong> in ${esc(room)} (${b.checkin} to ${b.checkout})</div>`;
     }).join('');
     alerts.innerHTML = `<div class="alert alert-conflict" id="conflict-banner">
       <div class="alert-main">
@@ -1486,7 +1492,7 @@ import '../styles/dashboard.css';
         const icon = HK_TYPE_ICONS[t.type] || '\ud83d\udccc';
         const statusDot = `<span class="hk-status-dot" style="background:${HK_STATUS_COLORS[t.status]}"></span>`;
         html += `<div class="hk-pop-task" data-id="${t.id}">
-          ${statusDot}<span class="hk-pop-task-title" title="Click to cycle status">${icon} ${t.title}</span>
+          ${statusDot}<span class="hk-pop-task-title" title="Click to cycle status">${icon} ${esc(t.title)}</span>
           <button class="hk-pop-del" title="Delete">&times;</button>
         </div>`;
       });
@@ -1907,7 +1913,7 @@ import '../styles/dashboard.css';
     const typeColor = {airbnb:'var(--airbnb)',direct:'var(--direct)',friend:'var(--friend)',blocked:'var(--blocked)',hold:'var(--hold)',waitlist:'var(--waitlist)'}[b.type]||'#8a8070';
     const n = nightCount(b);
     const ttName = presentMode ? scrambleName(b.guest || typeLabel) : (b.guest || typeLabel);
-    const ttNotes = presentMode ? '' : (b.notes ? `<div class="tt-detail" style="margin-top:3px">${b.notes}</div>` : '');
+    const ttNotes = presentMode ? '' : (b.notes ? `<div class="tt-detail" style="margin-top:3px">${esc(b.notes)}</div>` : '');
     tt.innerHTML = `
       <div class="tt-name">${ttName}</div>
       <div class="tt-detail">${fmtDate(b.checkin)} &#x2192; ${fmtDate(b.checkout)} (${n}n)</div>
@@ -2169,10 +2175,10 @@ import '../styles/dashboard.css';
           <span class="inq-time">${timeAgo}</span>
         </div>
         <div class="inq-card-body">
-          <div class="inq-guest">${presentMode ? scrambleName(inq.guest) : inq.guest}${inq.whatsapp ? `<span class="inq-wa-num">${presentMode ? scramblePhone(inq.whatsapp) : inq.whatsapp}</span>` : ''}</div>
-          <div class="inq-detail">${inq.room} &middot; ${fmtDate(inq.checkin)} \u2192 ${fmtDate(inq.checkout)} &middot; ${inq.nights}n</div>
+          <div class="inq-guest">${esc(presentMode ? scrambleName(inq.guest) : inq.guest)}${inq.whatsapp ? `<span class="inq-wa-num">${esc(presentMode ? scramblePhone(inq.whatsapp) : inq.whatsapp)}</span>` : ''}</div>
+          <div class="inq-detail">${esc(inq.room)} &middot; ${fmtDate(inq.checkin)} \u2192 ${fmtDate(inq.checkout)} &middot; ${inq.nights}n</div>
           ${amountStr ? `<div class="inq-amount">${amountStr}</div>` : ''}
-          ${inq.message && !presentMode ? `<div class="inq-message">"${inq.message}"</div>` : ''}
+          ${inq.message && !presentMode ? `<div class="inq-message">"${esc(inq.message)}"</div>` : ''}
         </div>
         ${presentMode ? '' : `<div class="inq-card-actions">${actions}</div>`}
       </div>`;
@@ -2562,10 +2568,10 @@ import '../styles/dashboard.css';
 
       return `<div class="guest-card" data-id="${g.id}" onclick="openGuestPanel('${g.id}')">
         <div class="guest-card-header">
-          <div class="guest-card-avatar">${g.fullName.charAt(0).toUpperCase()}</div>
+          <div class="guest-card-avatar">${esc(g.fullName.charAt(0).toUpperCase())}</div>
           <div class="guest-card-info">
-            <div class="guest-card-name">${g.fullName} ${genderIcon ? '<span class="guest-gender">' + genderIcon + '</span>' : ''}</div>
-            <div class="guest-card-detail">${g.nationality || 'Unknown'}${g.source ? ' &middot; via ' + g.source : ''}</div>
+            <div class="guest-card-name">${esc(g.fullName)} ${genderIcon ? '<span class="guest-gender">' + genderIcon + '</span>' : ''}</div>
+            <div class="guest-card-detail">${esc(g.nationality || 'Unknown')}${g.source ? ' &middot; via ' + esc(g.source) : ''}</div>
           </div>
           ${statusTag}
         </div>
@@ -2721,7 +2727,7 @@ import '../styles/dashboard.css';
 
     // Notes
     if (g.notes) {
-      html += `<div class="gp-view-section"><div class="gp-view-label">Notes</div><div class="gp-view-value" style="white-space:pre-wrap;">${g.notes}</div></div>`;
+      html += `<div class="gp-view-section"><div class="gp-view-label">Notes</div><div class="gp-view-value" style="white-space:pre-wrap;">${esc(g.notes)}</div></div>`;
     }
 
     el.innerHTML = html;
@@ -4315,7 +4321,7 @@ import '../styles/dashboard.css';
         <div class="staff-card-left">
           <div class="staff-avatar">${initial}</div>
           <div class="staff-info">
-            <div class="staff-name">${h.name} <span class="staff-role-badge" style="background:${roleBg};color:${roleTxt}">${roleLabel}</span></div>
+            <div class="staff-name">${esc(h.name)} <span class="staff-role-badge" style="background:${roleBg};color:${roleTxt}">${roleLabel}</span></div>
             <div class="staff-meta">${rooms ? rooms + ' &middot; ' : ''}${availDays}${h.rate ? ' &middot; ' + h.rate : ''}</div>
             ${contacts ? `<div class="staff-contacts">${contacts}</div>` : ''}
           </div>

@@ -26,7 +26,7 @@ export default defineConfig({
     }),
   ],
   security: {
-    checkOrigin: false,
+    checkOrigin: true,
   },
   server: {
     port: 3000,

@@ -15,7 +15,11 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability && !isWhatsAppWebhook && !isHousekeepingIcal);
 
   if (!isProtected) {
-    return next();
+    const response = await next();
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    return response;
   }
 
   // Check session cookie
@@ -23,7 +27,11 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   const validToken = getSessionToken();
 
   if (session === validToken) {
-    return next();
+    const response = await next();
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    return response;
   }
 
   // Not authenticated
