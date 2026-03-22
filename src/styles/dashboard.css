@@ -117,6 +117,7 @@ body.present-mode .present-banner { display:block; }
 .cell-initial { position:absolute; top:4px; left:5px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0.6; z-index:2; }
 .cal-cell.inactive { border-color:transparent; cursor:default; background:transparent; margin:0; }
 .cal-cell.drag-selected { background:var(--direct-light); border-color:var(--accent); }
+.cal-cell.extend-highlight { background:rgba(42,97,59,0.08); border-color:var(--accent); border-style:dashed; }
 .cal-cell.half-free-pm { cursor:crosshair; }
 .cal-cell.half-free-pm::before { content:''; position:absolute; top:0; bottom:0; left:50%; right:0; z-index:0; pointer-events:none; transition:background 0.1s; }
 .cal-cell.half-free-pm:hover::before { background:var(--warm); }
@@ -200,9 +201,9 @@ body.present-mode .present-banner { display:block; }
 .modal-footer { padding:16px 24px; border-top:1px solid #eae8e5; display:flex; gap:10px; justify-content:flex-end; }
 .modal-footer .btn { white-space:nowrap; }
 .fg { margin-bottom:15px; }
-.fg label { display:block; font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b6b66; margin-bottom:5px; }
-.fg input, .fg select { width:100%; padding:10px 13px; border:1px solid #d9d7d3; border-radius:6px; background:white; font-family:'Inter',sans-serif; font-size:14px; color:var(--ink); outline:none; }
-.fg input:focus, .fg select:focus { border-color:var(--accent); }
+.fg > label { display:block; font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b6b66; margin-bottom:5px; }
+.fg input:not([type="checkbox"]), .fg select { width:100%; padding:10px 13px; border:1px solid #d9d7d3; border-radius:6px; background:white; font-family:'Inter',sans-serif; font-size:14px; color:var(--ink); outline:none; }
+.fg input:not([type="checkbox"]):focus, .fg select:focus { border-color:var(--accent); }
 .fg-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
 /* DETAIL PANEL (slide-in from right) */

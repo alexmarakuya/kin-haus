@@ -1557,6 +1557,13 @@ import '../styles/dashboard.css';
     }
   });
 
+  // ─── EXTEND-DRAG STATE ───────────────────────────────────────────────────
+  let extendBookingId = null;
+  let extendRoom = null;
+  let extendOrigCheckout = null;
+  let extendEndDay = null;
+  let isExtending = false;
+
   function makeBar(bk, barClass, extra) {
     const bar = document.createElement('div');
     const colors = BAR_COLORS[bk._barType || bk.type] || BAR_COLORS.airbnb;
@@ -1565,11 +1572,91 @@ import '../styles/dashboard.css';
     bar.style.borderBottom = '2px solid ' + colors.accent;
     if (colors.bs === 'bar-dashed') bar.style.borderBottomStyle = 'dashed';
     if (colors.bs === 'bar-dotted') bar.style.borderBottomStyle = 'dotted';
+    bar.dataset.bookingId = bk.id;
+    bar.dataset.room = bk.room;
+    bar.dataset.checkout = bk.checkout;
     bar.addEventListener('mouseenter', e => showTooltip(e, bk));
     bar.addEventListener('mousemove', moveTooltip);
     bar.addEventListener('mouseleave', hideTooltip);
-    bar.addEventListener('click', () => { hideTooltip(); openBookingDetail(bk.id); });
+    bar.addEventListener('click', (e) => {
+      if (isExtending) return; // Don't open detail if we just finished extending
+      hideTooltip(); openBookingDetail(bk.id);
+    });
+
+    // Extend-drag: detect mousedown on bar-mid cells (last day before checkout)
+    // The last "bar-mid" or "bar-first" (for 1-night) is the day BEFORE checkout
+    if (barClass === 'bar-mid' || barClass === 'bar-first' || barClass === 'bar-only') {
+      bar.addEventListener('mousedown', (e) => {
+        // Only trigger from right edge of the bar (last 12px)
+        const rect = bar.getBoundingClientRect();
+        if (rect.right - e.clientX > 12) return;
+        // Don't allow extending Airbnb bookings
+        if (bk.type === 'airbnb' || bk.source === 'ical') return;
+        e.preventDefault();
+        e.stopPropagation();
+        hideTooltip();
+        extendBookingId = bk.id;
+        extendRoom = bk.room;
+        extendOrigCheckout = bk.checkout;
+        extendEndDay = bk.checkout; // start from current checkout
+        isExtending = true;
+        bar.style.cursor = 'e-resize';
+        updateExtendHighlight();
+      });
+    }
     return bar;
+  }
+
+  // Extend-drag: mousemove
+  document.addEventListener('mousemove', (e) => {
+    if (!isExtending) return;
+    const cell = e.target.closest('.cal-cell.empty, .cal-cell.half-free-pm');
+    if (cell && cell.dataset.room === extendRoom && cell.dataset.date) {
+      if (cell.dataset.date >= extendOrigCheckout) {
+        // Add 1 day because the cell represents a stay night, checkout = next day
+        const d = new Date(cell.dataset.date + 'T12:00:00');
+        d.setDate(d.getDate() + 1);
+        extendEndDay = d.toISOString().slice(0, 10);
+        updateExtendHighlight();
+      }
+    }
+  });
+
+  // Extend-drag: mouseup
+  document.addEventListener('mouseup', async () => {
+    if (!isExtending) return;
+    isExtending = false;
+    clearExtendHighlight();
+    if (extendBookingId && extendEndDay && extendEndDay > extendOrigCheckout) {
+      try {
+        const res = await fetch(`/api/bookings/${encodeURIComponent(extendBookingId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checkout: extendEndDay }),
+        });
+        if (res.ok) await loadBookings();
+      } catch (err) {
+        console.error('[extend] error:', err);
+      }
+    }
+    extendBookingId = null;
+    extendRoom = null;
+    extendOrigCheckout = null;
+    extendEndDay = null;
+  });
+
+  function updateExtendHighlight() {
+    clearExtendHighlight();
+    if (!extendOrigCheckout || !extendEndDay) return;
+    document.querySelectorAll('.cal-cell.empty, .cal-cell.half-free-pm').forEach(c => {
+      if (c.dataset.room === extendRoom && c.dataset.date >= extendOrigCheckout && c.dataset.date < extendEndDay) {
+        c.classList.add('extend-highlight');
+      }
+    });
+  }
+
+  function clearExtendHighlight() {
+    document.querySelectorAll('.extend-highlight').forEach(c => c.classList.remove('extend-highlight'));
   }
 
   function ds(y, m, d) {
