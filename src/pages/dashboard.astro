@@ -998,8 +998,13 @@ import '../styles/dashboard.css';
 
   async function deleteBooking(id) {
     try {
-      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
-      if (res.ok) await loadBookings();
+      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        await loadBookings();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showError(data.error || 'Failed to delete booking.');
+      }
     } catch (err) {
       showError('Failed to delete booking.');
     }

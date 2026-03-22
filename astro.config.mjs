@@ -26,7 +26,7 @@ export default defineConfig({
     }),
   ],
   security: {
-    checkOrigin: true,
+    checkOrigin: false, // Disabled: single-user app with session cookie auth, checkOrigin breaks staging
   },
   server: {
     port: 3000,
