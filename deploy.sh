@@ -7,7 +7,7 @@
 set -e
 
 VPS="root@5.223.42.90"
-DATA_FILES="bookings.json overrides.json inquiries.json discount-codes.json pricing.json"
+DATA_FILES="bookings.json overrides.json inquiries.json discount-codes.json pricing.json guests.json housekeepers.json housekeeping.json airbnb-archive.json chat-session.json"
 
 ENV="${1:-production}"
 
