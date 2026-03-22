@@ -10,7 +10,9 @@ export function readHousekeepers(): Housekeeper[] {
   try {
     if (!fs.existsSync(HK_FILE)) return [];
     const raw = fs.readFileSync(HK_FILE, 'utf8');
-    return JSON.parse(raw);
+    const list = JSON.parse(raw);
+    // Migrate: add default role for existing entries without one
+    return list.map((h: any) => ({ ...h, role: h.role || 'housekeeper' }));
   } catch (err: any) {
     console.error('[housekeepers] error reading file:', err.message);
     return [];
@@ -28,6 +30,7 @@ export function findHousekeeperByToken(token: string): Housekeeper | undefined {
 
 export function createHousekeeper(data: {
   name: string;
+  role?: string;
   phone?: string;
   lineId?: string;
   messenger?: string;
@@ -35,11 +38,13 @@ export function createHousekeeper(data: {
   assignedRooms?: string[];
   availableDays?: number[];
   notes?: string;
+  rate?: string;
 }): Housekeeper {
   const list = readHousekeepers();
   const hk: Housekeeper = {
     id: crypto.randomUUID(),
     name: data.name,
+    role: (data.role as any) || 'housekeeper',
     phone: data.phone,
     lineId: data.lineId,
     messenger: data.messenger,
@@ -49,6 +54,7 @@ export function createHousekeeper(data: {
     token: crypto.randomBytes(16).toString('hex'),
     active: true,
     notes: data.notes,
+    rate: data.rate,
     createdAt: new Date().toISOString(),
   };
   list.push(hk);

@@ -81,6 +81,7 @@ import '../styles/dashboard.css';
         <div class="tab" data-tab="list">Bookings</div>
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
         <div class="tab" data-tab="guests">Guests</div>
+        <div class="tab" data-tab="staff">Staff</div>
         <div class="tab" data-tab="monitors">Monitors</div>
         <div class="tab" data-tab="desks">Desks</div>
         <div class="tab-spacer"></div>
@@ -237,6 +238,19 @@ import '../styles/dashboard.css';
       <!-- TODAY TAB -->
       <div id="tab-today" class="list-pane" style="display:none">
         <div class="today-view" id="today-view"></div>
+      </div>
+
+      <!-- STAFF TAB -->
+      <div id="tab-staff" class="list-pane" style="display:none">
+        <div class="staff-header">
+          <div class="staff-header-info">
+            <div class="staff-header-title">Staff</div>
+            <div class="staff-header-count" id="staff-count"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-add-staff">+ Add Staff</button>
+        </div>
+        <div class="staff-filters" id="staff-filters"></div>
+        <div class="staff-list" id="staff-list"></div>
       </div>
 
       <div class="stats-footer" id="stats-footer"></div>
@@ -644,22 +658,33 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
-  <!-- HOUSEKEEPER MANAGEMENT MODAL -->
+  <!-- STAFF MANAGEMENT MODAL -->
   <div class="overlay" id="hk-modal">
     <div class="modal" style="max-width:520px;">
       <div class="modal-header">
-        <div class="modal-title">Housekeepers</div>
+        <div class="modal-title" id="hk-modal-title">Staff</div>
         <button class="modal-close" onclick="document.getElementById('hk-modal').classList.remove('open')">&times;</button>
       </div>
       <div class="modal-body" style="padding:0;">
         <div id="hk-list" style="max-height:320px; overflow-y:auto;"></div>
         <div id="hk-form" style="padding:16px; border-top:1px solid #eae8e5;">
-          <div style="font-weight:600; margin-bottom:10px;" id="hk-form-title">Add Housekeeper</div>
+          <div style="font-weight:600; margin-bottom:10px;" id="hk-form-title">Add Staff Member</div>
           <div class="fg"><label>Name</label><input id="hk-name" type="text" placeholder="e.g. Noi"></div>
+          <div class="fg"><label>Role</label>
+            <select id="hk-role">
+              <option value="housekeeper">Housekeeper</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="pool">Pool Service</option>
+              <option value="pest_control">Pest Control</option>
+              <option value="gardener">Gardener</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
           <div class="fg"><label>Phone / WhatsApp</label><input id="hk-phone" type="text" placeholder="Optional"></div>
           <div class="fg"><label>LINE ID</label><input id="hk-line" type="text" placeholder="Optional"></div>
           <div class="fg"><label>Facebook Messenger</label><input id="hk-messenger" type="text" placeholder="Optional"></div>
           <div class="fg"><label>Email</label><input id="hk-email" type="text" placeholder="Optional"></div>
+          <div class="fg"><label>Rate</label><input id="hk-rate" type="text" placeholder="e.g. 500/day, 200/visit"></div>
           <div class="fg">
             <label>Assigned Rooms</label>
             <div style="display:flex; gap:10px; flex-wrap:wrap;" id="hk-rooms">
@@ -2039,12 +2064,14 @@ import '../styles/dashboard.css';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('tab-inquiries').style.display = tab === 'inquiries' ? 'block' : 'none';
     document.getElementById('tab-guests').style.display = tab === 'guests' ? 'block' : 'none';
+    document.getElementById('tab-staff').style.display = tab === 'staff' ? 'block' : 'none';
     document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
     document.getElementById('tab-desks').style.display = tab === 'desks' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
     if (tab === 'today') renderTodayView();
     if (tab === 'inquiries') fetchInquiries();
     if (tab === 'guests') loadGuests();
+    if (tab === 'staff') { loadHousekeepers().then(renderStaffTab); }
     if (tab === 'monitors') loadMonitors();
     if (tab === 'desks') loadDesks();
     render();
@@ -4139,12 +4166,14 @@ import '../styles/dashboard.css';
 
   function resetHkForm() {
     editingHkId = null;
-    document.getElementById('hk-form-title').textContent = 'Add Housekeeper';
+    document.getElementById('hk-form-title').textContent = 'Add Staff Member';
     document.getElementById('hk-name').value = '';
+    document.getElementById('hk-role').value = 'housekeeper';
     document.getElementById('hk-phone').value = '';
     document.getElementById('hk-line').value = '';
     document.getElementById('hk-messenger').value = '';
     document.getElementById('hk-email').value = '';
+    document.getElementById('hk-rate').value = '';
     document.querySelectorAll('#hk-rooms input').forEach(cb => cb.checked = false);
     document.querySelectorAll('#hk-days input').forEach(cb => {
       const v = parseInt(cb.value);
@@ -4156,12 +4185,14 @@ import '../styles/dashboard.css';
 
   function populateHkForm(hk) {
     editingHkId = hk.id;
-    document.getElementById('hk-form-title').textContent = 'Edit Housekeeper';
+    document.getElementById('hk-form-title').textContent = 'Edit Staff Member';
     document.getElementById('hk-name').value = hk.name;
+    document.getElementById('hk-role').value = hk.role || 'housekeeper';
     document.getElementById('hk-phone').value = hk.phone || '';
     document.getElementById('hk-line').value = hk.lineId || '';
     document.getElementById('hk-messenger').value = hk.messenger || '';
     document.getElementById('hk-email').value = hk.email || '';
+    document.getElementById('hk-rate').value = hk.rate || '';
     document.querySelectorAll('#hk-rooms input').forEach(cb => {
       cb.checked = hk.assignedRooms.includes(cb.value);
     });
@@ -4184,10 +4215,12 @@ import '../styles/dashboard.css';
   document.getElementById('hk-save').addEventListener('click', async () => {
     const name = document.getElementById('hk-name').value.trim();
     if (!name) return;
+    const role = document.getElementById('hk-role').value;
     const phone = document.getElementById('hk-phone').value.trim() || undefined;
     const lineId = document.getElementById('hk-line').value.trim() || undefined;
     const messenger = document.getElementById('hk-messenger').value.trim() || undefined;
     const email = document.getElementById('hk-email').value.trim() || undefined;
+    const rate = document.getElementById('hk-rate').value.trim() || undefined;
     const assignedRooms = [...document.querySelectorAll('#hk-rooms input:checked')].map(cb => cb.value);
     const availableDays = [...document.querySelectorAll('#hk-days input:checked')].map(cb => parseInt(cb.value));
 
@@ -4195,17 +4228,18 @@ import '../styles/dashboard.css';
       await fetch(`/api/housekeepers/${editingHkId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, lineId, messenger, email, assignedRooms, availableDays })
+        body: JSON.stringify({ name, role, phone, lineId, messenger, email, rate, assignedRooms, availableDays })
       });
     } else {
       await fetch('/api/housekeepers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, lineId, messenger, email, assignedRooms, availableDays })
+        body: JSON.stringify({ name, role, phone, lineId, messenger, email, rate, assignedRooms, availableDays })
       });
     }
     await loadHousekeepers();
     renderHkList();
+    if (currentTab === 'staff') renderStaffTab();
     resetHkForm();
   });
 
@@ -4236,12 +4270,97 @@ import '../styles/dashboard.css';
     }
   });
 
+  // ─── STAFF TAB ───────────────────────────────────────────────────────────────
+  const STAFF_ROLE_LABELS = { housekeeper:'Housekeeper', maintenance:'Maintenance', pool:'Pool Service', pest_control:'Pest Control', gardener:'Gardener', other:'Other' };
+  const STAFF_ROLE_COLORS = { housekeeper:'#d4ede3', maintenance:'#fef3cd', pool:'#dbeafe', pest_control:'#fde8e8', gardener:'#dcfce7', other:'#f0eeeb' };
+  const STAFF_ROLE_TEXT = { housekeeper:'#1a6b3c', maintenance:'#856404', pool:'#1a56db', pest_control:'#b42a1e', gardener:'#166534', other:'#52524e' };
+
+  function renderStaffTab() {
+    const list = document.getElementById('staff-list');
+    const countEl = document.getElementById('staff-count');
+    const filtersEl = document.getElementById('staff-filters');
+    if (!list) return;
+
+    countEl.textContent = `${allHousekeepers.length} member${allHousekeepers.length !== 1 ? 's' : ''}`;
+
+    // Role filter chips
+    const roles = [...new Set(allHousekeepers.map(h => h.role || 'housekeeper'))];
+    filtersEl.innerHTML = roles.length > 1 ? roles.map(r =>
+      `<button class="filter-chip active staff-role-chip" data-role="${r}"><span class="filter-dot" style="background:${STAFF_ROLE_COLORS[r] || '#f0eeeb'}"></span>${STAFF_ROLE_LABELS[r] || r}</button>`
+    ).join('') : '';
+
+    if (!allHousekeepers.length) {
+      list.innerHTML = '<div style="padding:40px; text-align:center; color:#b5b3ad; font-size:14px;">No staff members yet. Add one to get started.</div>';
+      return;
+    }
+
+    list.innerHTML = allHousekeepers.map(h => {
+      const role = h.role || 'housekeeper';
+      const roleLabel = STAFF_ROLE_LABELS[role] || role;
+      const roleBg = STAFF_ROLE_COLORS[role] || '#f0eeeb';
+      const roleTxt = STAFF_ROLE_TEXT[role] || '#52524e';
+      const rooms = (h.assignedRooms || []).map(r => `<span class="staff-room-dot" style="background:${ROOM_COLORS[r]}" title="${ROOM_LABELS[r] || r}"></span>`).join('');
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const availDays = (h.availableDays || []).map(d => days[d]).join(', ');
+      const initial = (h.name || '?').charAt(0).toUpperCase();
+
+      // Contact buttons
+      let contacts = '';
+      if (h.phone) contacts += `<a class="staff-contact-btn" href="https://wa.me/${h.phone.replace(/[^0-9]/g,'')}" target="_blank" title="WhatsApp">WA</a>`;
+      if (h.lineId) contacts += `<span class="staff-contact-btn" title="LINE: ${h.lineId}">LINE</span>`;
+      if (h.messenger) contacts += `<a class="staff-contact-btn" href="https://m.me/${h.messenger}" target="_blank" title="Messenger">FB</a>`;
+      if (h.email) contacts += `<a class="staff-contact-btn" href="mailto:${h.email}" title="${h.email}">Email</a>`;
+
+      return `<div class="staff-card" data-id="${h.id}">
+        <div class="staff-card-left">
+          <div class="staff-avatar">${initial}</div>
+          <div class="staff-info">
+            <div class="staff-name">${h.name} <span class="staff-role-badge" style="background:${roleBg};color:${roleTxt}">${roleLabel}</span></div>
+            <div class="staff-meta">${rooms ? rooms + ' &middot; ' : ''}${availDays}${h.rate ? ' &middot; ' + h.rate : ''}</div>
+            ${contacts ? `<div class="staff-contacts">${contacts}</div>` : ''}
+          </div>
+        </div>
+        <div class="staff-card-actions">
+          <button class="staff-edit-btn" data-id="${h.id}" title="Edit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="staff-del-btn" data-id="${h.id}" title="Delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Event delegation for staff cards
+    list.onclick = async (e) => {
+      const editBtn = e.target.closest('.staff-edit-btn');
+      if (editBtn) {
+        const hk = allHousekeepers.find(h => h.id === editBtn.dataset.id);
+        if (hk) { populateHkForm(hk); document.getElementById('hk-modal').classList.add('open'); }
+        return;
+      }
+      const delBtn = e.target.closest('.staff-del-btn');
+      if (delBtn) {
+        if (!confirm('Remove this staff member?')) return;
+        await fetch(`/api/housekeepers/${delBtn.dataset.id}`, { method: 'DELETE' });
+        await loadHousekeepers();
+        renderStaffTab();
+      }
+    };
+  }
+
+  document.getElementById('btn-add-staff')?.addEventListener('click', () => {
+    resetHkForm();
+    document.getElementById('hk-modal').classList.add('open');
+  });
+
   // ─── TODAY VIEW ──────────────────────────────────────────────────────────────
   function renderTodayView() {
     const container = document.getElementById('today-view');
     if (!container) return;
 
-    const today = todayStr;
+    const now = new Date();
+    const today = ds(now.getFullYear(), now.getMonth(), now.getDate());
     const todayDate = new Date(today + 'T12:00:00');
     const dayName = todayDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -4262,7 +4381,7 @@ import '../styles/dashboard.css';
     });
 
     // Housekeeping tasks for today
-    const todayTasks = (allHkTasks || []).filter(t => t.date === today);
+    const todayTasks = (housekeepingData || []).filter(t => t.date === today);
     const pendingTasks = todayTasks.filter(t => t.status === 'pending');
     const inProgressTasks = todayTasks.filter(t => t.status === 'in_progress');
     const doneTasks = todayTasks.filter(t => t.status === 'done');

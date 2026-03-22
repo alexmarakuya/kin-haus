@@ -13,6 +13,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const hk = createHousekeeper({
     name: body.name,
+    role: body.role,
     phone: body.phone,
     lineId: body.lineId,
     messenger: body.messenger,
@@ -20,6 +21,7 @@ export const POST: APIRoute = async ({ request }) => {
     assignedRooms: body.assignedRooms,
     availableDays: body.availableDays,
     notes: body.notes,
+    rate: body.rate,
   });
 
   return json({ housekeeper: hk }, 201);

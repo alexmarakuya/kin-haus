@@ -119,9 +119,12 @@ export interface HousekeepingTask {
   createdAt: string;
 }
 
+export type StaffRole = 'housekeeper' | 'maintenance' | 'pool' | 'pest_control' | 'gardener' | 'other';
+
 export interface Housekeeper {
   id: string;
   name: string;
+  role: StaffRole;           // staff role (default: housekeeper)
   phone?: string;
   lineId?: string;           // LINE app ID
   messenger?: string;        // Facebook Messenger name/link
@@ -131,6 +134,7 @@ export interface Housekeeper {
   token: string;             // unique token for iCal feed URL
   active: boolean;
   notes?: string;
+  rate?: string;             // e.g. "500/day", "200/visit"
   createdAt: string;
 }
 
