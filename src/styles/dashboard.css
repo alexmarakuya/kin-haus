@@ -441,6 +441,33 @@ body.present-mode .present-banner { display:block; }
 .booking-bar-waitlist.wbar-first { left:calc(50% + 2px); border-radius:3px 0 0 0; }
 .booking-bar-waitlist.wbar-last { right:calc(50% + 2px); border-radius:0 3px 0 0; }
 
+/* ─── HOUSEKEEPING SUB-ROWS ──────────────────────────────────────────────── */
+.cal-row-hk { margin-top:-3px; }
+.row-lbl-hk { font-size:11px; color:#b5b3ad; display:flex; align-items:center; justify-content:center; padding-right:8px; }
+.hk-cell { height:18px; border:1px solid transparent; position:relative; transition:background 0.15s; border-radius:2px; }
+.hk-cell.hk-needs-cleaning { background:#fee2e2; border-color:#fca5a5; cursor:pointer; }
+.hk-cell.hk-needs-cleaning:hover { background:#fecaca; }
+.hk-cell.hk-in-progress { background:#fef9c3; border-color:#fde047; cursor:pointer; }
+.hk-cell.hk-in-progress:hover { background:#fef08a; }
+.hk-cell.hk-done { background:#dcfce7; border-color:#86efac; cursor:pointer; }
+.hk-cell.hk-done:hover { background:#bbf7d0; }
+.hk-cell.hk-today { outline:1px solid var(--accent); outline-offset:-1px; }
+.hk-cell.inactive { border-color:transparent; cursor:default; }
+
+.btn-hk-toggle, .btn-hk-manage { background:none; border:1px solid #dddbd7; border-radius:8px; padding:4px 10px; font-size:12px; cursor:pointer; color:#8c8a84; display:flex; align-items:center; gap:4px; transition:all 0.2s; white-space:nowrap; }
+.btn-hk-toggle:hover, .btn-hk-manage:hover { background:#f5f4f1; color:#5a5854; }
+.btn-hk-active { background:#e8f5e9; border-color:var(--accent); color:var(--accent); }
+
+.hk-person { display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:1px solid #f0eeeb; }
+.hk-person:last-child { border-bottom:none; }
+.hk-room-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:4px; }
+
+@media (max-width:768px) {
+  .hk-cell { height:14px; border-radius:1px; }
+  .row-lbl-hk { font-size:10px; }
+  .btn-hk-manage { display:none; }
+}
+
 /* ─── DESKS (CO-WORKING) ──────────────────────────────────────────────────── */
 .desk-summary { display:flex; gap:16px; padding:20px 28px; border-bottom:1px solid #eae8e5; flex-wrap:wrap; }
 .desk-today { padding:20px 28px; border-bottom:1px solid #eae8e5; }

@@ -11,7 +11,8 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   const isPublicInquiry = path === '/api/inquiries' && request.method === 'POST';
   const isPublicAvailability = path.startsWith('/api/availability') && request.method === 'GET';
   const isWhatsAppWebhook = path === '/api/whatsapp/webhook';
-  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability && !isWhatsAppWebhook);
+  const isHousekeepingIcal = path === '/api/housekeeping/ical' && request.method === 'GET';
+  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability && !isWhatsAppWebhook && !isHousekeepingIcal);
 
   if (!isProtected) {
     return next();

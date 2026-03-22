@@ -1,0 +1,12 @@
+{
+  "name": "Kin Haus",
+  "short_name": "Kin Haus",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fafaf8",
+  "theme_color": "#2c6e49",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

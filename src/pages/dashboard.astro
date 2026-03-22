@@ -104,6 +104,14 @@ import '../styles/dashboard.css';
           <div class="month-title" id="month-title"></div>
           <button class="month-btn" id="month-next">&#x203A;</button>
           <div class="season-tag" id="season-tag"></div>
+          <div style="flex:1"></div>
+          <button class="btn-hk-toggle" id="btn-hk-toggle" title="Toggle housekeeping rows">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6l3-3"/><path d="M12 8l-3-3"/><path d="M20 21H4"/><path d="M8 21v-4a2 2 0 012-2h4a2 2 0 012 2v4"/></svg>
+            HK
+          </button>
+          <button class="btn-hk-manage" id="btn-hk-manage" title="Manage housekeepers" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </button>
         </div>
         <div class="cal-scroll">
           <div class="cal-grid-header" id="cal-header"></div>
@@ -630,6 +638,49 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
+  <!-- HOUSEKEEPER MANAGEMENT MODAL -->
+  <div class="overlay" id="hk-modal">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header">
+        <div class="modal-title">Housekeepers</div>
+        <button class="modal-close" onclick="document.getElementById('hk-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <div id="hk-list" style="max-height:320px; overflow-y:auto;"></div>
+        <div id="hk-form" style="padding:16px; border-top:1px solid #eae8e5;">
+          <div style="font-weight:600; margin-bottom:10px;" id="hk-form-title">Add Housekeeper</div>
+          <div class="fg"><label>Name</label><input id="hk-name" type="text" placeholder="e.g. Noi"></div>
+          <div class="fg"><label>Phone / WhatsApp</label><input id="hk-phone" type="text" placeholder="Optional"></div>
+          <div class="fg"><label>Email</label><input id="hk-email" type="text" placeholder="Optional"></div>
+          <div class="fg">
+            <label>Assigned Rooms</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;" id="hk-rooms">
+              <label style="display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer;"><input type="checkbox" value="nest"> The Nest</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer;"><input type="checkbox" value="master"> The Explorer</label>
+              <label style="display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer;"><input type="checkbox" value="nomad"> Nomad Room</label>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Available Days</label>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;" id="hk-days">
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="0"> Sun</label>
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="1" checked> Mon</label>
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="2" checked> Tue</label>
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="3" checked> Wed</label>
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="4" checked> Thu</label>
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="5" checked> Fri</label>
+              <label style="display:flex; align-items:center; gap:3px; font-size:12px; cursor:pointer;"><input type="checkbox" value="6"> Sat</label>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-primary" id="hk-save" style="flex:1;">Add</button>
+            <button class="btn" id="hk-cancel-edit" style="display:none;">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script is:inline>
   // ─── CONSTANTS ────────────────────────────────────────────────────────────
   // NOTE: These client-side constants mirror the canonical values in
@@ -656,6 +707,9 @@ import '../styles/dashboard.css';
 
   // ─── STATE ──────────────────────────────────────────────────────────────────
   let allBookings = [];
+  let housekeepingData = {};
+  let allHousekeepers = [];
+  let showHousekeeping = JSON.parse(localStorage.getItem('kin-show-housekeeping') || 'true');
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let currentTab = localStorage.getItem('kin-active-tab') || 'calendar';
@@ -865,10 +919,16 @@ import '../styles/dashboard.css';
   async function loadBookings(forceRefresh = false) {
     setLoading(true);
     try {
-      const url = forceRefresh ? '/api/bookings?refresh=true' : '/api/bookings';
-      const res = await fetch(url);
-      const data = await res.json();
+      const bookingsUrl = forceRefresh ? '/api/bookings?refresh=true' : '/api/bookings';
+      const monthStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
+      const [bookingsRes, hkRes] = await Promise.all([
+        fetch(bookingsUrl),
+        fetch(`/api/housekeeping?month=${monthStr}`),
+      ]);
+      const data = await bookingsRes.json();
       allBookings = data.bookings || [];
+      const hkData = await hkRes.json().catch(() => ({}));
+      housekeepingData = hkData.housekeeping || {};
       updateSyncStatus(data.meta, true);
       showConflictAlerts(allBookings);
       render();
@@ -1194,6 +1254,41 @@ import '../styles/dashboard.css';
         row.appendChild(cell);
       }
       rows.appendChild(row);
+
+      // ─── HOUSEKEEPING SUB-ROW ─────────────────────────────────────────────
+      if (showHousekeeping && room !== 'theater') {
+        const hkRow = document.createElement('div');
+        hkRow.className = 'cal-row cal-row-hk';
+
+        const hkLbl = document.createElement('div');
+        hkLbl.className = 'row-lbl row-lbl-hk';
+        hkLbl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M12 3v12"/><path d="M9 6l3-3 3 3"/></svg>';
+        hkRow.appendChild(hkLbl);
+
+        for (let d = 1; d <= 31; d++) {
+          const hkCell = document.createElement('div');
+          hkCell.className = 'hk-cell';
+
+          if (d <= numDays) {
+            const dStr = ds(currentYear, currentMonth, d);
+            autoDetectHousekeeping(room, dStr);
+            const key = `${dStr}:${room}`;
+            const status = housekeepingData[key];
+
+            if (status) {
+              hkCell.classList.add('hk-' + status.replace(/_/g, '-'));
+              const labels = { needs_cleaning: 'Needs cleaning', in_progress: 'In progress', done: 'Done' };
+              hkCell.title = labels[status] || status;
+              hkCell.addEventListener('click', () => cycleHousekeeping(key));
+            }
+            if (dStr === todayStr) hkCell.classList.add('hk-today');
+          } else {
+            hkCell.classList.add('inactive');
+          }
+          hkRow.appendChild(hkCell);
+        }
+        rows.appendChild(hkRow);
+      }
     });
   }
 
@@ -1227,6 +1322,42 @@ import '../styles/dashboard.css';
       if (b.type === 'waitlist') return false;
       return b.checkout === dStr;
     });
+  }
+
+  // ─── HOUSEKEEPING HELPERS ──────────────────────────────────────────────────
+  function needsCleaningOnDay(room, dStr) {
+    const departing = allBookings.find(b => {
+      if (b.room !== room && b.room !== 'full') return false;
+      if (b.type === 'waitlist' || b.type === 'blocked' || b.type === 'owner') return false;
+      return b.checkout === dStr;
+    });
+    return !!departing;
+  }
+
+  function autoDetectHousekeeping(room, dStr) {
+    const key = `${dStr}:${room}`;
+    if (housekeepingData[key]) return;
+    if (needsCleaningOnDay(room, dStr)) {
+      housekeepingData[key] = 'needs_cleaning';
+      fetch('/api/housekeeping', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, status: 'needs_cleaning' })
+      }).catch(() => {});
+    }
+  }
+
+  async function cycleHousekeeping(key) {
+    const cycle = { needs_cleaning: 'in_progress', in_progress: 'done', done: 'needs_cleaning' };
+    const current = housekeepingData[key] || 'needs_cleaning';
+    const next = cycle[current];
+    housekeepingData[key] = next;
+    renderCalendar();
+    await fetch('/api/housekeeping', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, status: next })
+    }).catch(() => {});
   }
 
   function makeBar(bk, barClass, extra) {
@@ -3779,6 +3910,156 @@ import '../styles/dashboard.css';
     const btn = e.target.closest('.chat-suggestion');
     if (!btn || isStreaming) return;
     sendChatMessage(btn.dataset.q || btn.textContent.trim());
+  });
+
+  // ─── HOUSEKEEPING TOGGLE + MANAGEMENT ─────────────────────────────────────────
+  const hkToggleBtn = document.getElementById('btn-hk-toggle');
+  const hkManageBtn = document.getElementById('btn-hk-manage');
+  if (showHousekeeping) {
+    hkToggleBtn.classList.add('btn-hk-active');
+    hkManageBtn.style.display = '';
+  }
+
+  hkToggleBtn.addEventListener('click', () => {
+    showHousekeeping = !showHousekeeping;
+    localStorage.setItem('kin-show-housekeeping', JSON.stringify(showHousekeeping));
+    hkToggleBtn.classList.toggle('btn-hk-active', showHousekeeping);
+    hkManageBtn.style.display = showHousekeeping ? '' : 'none';
+    renderCalendar();
+  });
+
+  // Housekeeper management
+  let editingHkId = null;
+
+  async function loadHousekeepers() {
+    try {
+      const res = await fetch('/api/housekeepers');
+      const data = await res.json();
+      allHousekeepers = data.housekeepers || [];
+    } catch { allHousekeepers = []; }
+  }
+
+  function renderHkList() {
+    const list = document.getElementById('hk-list');
+    if (!allHousekeepers.length) {
+      list.innerHTML = '<div style="padding:20px; text-align:center; color:#b5b3ad; font-size:13px;">No housekeepers yet. Add one below.</div>';
+      return;
+    }
+    const roomLabels = { nest: 'Nest', master: 'Explorer', nomad: 'Nomad' };
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    list.innerHTML = allHousekeepers.map(h => {
+      const rooms = h.assignedRooms.map(r => `<span class="hk-room-dot" style="background:var(--${r})" title="${roomLabels[r] || r}"></span>`).join('');
+      const days = h.availableDays.sort().map(d => dayLabels[d]).join(', ');
+      const icalUrl = `${location.origin}/api/housekeeping/ical?token=${h.token}`;
+      return `<div class="hk-person" data-id="${h.id}">
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:14px;">${h.name} ${rooms}</div>
+          <div style="font-size:12px; color:#8c8a84;">${days}${h.phone ? ' · ' + h.phone : ''}</div>
+        </div>
+        <button class="hk-copy-ical" data-url="${icalUrl}" title="Copy iCal URL" style="background:none; border:1px solid #dddbd7; border-radius:6px; padding:4px 8px; font-size:11px; cursor:pointer; color:#5a5854;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> iCal
+        </button>
+        <button class="hk-edit" data-id="${h.id}" title="Edit" style="background:none; border:none; cursor:pointer; color:#8c8a84; padding:4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="hk-delete" data-id="${h.id}" title="Delete" style="background:none; border:none; cursor:pointer; color:#d9534f; padding:4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  function resetHkForm() {
+    editingHkId = null;
+    document.getElementById('hk-form-title').textContent = 'Add Housekeeper';
+    document.getElementById('hk-name').value = '';
+    document.getElementById('hk-phone').value = '';
+    document.getElementById('hk-email').value = '';
+    document.querySelectorAll('#hk-rooms input').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#hk-days input').forEach(cb => {
+      const v = parseInt(cb.value);
+      cb.checked = v >= 1 && v <= 5;
+    });
+    document.getElementById('hk-save').textContent = 'Add';
+    document.getElementById('hk-cancel-edit').style.display = 'none';
+  }
+
+  function populateHkForm(hk) {
+    editingHkId = hk.id;
+    document.getElementById('hk-form-title').textContent = 'Edit Housekeeper';
+    document.getElementById('hk-name').value = hk.name;
+    document.getElementById('hk-phone').value = hk.phone || '';
+    document.getElementById('hk-email').value = hk.email || '';
+    document.querySelectorAll('#hk-rooms input').forEach(cb => {
+      cb.checked = hk.assignedRooms.includes(cb.value);
+    });
+    document.querySelectorAll('#hk-days input').forEach(cb => {
+      cb.checked = hk.availableDays.includes(parseInt(cb.value));
+    });
+    document.getElementById('hk-save').textContent = 'Update';
+    document.getElementById('hk-cancel-edit').style.display = '';
+  }
+
+  hkManageBtn.addEventListener('click', async () => {
+    await loadHousekeepers();
+    renderHkList();
+    resetHkForm();
+    document.getElementById('hk-modal').classList.add('open');
+  });
+
+  document.getElementById('hk-cancel-edit').addEventListener('click', resetHkForm);
+
+  document.getElementById('hk-save').addEventListener('click', async () => {
+    const name = document.getElementById('hk-name').value.trim();
+    if (!name) return;
+    const phone = document.getElementById('hk-phone').value.trim() || undefined;
+    const email = document.getElementById('hk-email').value.trim() || undefined;
+    const assignedRooms = [...document.querySelectorAll('#hk-rooms input:checked')].map(cb => cb.value);
+    const availableDays = [...document.querySelectorAll('#hk-days input:checked')].map(cb => parseInt(cb.value));
+
+    if (editingHkId) {
+      await fetch(`/api/housekeepers/${editingHkId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, assignedRooms, availableDays })
+      });
+    } else {
+      await fetch('/api/housekeepers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, assignedRooms, availableDays })
+      });
+    }
+    await loadHousekeepers();
+    renderHkList();
+    resetHkForm();
+  });
+
+  document.getElementById('hk-list').addEventListener('click', async (e) => {
+    const copyBtn = e.target.closest('.hk-copy-ical');
+    if (copyBtn) {
+      const url = copyBtn.dataset.url;
+      await navigator.clipboard.writeText(url);
+      const orig = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied';
+      setTimeout(() => copyBtn.innerHTML = orig, 2000);
+      return;
+    }
+
+    const editBtn = e.target.closest('.hk-edit');
+    if (editBtn) {
+      const hk = allHousekeepers.find(h => h.id === editBtn.dataset.id);
+      if (hk) populateHkForm(hk);
+      return;
+    }
+
+    const delBtn = e.target.closest('.hk-delete');
+    if (delBtn) {
+      if (!confirm('Delete this housekeeper?')) return;
+      await fetch(`/api/housekeepers/${delBtn.dataset.id}`, { method: 'DELETE' });
+      await loadHousekeepers();
+      renderHkList();
+    }
   });
 
   // ─── INIT ─────────────────────────────────────────────────────────────────────

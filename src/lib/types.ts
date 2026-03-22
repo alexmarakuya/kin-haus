@@ -102,6 +102,23 @@ export interface CoworkingPass {
   updatedAt: string;
 }
 
+// ─── Housekeeping ────────────────────────────────────────────────────────────
+export type HousekeepingStatus = 'needs_cleaning' | 'in_progress' | 'done';
+export type HousekeepingMap = Record<string, HousekeepingStatus>;
+
+export interface Housekeeper {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  assignedRooms: string[];
+  availableDays: number[];   // 0=Sun, 1=Mon, ..., 6=Sat
+  token: string;             // unique token for iCal feed URL
+  active: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface Monitor {
   id: string;
   name: string;
