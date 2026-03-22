@@ -117,6 +117,12 @@ body.present-mode .present-banner { display:block; }
 .cell-initial { position:absolute; top:4px; left:5px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0.6; z-index:2; }
 .cal-cell.inactive { border-color:transparent; cursor:default; background:transparent; margin:0; }
 .cal-cell.drag-selected { background:var(--direct-light); border-color:var(--accent); }
+.cal-cell.half-free-pm { cursor:crosshair; }
+.cal-cell.half-free-pm::before { content:''; position:absolute; top:0; bottom:0; left:50%; right:0; z-index:0; pointer-events:none; transition:background 0.1s; }
+.cal-cell.half-free-pm:hover::before { background:var(--warm); }
+.cal-cell.drag-selected-pm { position:relative; }
+.cal-cell.drag-selected-pm::before { background:var(--direct-light) !important; }
+.cal-cell.drag-selected-pm::after { content:''; position:absolute; top:0; bottom:0; left:50%; right:0; border:1px solid var(--accent); border-left:none; z-index:2; pointer-events:none; }
 
 /* Booking bar: inner element for colored booking indicator */
 .booking-bar { position:absolute; top:0; bottom:0; height:100%; z-index:1; box-sizing:border-box; }
@@ -461,10 +467,10 @@ body.present-mode .present-banner { display:block; }
 .btn-hk-active { background:#e8f5e9; border-color:var(--accent); color:var(--accent); }
 
 /* Housekeeping popover */
-.hk-popover { width:250px; background:white; border:1px solid #dddbd7; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); font-size:13px; overflow:hidden; }
+.hk-popover { width:340px; background:white; border:1px solid #dddbd7; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); font-size:13px; overflow:hidden; }
 .hk-pop-header { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #f0eeeb; font-size:12px; color:#5a5854; }
 .hk-pop-close { background:none; border:none; cursor:pointer; font-size:16px; color:#b5b3ad; padding:0 2px; line-height:1; }
-.hk-pop-tasks { max-height:160px; overflow-y:auto; }
+.hk-pop-tasks { max-height:240px; overflow-y:auto; }
 .hk-pop-task { display:flex; align-items:center; gap:6px; padding:6px 12px; border-bottom:1px solid #f8f7f5; }
 .hk-pop-task:last-child { border-bottom:none; }
 .hk-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
@@ -474,8 +480,8 @@ body.present-mode .present-banner { display:block; }
 .hk-pop-del:hover { opacity:1; }
 .hk-pop-empty { padding:12px; text-align:center; color:#b5b3ad; font-size:12px; }
 .hk-pop-add { display:flex; gap:4px; padding:8px; border-top:1px solid #f0eeeb; }
-.hk-pop-type { font-size:11px; padding:4px; border:1px solid #e0deda; border-radius:4px; background:white; width:auto; flex-shrink:0; }
-.hk-pop-input { flex:1; font-size:12px; padding:4px 6px; border:1px solid #e0deda; border-radius:4px; min-width:0; }
+.hk-pop-type { font-size:12px; padding:5px 6px; border:1px solid #e0deda; border-radius:4px; background:white; width:auto; flex-shrink:0; }
+.hk-pop-input { flex:1; font-size:13px; padding:5px 8px; border:1px solid #e0deda; border-radius:4px; min-width:0; }
 .hk-pop-add-btn { background:var(--accent); color:white; border:none; border-radius:4px; width:26px; font-size:14px; cursor:pointer; flex-shrink:0; }
 .hk-pop-add-btn:hover { opacity:0.9; }
 
@@ -489,7 +495,7 @@ body.present-mode .present-banner { display:block; }
   .hk-count { font-size:8px; }
   .row-lbl-hk { font-size:10px; }
   .btn-hk-manage { display:none; }
-  .hk-popover { width:220px; }
+  .hk-popover { width:300px; }
 }
 
 /* ─── DESKS (CO-WORKING) ──────────────────────────────────────────────────── */

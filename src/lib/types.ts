@@ -123,6 +123,8 @@ export interface Housekeeper {
   id: string;
   name: string;
   phone?: string;
+  lineId?: string;           // LINE app ID
+  messenger?: string;        // Facebook Messenger name/link
   email?: string;
   assignedRooms: string[];
   availableDays: number[];   // 0=Sun, 1=Mon, ..., 6=Sat

@@ -651,6 +651,8 @@ import '../styles/dashboard.css';
           <div style="font-weight:600; margin-bottom:10px;" id="hk-form-title">Add Housekeeper</div>
           <div class="fg"><label>Name</label><input id="hk-name" type="text" placeholder="e.g. Noi"></div>
           <div class="fg"><label>Phone / WhatsApp</label><input id="hk-phone" type="text" placeholder="Optional"></div>
+          <div class="fg"><label>LINE ID</label><input id="hk-line" type="text" placeholder="Optional"></div>
+          <div class="fg"><label>Facebook Messenger</label><input id="hk-messenger" type="text" placeholder="Optional"></div>
           <div class="fg"><label>Email</label><input id="hk-email" type="text" placeholder="Optional"></div>
           <div class="fg">
             <label>Assigned Rooms</label>
@@ -760,7 +762,13 @@ import '../styles/dashboard.css';
   let dragRoom = null;
   let dragStartDay = null;
   let dragEndDay = null;
+  let dragStartHalf = null; // 'am' or 'pm'
   let isDragging = false;
+
+  function getHalf(e, cell) {
+    const rect = cell.getBoundingClientRect();
+    return (e.clientX - rect.left) < (rect.width / 2) ? 'am' : 'pm';
+  }
 
   // ─── PRICING HELPERS ──────────────────────────────────────────────────────
   function isLowSeason(dateStr) {
@@ -856,8 +864,10 @@ import '../styles/dashboard.css';
   // ─── DRAG-TO-SELECT ───────────────────────────────────────────────────────
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    const cell = e.target.closest('.cal-cell.empty');
+    const cell = e.target.closest('.cal-cell.empty, .cal-cell.half-free-pm');
     if (cell && cell.dataset.room === dragRoom && cell.dataset.date) {
+      // If drag started on PM half of departure cell, only allow rightward
+      if (dragStartHalf === 'pm' && cell.dataset.date < dragStartDay) return;
       dragEndDay = cell.dataset.date;
       updateDragHighlight();
     }
@@ -879,6 +889,7 @@ import '../styles/dashboard.css';
     dragRoom = null;
     dragStartDay = null;
     dragEndDay = null;
+    dragStartHalf = null;
   });
 
   function updateDragHighlight() {
@@ -891,10 +902,17 @@ import '../styles/dashboard.css';
         c.classList.add('drag-selected');
       }
     });
+    // Highlight PM half of departure cells in range
+    document.querySelectorAll('.cal-cell.half-free-pm').forEach(c => {
+      if (c.dataset.room === dragRoom && c.dataset.date >= lo && c.dataset.date <= hi) {
+        c.classList.add('drag-selected-pm');
+      }
+    });
   }
 
   function clearDragHighlight() {
     document.querySelectorAll('.drag-selected').forEach(c => c.classList.remove('drag-selected'));
+    document.querySelectorAll('.drag-selected-pm').forEach(c => c.classList.remove('drag-selected-pm'));
   }
 
   // ─── PRESENT MODE TOGGLE ────────────────────────────────────────────────────
@@ -1214,9 +1232,25 @@ import '../styles/dashboard.css';
               }
             }
 
-            // Fallback: if only departing (no staying), cell click goes to departing booking
+            // Departure-only cell: AM half clicks departing booking, PM half starts drag
             if (!stayBk && deptBk) {
-              cell.addEventListener('click', () => { hideTooltip(); openBookingDetail(deptBk.id); });
+              cell.dataset.date = dStr;
+              cell.dataset.room = room;
+              cell.classList.add('half-free-pm');
+              cell.addEventListener('click', (e) => {
+                if (getHalf(e, cell) === 'am') { hideTooltip(); openBookingDetail(deptBk.id); }
+              });
+              cell.addEventListener('mousedown', (e) => {
+                if (getHalf(e, cell) !== 'pm') return;
+                e.preventDefault();
+                e.stopPropagation();
+                dragRoom = room;
+                dragStartDay = dStr;
+                dragEndDay = dStr;
+                dragStartHalf = 'pm';
+                isDragging = true;
+                updateDragHighlight();
+              });
             }
           } else {
             cell.classList.add('empty');
@@ -1227,6 +1261,7 @@ import '../styles/dashboard.css';
               dragRoom = room;
               dragStartDay = dStr;
               dragEndDay = dStr;
+              dragStartHalf = getHalf(e, cell);
               isDragging = true;
               updateDragHighlight();
             });
@@ -1441,7 +1476,7 @@ import '../styles/dashboard.css';
     const rect = cell.getBoundingClientRect();
     pop.style.position = 'fixed';
     pop.style.top = (rect.bottom + 4) + 'px';
-    pop.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 260)) + 'px';
+    pop.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 350)) + 'px';
     pop.style.zIndex = '200';
 
     document.body.appendChild(pop);
@@ -4079,7 +4114,7 @@ import '../styles/dashboard.css';
       return `<div class="hk-person" data-id="${h.id}">
         <div style="flex:1;">
           <div style="font-weight:600; font-size:14px;">${h.name} ${rooms}</div>
-          <div style="font-size:12px; color:#8c8a84;">${days}${h.phone ? ' · ' + h.phone : ''}</div>
+          <div style="font-size:12px; color:#8c8a84;">${days}${h.phone ? ' · ' + h.phone : ''}${h.lineId ? ' · LINE: ' + h.lineId : ''}${h.messenger ? ' · Messenger: ' + h.messenger : ''}</div>
         </div>
         <button class="hk-copy-ical" data-url="${icalUrl}" title="Copy iCal URL" style="background:none; border:1px solid #dddbd7; border-radius:6px; padding:4px 8px; font-size:11px; cursor:pointer; color:#5a5854;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> iCal
@@ -4099,6 +4134,8 @@ import '../styles/dashboard.css';
     document.getElementById('hk-form-title').textContent = 'Add Housekeeper';
     document.getElementById('hk-name').value = '';
     document.getElementById('hk-phone').value = '';
+    document.getElementById('hk-line').value = '';
+    document.getElementById('hk-messenger').value = '';
     document.getElementById('hk-email').value = '';
     document.querySelectorAll('#hk-rooms input').forEach(cb => cb.checked = false);
     document.querySelectorAll('#hk-days input').forEach(cb => {
@@ -4114,6 +4151,8 @@ import '../styles/dashboard.css';
     document.getElementById('hk-form-title').textContent = 'Edit Housekeeper';
     document.getElementById('hk-name').value = hk.name;
     document.getElementById('hk-phone').value = hk.phone || '';
+    document.getElementById('hk-line').value = hk.lineId || '';
+    document.getElementById('hk-messenger').value = hk.messenger || '';
     document.getElementById('hk-email').value = hk.email || '';
     document.querySelectorAll('#hk-rooms input').forEach(cb => {
       cb.checked = hk.assignedRooms.includes(cb.value);
@@ -4138,6 +4177,8 @@ import '../styles/dashboard.css';
     const name = document.getElementById('hk-name').value.trim();
     if (!name) return;
     const phone = document.getElementById('hk-phone').value.trim() || undefined;
+    const lineId = document.getElementById('hk-line').value.trim() || undefined;
+    const messenger = document.getElementById('hk-messenger').value.trim() || undefined;
     const email = document.getElementById('hk-email').value.trim() || undefined;
     const assignedRooms = [...document.querySelectorAll('#hk-rooms input:checked')].map(cb => cb.value);
     const availableDays = [...document.querySelectorAll('#hk-days input:checked')].map(cb => parseInt(cb.value));
@@ -4146,13 +4187,13 @@ import '../styles/dashboard.css';
       await fetch(`/api/housekeepers/${editingHkId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email, assignedRooms, availableDays })
+        body: JSON.stringify({ name, phone, lineId, messenger, email, assignedRooms, availableDays })
       });
     } else {
       await fetch('/api/housekeepers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email, assignedRooms, availableDays })
+        body: JSON.stringify({ name, phone, lineId, messenger, email, assignedRooms, availableDays })
       });
     }
     await loadHousekeepers();

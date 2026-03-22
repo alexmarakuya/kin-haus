@@ -29,6 +29,8 @@ export function findHousekeeperByToken(token: string): Housekeeper | undefined {
 export function createHousekeeper(data: {
   name: string;
   phone?: string;
+  lineId?: string;
+  messenger?: string;
   email?: string;
   assignedRooms?: string[];
   availableDays?: number[];
@@ -39,6 +41,8 @@ export function createHousekeeper(data: {
     id: crypto.randomUUID(),
     name: data.name,
     phone: data.phone,
+    lineId: data.lineId,
+    messenger: data.messenger,
     email: data.email,
     assignedRooms: data.assignedRooms || [],
     availableDays: data.availableDays || [0, 1, 2, 3, 4, 5, 6],

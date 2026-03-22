@@ -14,6 +14,8 @@ export const POST: APIRoute = async ({ request }) => {
   const hk = createHousekeeper({
     name: body.name,
     phone: body.phone,
+    lineId: body.lineId,
+    messenger: body.messenger,
     email: body.email,
     assignedRooms: body.assignedRooms,
     availableDays: body.availableDays,
