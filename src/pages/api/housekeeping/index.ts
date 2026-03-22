@@ -1,38 +1,72 @@
 import type { APIRoute } from 'astro';
-import { readHousekeeping, setHousekeepingStatus, getHousekeepingForMonth } from '../../../lib/housekeeping.ts';
+import { readTasks, getTasksForMonth, createTask, updateTask, deleteTask } from '../../../lib/housekeeping.ts';
 import { json, jsonError } from '../../../lib/api-response.ts';
 import { VALID_ROOMS } from '../../../lib/constants.ts';
-import type { HousekeepingStatus } from '../../../lib/types.ts';
+import type { HousekeepingStatus, HousekeepingTaskType } from '../../../lib/types.ts';
 
-const VALID_STATUSES: HousekeepingStatus[] = ['needs_cleaning', 'in_progress', 'done'];
+const VALID_STATUSES: HousekeepingStatus[] = ['pending', 'in_progress', 'done'];
+const VALID_TYPES: HousekeepingTaskType[] = ['cleaning', 'maintenance', 'laundry', 'inspection', 'other'];
+const VALID_TASK_ROOMS = [...VALID_ROOMS, 'common'];
 
 export const GET: APIRoute = async ({ url }) => {
   const month = url.searchParams.get('month');
-  const data = month ? getHousekeepingForMonth(month) : readHousekeeping();
-  return json({ housekeeping: data });
+  const tasks = month ? getTasksForMonth(month) : readTasks();
+  return json({ tasks });
+};
+
+export const POST: APIRoute = async ({ request }) => {
+  const body = await request.json().catch(() => null);
+  if (!body) return jsonError('Invalid JSON body');
+
+  const { date, room, type, title, assigneeId, notes } = body;
+  if (!date || !room || !title) return jsonError('Missing date, room, or title');
+  if (!VALID_TASK_ROOMS.includes(room)) return jsonError(`Invalid room: ${room}`);
+  if (type && !VALID_TYPES.includes(type)) return jsonError(`Invalid type. Use: ${VALID_TYPES.join(', ')}`);
+
+  const task = createTask({
+    date,
+    room,
+    type: type || 'other',
+    title,
+    assigneeId,
+    notes,
+  });
+
+  return json({ task }, 201);
 };
 
 export const PATCH: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);
-  if (!body?.key || !body?.status) {
-    return jsonError('Missing key or status');
-  }
+  if (!body?.id) return jsonError('Missing task id');
 
-  const { key, status } = body as { key: string; status: string };
+  const { id, status, title, type, assigneeId, notes } = body;
 
-  // Validate key format: YYYY-MM-DD:room
-  const match = key.match(/^(\d{4}-\d{2}-\d{2}):(\w+)$/);
-  if (!match) return jsonError('Invalid key format. Expected YYYY-MM-DD:room');
-
-  const room = match[2];
-  if (!VALID_ROOMS.includes(room as any)) {
-    return jsonError(`Invalid room: ${room}`);
-  }
-
-  if (!VALID_STATUSES.includes(status as HousekeepingStatus)) {
+  if (status && !VALID_STATUSES.includes(status)) {
     return jsonError(`Invalid status. Use: ${VALID_STATUSES.join(', ')}`);
   }
+  if (type && !VALID_TYPES.includes(type)) {
+    return jsonError(`Invalid type. Use: ${VALID_TYPES.join(', ')}`);
+  }
 
-  setHousekeepingStatus(key, status as HousekeepingStatus);
-  return json({ ok: true, key, status });
+  const updates: Record<string, any> = {};
+  if (status !== undefined) updates.status = status;
+  if (title !== undefined) updates.title = title;
+  if (type !== undefined) updates.type = type;
+  if (assigneeId !== undefined) updates.assigneeId = assigneeId;
+  if (notes !== undefined) updates.notes = notes;
+
+  const task = updateTask(id, updates);
+  if (!task) return jsonError('Task not found', 404);
+
+  return json({ task });
+};
+
+export const DELETE: APIRoute = async ({ url }) => {
+  const id = url.searchParams.get('id');
+  if (!id) return jsonError('Missing task id');
+
+  const deleted = deleteTask(id);
+  if (!deleted) return jsonError('Task not found', 404);
+
+  return json({ ok: true });
 };

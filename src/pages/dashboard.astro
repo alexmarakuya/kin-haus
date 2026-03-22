@@ -707,7 +707,7 @@ import '../styles/dashboard.css';
 
   // ─── STATE ──────────────────────────────────────────────────────────────────
   let allBookings = [];
-  let housekeepingData = {};
+  let housekeepingData = []; // HousekeepingTask[]
   let allHousekeepers = [];
   let showHousekeeping = JSON.parse(localStorage.getItem('kin-show-housekeeping') || 'true');
   let currentYear = new Date().getFullYear();
@@ -927,8 +927,8 @@ import '../styles/dashboard.css';
       ]);
       const data = await bookingsRes.json();
       allBookings = data.bookings || [];
-      const hkData = await hkRes.json().catch(() => ({}));
-      housekeepingData = hkData.housekeeping || {};
+      const hkData = await hkRes.json().catch(() => ({ tasks: [] }));
+      housekeepingData = hkData.tasks || [];
       updateSyncStatus(data.meta, true);
       showConflictAlerts(allBookings);
       render();
@@ -1271,16 +1271,28 @@ import '../styles/dashboard.css';
 
           if (d <= numDays) {
             const dStr = ds(currentYear, currentMonth, d);
-            autoDetectHousekeeping(room, dStr);
-            const key = `${dStr}:${room}`;
-            const status = housekeepingData[key];
+            autoDetectTurnovers(room, dStr);
+            const tasks = getTasksForCell(room, dStr);
 
-            if (status) {
-              hkCell.classList.add('hk-' + status.replace(/_/g, '-'));
-              const labels = { needs_cleaning: 'Needs cleaning', in_progress: 'In progress', done: 'Done' };
-              hkCell.title = labels[status] || status;
-              hkCell.addEventListener('click', () => cycleHousekeeping(key));
+            if (tasks.length > 0) {
+              // Show worst status: pending > in_progress > done
+              const hasPending = tasks.some(t => t.status === 'pending');
+              const hasInProgress = tasks.some(t => t.status === 'in_progress');
+              if (hasPending) hkCell.classList.add('hk-pending');
+              else if (hasInProgress) hkCell.classList.add('hk-in-progress');
+              else hkCell.classList.add('hk-done');
+
+              if (tasks.length > 1) {
+                const badge = document.createElement('span');
+                badge.className = 'hk-count';
+                badge.textContent = tasks.length;
+                hkCell.appendChild(badge);
+              }
+              hkCell.title = tasks.map(t => `${HK_TYPE_ICONS[t.type] || ''} ${t.title} (${t.status.replace('_', ' ')})`).join('\n');
             }
+
+            hkCell.style.cursor = 'pointer';
+            hkCell.addEventListener('click', (e) => { e.stopPropagation(); openHkPopover(hkCell, room, dStr); });
             if (dStr === todayStr) hkCell.classList.add('hk-today');
           } else {
             hkCell.classList.add('inactive');
@@ -1325,40 +1337,153 @@ import '../styles/dashboard.css';
   }
 
   // ─── HOUSEKEEPING HELPERS ──────────────────────────────────────────────────
-  function needsCleaningOnDay(room, dStr) {
+  const HK_TYPE_ICONS = { cleaning: '\ud83e\uddf9', maintenance: '\ud83d\udd27', laundry: '\ud83e\uddf4', inspection: '\ud83d\udd0d', other: '\ud83d\udccc' };
+  const HK_TYPE_LABELS = { cleaning: 'Cleaning', maintenance: 'Maintenance', laundry: 'Laundry', inspection: 'Inspection', other: 'Other' };
+  const HK_STATUS_COLORS = { pending: '#fca5a5', in_progress: '#fde047', done: '#86efac' };
+
+  function getTasksForCell(room, dStr) {
+    return housekeepingData.filter(t => t.date === dStr && t.room === room);
+  }
+
+  function autoDetectTurnovers(room, dStr) {
     const departing = allBookings.find(b => {
       if (b.room !== room && b.room !== 'full') return false;
       if (b.type === 'waitlist' || b.type === 'blocked' || b.type === 'owner') return false;
       return b.checkout === dStr;
     });
-    return !!departing;
+    if (!departing) return;
+    const exists = housekeepingData.find(t => t.date === dStr && t.room === room && t.auto);
+    if (exists) return;
+    const guest = departing.guest;
+    fetch('/api/housekeeping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dStr, room, type: 'cleaning', title: `Turnover clean${guest ? ` (after ${guest})` : ''}`, auto: true })
+    }).then(r => r.json()).then(d => {
+      if (d.task) housekeepingData.push(d.task);
+    }).catch(() => {});
   }
 
-  function autoDetectHousekeeping(room, dStr) {
-    const key = `${dStr}:${room}`;
-    if (housekeepingData[key]) return;
-    if (needsCleaningOnDay(room, dStr)) {
-      housekeepingData[key] = 'needs_cleaning';
-      fetch('/api/housekeeping', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, status: 'needs_cleaning' })
-      }).catch(() => {});
-    }
-  }
-
-  async function cycleHousekeeping(key) {
-    const cycle = { needs_cleaning: 'in_progress', in_progress: 'done', done: 'needs_cleaning' };
-    const current = housekeepingData[key] || 'needs_cleaning';
-    const next = cycle[current];
-    housekeepingData[key] = next;
+  async function cycleTaskStatus(taskId) {
+    const cycle = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
+    const task = housekeepingData.find(t => t.id === taskId);
+    if (!task) return;
+    const next = cycle[task.status] || 'pending';
+    task.status = next;
     renderCalendar();
     await fetch('/api/housekeeping', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, status: next })
+      body: JSON.stringify({ id: taskId, status: next })
     }).catch(() => {});
   }
+
+  async function deleteHkTask(taskId) {
+    housekeepingData = housekeepingData.filter(t => t.id !== taskId);
+    renderCalendar();
+    await fetch(`/api/housekeeping?id=${taskId}`, { method: 'DELETE' }).catch(() => {});
+  }
+
+  async function addHkTask(date, room, type, title) {
+    const res = await fetch('/api/housekeeping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, room, type, title })
+    });
+    const data = await res.json();
+    if (data.task) {
+      housekeepingData.push(data.task);
+      renderCalendar();
+    }
+  }
+
+  // Popover for viewing/adding tasks on a cell
+  let activeHkPopover = null;
+  function closeHkPopover() {
+    if (activeHkPopover) { activeHkPopover.remove(); activeHkPopover = null; }
+  }
+
+  function openHkPopover(cell, room, dStr) {
+    closeHkPopover();
+    const tasks = getTasksForCell(room, dStr);
+    const pop = document.createElement('div');
+    pop.className = 'hk-popover';
+
+    const dateLabel = new Date(dStr + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const roomLabel = ROOM_LABELS[room] || room;
+
+    let html = `<div class="hk-pop-header"><strong>${dateLabel}</strong> &middot; ${roomLabel}<button class="hk-pop-close" onclick="this.closest('.hk-popover').remove()">&times;</button></div>`;
+
+    if (tasks.length) {
+      html += '<div class="hk-pop-tasks">';
+      tasks.forEach(t => {
+        const icon = HK_TYPE_ICONS[t.type] || '\ud83d\udccc';
+        const statusDot = `<span class="hk-status-dot" style="background:${HK_STATUS_COLORS[t.status]}"></span>`;
+        html += `<div class="hk-pop-task" data-id="${t.id}">
+          ${statusDot}<span class="hk-pop-task-title" title="Click to cycle status">${icon} ${t.title}</span>
+          <button class="hk-pop-del" title="Delete">&times;</button>
+        </div>`;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="hk-pop-empty">No tasks</div>';
+    }
+
+    html += `<div class="hk-pop-add">
+      <select class="hk-pop-type"><option value="cleaning">\ud83e\uddf9 Cleaning</option><option value="maintenance">\ud83d\udd27 Maintenance</option><option value="laundry">\ud83e\uddf4 Laundry</option><option value="inspection">\ud83d\udd0d Inspection</option><option value="other">\ud83d\udccc Other</option></select>
+      <input class="hk-pop-input" type="text" placeholder="Task description...">
+      <button class="hk-pop-add-btn">+</button>
+    </div>`;
+
+    pop.innerHTML = html;
+
+    // Position near cell
+    const rect = cell.getBoundingClientRect();
+    pop.style.position = 'fixed';
+    pop.style.top = (rect.bottom + 4) + 'px';
+    pop.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 260)) + 'px';
+    pop.style.zIndex = '200';
+
+    document.body.appendChild(pop);
+    activeHkPopover = pop;
+
+    // Event handlers
+    pop.addEventListener('click', (e) => {
+      const taskEl = e.target.closest('.hk-pop-task-title');
+      if (taskEl) {
+        const id = taskEl.closest('.hk-pop-task').dataset.id;
+        cycleTaskStatus(id).then(() => openHkPopover(cell, room, dStr));
+        return;
+      }
+      const delBtn = e.target.closest('.hk-pop-del');
+      if (delBtn) {
+        const id = delBtn.closest('.hk-pop-task').dataset.id;
+        deleteHkTask(id).then(() => openHkPopover(cell, room, dStr));
+        return;
+      }
+      const addBtn = e.target.closest('.hk-pop-add-btn');
+      if (addBtn) {
+        const input = pop.querySelector('.hk-pop-input');
+        const typeSelect = pop.querySelector('.hk-pop-type');
+        const title = input.value.trim();
+        if (!title) { input.focus(); return; }
+        addHkTask(dStr, room, typeSelect.value, title).then(() => openHkPopover(cell, room, dStr));
+      }
+    });
+
+    const input = pop.querySelector('.hk-pop-input');
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') pop.querySelector('.hk-pop-add-btn').click();
+    });
+    input.focus();
+  }
+
+  // Close popover on outside click
+  document.addEventListener('click', (e) => {
+    if (activeHkPopover && !activeHkPopover.contains(e.target) && !e.target.closest('.hk-cell')) {
+      closeHkPopover();
+    }
+  });
 
   function makeBar(bk, barClass, extra) {
     const bar = document.createElement('div');

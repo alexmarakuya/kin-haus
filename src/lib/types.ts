@@ -103,8 +103,21 @@ export interface CoworkingPass {
 }
 
 // ─── Housekeeping ────────────────────────────────────────────────────────────
-export type HousekeepingStatus = 'needs_cleaning' | 'in_progress' | 'done';
-export type HousekeepingMap = Record<string, HousekeepingStatus>;
+export type HousekeepingStatus = 'pending' | 'in_progress' | 'done';
+export type HousekeepingTaskType = 'cleaning' | 'maintenance' | 'laundry' | 'inspection' | 'other';
+
+export interface HousekeepingTask {
+  id: string;
+  date: string;            // YYYY-MM-DD
+  room: string;            // room slug or "common"
+  type: HousekeepingTaskType;
+  title: string;
+  status: HousekeepingStatus;
+  assigneeId?: string;     // housekeeper ID
+  notes?: string;
+  auto?: boolean;          // true if auto-generated from turnover
+  createdAt: string;
+}
 
 export interface Housekeeper {
   id: string;
