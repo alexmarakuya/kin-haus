@@ -109,13 +109,13 @@ body.present-mode .present-banner { display:block; }
 .row-lbl { font-size:13px; font-weight:500; color:#52524e; display:flex; align-items:center; gap:6px; padding-right:8px; }
 .row-lbl-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
-.cal-cell { height:44px; border:1px solid transparent; cursor:pointer; transition:background 0.1s; position:relative; }
+.cal-cell { height:44px; cursor:pointer; transition:background 0.1s; position:relative; margin-top:-1px; margin-left:-1px; border:1px solid transparent; }
 .cal-cell.empty { border-color:#eae8e5; }
 .cal-cell.empty:hover { background:var(--warm); }
 .cal-cell.today-outline { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; background:rgba(42,97,59,0.04); }
 .cal-cell.today-outline::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent); border-radius:1px 1px 0 0; z-index:3; }
 .cell-initial { position:absolute; top:4px; left:5px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0.6; z-index:2; }
-.cal-cell.inactive { border-color:transparent; cursor:default; background:transparent; }
+.cal-cell.inactive { border-color:transparent; cursor:default; background:transparent; margin:0; }
 .cal-cell.drag-selected { background:var(--direct-light); border-color:var(--accent); }
 
 /* Booking bar: inner element for colored booking indicator */
@@ -442,18 +442,18 @@ body.present-mode .present-banner { display:block; }
 .booking-bar-waitlist.wbar-last { right:calc(50% + 2px); border-radius:0 3px 0 0; }
 
 /* ─── HOUSEKEEPING SUB-ROWS ──────────────────────────────────────────────── */
-.cal-row-hk { margin-top:-3px; }
+.cal-row-hk { margin-top:-2px; }
 .row-lbl-hk { font-size:11px; color:#b5b3ad; display:flex; align-items:center; justify-content:center; padding-right:8px; }
-.hk-cell { height:18px; border:1px solid #eae8e5; position:relative; transition:background 0.15s; border-radius:2px; cursor:pointer; }
-.hk-cell:hover { background:#f5f4f1; }
-.hk-cell.hk-pending { background:#fee2e2; border-color:#fca5a5; }
+.hk-cell { height:18px; border:none; position:relative; transition:background 0.15s; border-radius:2px; cursor:pointer; background:#f5f4f1; }
+.hk-cell:hover { background:#eceae7; }
+.hk-cell.hk-pending { background:#fee2e2; }
 .hk-cell.hk-pending:hover { background:#fecaca; }
-.hk-cell.hk-in-progress { background:#fef9c3; border-color:#fde047; }
+.hk-cell.hk-in-progress { background:#fef9c3; }
 .hk-cell.hk-in-progress:hover { background:#fef08a; }
-.hk-cell.hk-done { background:#dcfce7; border-color:#86efac; }
+.hk-cell.hk-done { background:#dcfce7; }
 .hk-cell.hk-done:hover { background:#bbf7d0; }
 .hk-cell.hk-today { outline:1px solid var(--accent); outline-offset:-1px; }
-.hk-cell.inactive { border-color:transparent; cursor:default; }
+.hk-cell.inactive { background:transparent; cursor:default; }
 .hk-count { position:absolute; top:-1px; right:1px; font-size:9px; font-weight:700; color:#5a5854; line-height:1; }
 
 .btn-hk-toggle, .btn-hk-manage { background:none; border:1px solid #dddbd7; border-radius:8px; padding:4px 10px; font-size:12px; cursor:pointer; color:#8c8a84; display:flex; align-items:center; gap:4px; transition:all 0.2s; white-space:nowrap; }
