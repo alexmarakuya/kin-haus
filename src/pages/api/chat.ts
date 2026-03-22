@@ -4,7 +4,8 @@ import { getOpenAIClient } from '../../lib/ai/client.ts';
 import { getNextAvailable, getAllAvailability } from '../../lib/availability.ts';
 import { calculatePrice, getCurrentRates, validatePromoCode } from '../../lib/ai/pricing-calculator.ts';
 import { readManualBookings, writeManualBookings, readOverrides } from '../../lib/bookings.ts';
-import { readInquiries } from '../../lib/inquiries.ts';
+import { readInquiries, writeInquiries } from '../../lib/inquiries.ts';
+import { readTasks, createTask } from '../../lib/housekeeping.ts';
 import { fetchAllIcalBookings } from '../../lib/ical.ts';
 import { detectConflicts } from '../../lib/conflicts.ts';
 import { readMonitors, getActiveRentals, getMonthlyRevenueSummary } from '../../lib/monitor-rentals.ts';
@@ -15,18 +16,117 @@ import type { Booking } from '../../lib/types.ts';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Dynamic system prompt with today's date
-function getSystemPrompt(): string {
+// ─── Server-side chat session storage ────────────────────────────────────────
+const CHAT_FILE = path.join(process.cwd(), 'data', 'chat-session.json');
+const CHAT_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+function loadChatSession(): { messages: any[]; updatedAt: string } | null {
+  try {
+    if (!fs.existsSync(CHAT_FILE)) return null;
+    const data = JSON.parse(fs.readFileSync(CHAT_FILE, 'utf8'));
+    // Expire after 24h
+    if (data.updatedAt && Date.now() - new Date(data.updatedAt).getTime() > CHAT_MAX_AGE) return null;
+    return data;
+  } catch { return null; }
+}
+
+function saveChatSession(messages: any[]): void {
+  try {
+    const dir = path.dirname(CHAT_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(CHAT_FILE, JSON.stringify({ messages: messages.slice(-30), updatedAt: new Date().toISOString() }, null, 2), 'utf8');
+  } catch (err: any) {
+    console.error('[chat] save session error:', err.message);
+  }
+}
+
+// ─── Property snapshot (injected into every system prompt) ───────────────────
+async function buildPropertySnapshot(): Promise<string> {
+  try {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const allBookings = await getMergedBookings();
+    const rooms = ['nest', 'master', 'nomad'];
+    const labels: Record<string, string> = { nest: 'The Nest', master: 'The Explorer', nomad: 'The Nomad' };
+    const skip = (b: Booking) => b.type === 'blocked' || b.type === 'waitlist';
+
+    // Room status
+    const roomLines = rooms.map(room => {
+      const occupied = allBookings.find(b => (b.room === room || b.room === 'full') && todayStr >= b.checkin && todayStr < b.checkout && !skip(b));
+      const departing = allBookings.find(b => (b.room === room || b.room === 'full') && b.checkout === todayStr && !skip(b));
+      const arriving = allBookings.find(b => (b.room === room || b.room === 'full') && b.checkin === todayStr && !skip(b));
+      let status = 'Empty';
+      let guest = '';
+      if (arriving && departing) { status = 'TURNOVER'; guest = `${departing.guest || '?'} out, ${arriving.guest || '?'} in`; }
+      else if (arriving) { status = 'CHECK-IN'; guest = arriving.guest || '?'; }
+      else if (departing) { status = 'CHECK-OUT'; guest = departing.guest || '?'; }
+      else if (occupied) { status = 'Occupied'; guest = occupied.guest || '?'; const left = Math.round((new Date(occupied.checkout).getTime() - today.getTime()) / 86400000); guest += ` (${left}d left)`; }
+      return `  ${labels[room]}: ${status}${guest ? ' - ' + guest : ''}`;
+    }).join('\n');
+
+    // Upcoming check-ins (next 3 days)
+    const upcoming: string[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      const dStr = d.toISOString().slice(0, 10);
+      const arrivals = allBookings.filter(b => b.checkin === dStr && !skip(b));
+      arrivals.forEach(b => upcoming.push(`  ${dStr}: ${b.guest || '?'} -> ${labels[b.room] || b.room}`));
+    }
+
+    // Gap nights (next 14 days)
+    const gaps: string[] = [];
+    for (const room of rooms) {
+      const emptyDays: string[] = [];
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(today); d.setDate(d.getDate() + i);
+        const dStr = d.toISOString().slice(0, 10);
+        const booked = allBookings.find(b => (b.room === room || b.room === 'full') && dStr >= b.checkin && dStr < b.checkout && !skip(b));
+        if (!booked) emptyDays.push(dStr);
+      }
+      if (emptyDays.length > 0 && emptyDays.length < 14) {
+        gaps.push(`  ${labels[room]}: ${emptyDays.length} empty night(s) in next 14 days`);
+      }
+    }
+
+    // Unanswered inquiries
+    const inquiries = readInquiries();
+    const newInq = inquiries.filter(i => i.status === 'new');
+
+    // Pending housekeeping
+    const hkTasks = readTasks();
+    const pendingHk = hkTasks.filter(t => t.date === todayStr && t.status !== 'done');
+
+    let snapshot = `\n--- PROPERTY SNAPSHOT (live) ---\nROOMS TODAY:\n${roomLines}`;
+    if (upcoming.length) snapshot += `\nUPCOMING ARRIVALS:\n${upcoming.join('\n')}`;
+    if (gaps.length) snapshot += `\nGAP ALERTS:\n${gaps.join('\n')}`;
+    if (newInq.length) snapshot += `\nUNANSWERED INQUIRIES: ${newInq.length} new`;
+    if (pendingHk.length) snapshot += `\nHOUSEKEEPING TODAY: ${pendingHk.length} pending task(s)`;
+    snapshot += '\n---';
+
+    return snapshot;
+  } catch (err: any) {
+    console.error('[chat] snapshot error:', err.message);
+    return '';
+  }
+}
+
+// Dynamic system prompt with today's date + property snapshot
+async function getSystemPrompt(): Promise<string> {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   const hour = today.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
+  const snapshot = await buildPropertySnapshot();
+
   return `You are KH, the operations brain behind Kin Haus. Your #1 job is helping Alex and Paulo respond to guests quickly and run the property smoothly. You're a trusted colleague who knows every detail of the business.
 
 TODAY: ${dateStr} (${greeting.toLowerCase()} in Thailand, UTC+7)
 WHATSAPP: +66 63 803 4860 (Kin Haus main number)
+CHECK-IN: 2pm | CHECK-OUT: 11am | WIFI: "KinHaus" / password on arrival
+ADDRESS: 69/10 Moo 4, Thongsala, Koh Phangan, 84280
+${snapshot}
 
 YOUR CORE BEHAVIOR:
 Always think one step ahead. If they ask about availability, draft the reply. If they create a booking, suggest the confirmation message. Your responses should be actionable -- the operator should be able to copy-paste something you wrote and send it.
@@ -35,18 +135,25 @@ PERSONALITY:
 - Concise, warm, professional. Get straight to the point.
 - Occasionally use a Thai phrase naturally (sabai sabai, mai pen rai).
 - Show proactive thinking: flag interesting patterns in the data.
+- Match the guest's tone: casual messages get casual replies, formal gets formal.
 
 You have full access to all dashboard data. Use tools to look up live data before answering -- never guess.
 
 ALWAYS DRAFT REPLIES:
 This is your most important behavior. Whenever the conversation touches on availability, pricing, guest inquiries, or bookings, ALWAYS end your response with a ready-to-send reply message in a quote block that Alex can copy-paste to WhatsApp. Do this automatically -- don't wait to be asked.
 
+Include these details in replies when relevant:
+- Check-in from 2pm, check-out by 11am
+- Direct booking = bank transfer, best rate vs Airbnb
+- WhatsApp: +66 63 803 4860
+- Always show per-night rate AND total
+
 Reply patterns to follow:
 
 **Available room inquiry:**
 > Hi [name]! Thanks for reaching out. [Room] is available from [dates] -- that's [X] nights.
 >
-> The rate is [amount] THB per night ([total] THB total)[mention long-stay discount if applicable].
+> The rate is [amount] THB per night ([total] THB total, ~[EUR] EUR)[mention long-stay discount if applicable].
 >
 > For direct bookings we accept bank transfer. Let me know if you'd like to reserve those dates!
 
@@ -76,6 +183,7 @@ When context allows, briefly mention:
 - Unanswered inquiries that are getting stale
 - Empty room gaps that could be filled with a last-minute deal
 - Guests checking out tomorrow who might need a check-out message
+- Returning guests who've stayed before (check guest profiles)
 
 ROOMS:
 - The Nest (slug: nest) -- top floor, king bed, ensuite, panoramic views. Premium room.
@@ -131,6 +239,9 @@ When a user uploads a passport photo, extract: Full name, Nationality, Passport 
 
 GUEST PROFILES:
 Use find_guest to look up existing profiles. Use save_guest_profile to create/update. Profiles persist for TM30 registration, guest management, etc.
+
+DAILY BRIEFING:
+When the user says "morning", "briefing", "what's happening today", or similar, use get_today_summary to generate a clean daily overview covering: room status, arrivals, departures, housekeeping, inquiries, and gap alerts.
 
 FORMAT:
 - Markdown for formatting (headers, bold, tables, lists)
@@ -293,6 +404,107 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         type: 'object',
         properties: {
           name: { type: 'string', description: 'Guest name to search for (optional - omit to list all)' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_booking',
+      description: 'Update an existing manual booking. Use list_bookings to find the booking ID first.',
+      parameters: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Booking ID to update' },
+          guest: { type: 'string', description: 'New guest name' },
+          room: { type: 'string', enum: ['nest', 'master', 'nomad', 'theater', 'full'], description: 'New room' },
+          checkin: { type: 'string', description: 'New check-in YYYY-MM-DD' },
+          checkout: { type: 'string', description: 'New check-out YYYY-MM-DD' },
+          type: { type: 'string', enum: ['direct', 'friend', 'blocked', 'owner', 'hold', 'waitlist'], description: 'New type' },
+          amount: { type: 'number', description: 'New amount in THB' },
+          notes: { type: 'string', description: 'New notes' },
+        },
+        required: ['id'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delete_booking',
+      description: 'Delete a manual booking by ID. Cannot delete Airbnb bookings.',
+      parameters: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Booking ID to delete' },
+        },
+        required: ['id'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_inquiry',
+      description: 'Update the status of a booking inquiry.',
+      parameters: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Inquiry ID' },
+          status: { type: 'string', enum: ['new', 'responded', 'booked', 'archived'], description: 'New status' },
+        },
+        required: ['id', 'status'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_housekeeping_task',
+      description: 'Create a housekeeping or maintenance task for a specific date and room.',
+      parameters: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', description: 'Task date YYYY-MM-DD' },
+          room: { type: 'string', enum: ['nest', 'master', 'nomad'], description: 'Room slug' },
+          type: { type: 'string', enum: ['cleaning', 'maintenance', 'laundry', 'inspection', 'other'], description: 'Task type' },
+          title: { type: 'string', description: 'Task description' },
+        },
+        required: ['date', 'room', 'type', 'title'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_today_summary',
+      description: 'Get a comprehensive daily briefing: room status, arrivals, departures, housekeeping, inquiries, gap alerts, revenue. Use when user asks for morning briefing or daily overview.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_revenue_insights',
+      description: 'Get revenue analytics: ADR, RevPAR, occupancy trends, direct vs Airbnb split, gap-night cost estimates. Use for revenue questions or optimization suggestions.',
+      parameters: {
+        type: 'object',
+        properties: {
+          months: { type: 'number', description: 'Number of months to analyze (default 3)' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_gap_nights',
+      description: 'Find empty nights per room in the next N days with fill suggestions and estimated lost revenue.',
+      parameters: {
+        type: 'object',
+        properties: {
+          days: { type: 'number', description: 'Number of days to look ahead (default 14)' },
         },
       },
     },
@@ -645,10 +857,227 @@ async function executeTool(name: string, args: Record<string, any>): Promise<Rec
       }
     }
 
+    case 'update_booking': {
+      try {
+        const bookings = readManualBookings();
+        const idx = bookings.findIndex(b => b.id === args.id);
+        if (idx === -1) return { error: 'Booking not found or is an Airbnb booking (cannot edit)' };
+        const old = bookings[idx];
+        if (args.guest !== undefined) bookings[idx].guest = args.guest;
+        if (args.room !== undefined) bookings[idx].room = args.room;
+        if (args.checkin !== undefined) bookings[idx].checkin = args.checkin;
+        if (args.checkout !== undefined) bookings[idx].checkout = args.checkout;
+        if (args.type !== undefined) bookings[idx].type = args.type;
+        if (args.amount !== undefined) bookings[idx].amount = parseFloat(args.amount) || 0;
+        if (args.notes !== undefined) bookings[idx].notes = args.notes;
+        writeManualBookings(bookings);
+        return { success: true, booking: bookings[idx], message: `Booking updated for ${bookings[idx].guest}` };
+      } catch (err: any) {
+        return { error: 'Could not update booking: ' + err.message };
+      }
+    }
+
+    case 'delete_booking': {
+      try {
+        const bookings = readManualBookings();
+        const idx = bookings.findIndex(b => b.id === args.id);
+        if (idx === -1) return { error: 'Booking not found or is an Airbnb booking (cannot delete)' };
+        const deleted = bookings.splice(idx, 1)[0];
+        writeManualBookings(bookings);
+        return { success: true, message: `Deleted booking for ${deleted.guest} (${deleted.room}, ${deleted.checkin} to ${deleted.checkout})` };
+      } catch (err: any) {
+        return { error: 'Could not delete booking: ' + err.message };
+      }
+    }
+
+    case 'update_inquiry': {
+      try {
+        const inquiries = readInquiries();
+        const idx = inquiries.findIndex(i => i.id === args.id);
+        if (idx === -1) return { error: 'Inquiry not found' };
+        inquiries[idx].status = args.status;
+        writeInquiries(inquiries);
+        return { success: true, message: `Inquiry from ${inquiries[idx].guest} marked as "${args.status}"` };
+      } catch (err: any) {
+        return { error: 'Could not update inquiry: ' + err.message };
+      }
+    }
+
+    case 'create_housekeeping_task': {
+      try {
+        const task = createTask({
+          date: args.date,
+          room: args.room,
+          type: args.type,
+          title: args.title,
+        });
+        return { success: true, task, message: `Housekeeping task created: ${args.title} for ${args.room} on ${args.date}` };
+      } catch (err: any) {
+        return { error: 'Could not create task: ' + err.message };
+      }
+    }
+
+    case 'get_today_summary': {
+      try {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const allBookings = await getMergedBookings();
+        const rooms = ['nest', 'master', 'nomad'];
+        const labels: Record<string, string> = { nest: 'The Nest', master: 'The Explorer', nomad: 'The Nomad' };
+        const skip = (b: Booking) => b.type === 'blocked' || b.type === 'waitlist';
+
+        const roomStatus = rooms.map(room => {
+          const occupied = allBookings.find(b => (b.room === room || b.room === 'full') && todayStr >= b.checkin && todayStr < b.checkout && !skip(b));
+          const departing = allBookings.find(b => (b.room === room || b.room === 'full') && b.checkout === todayStr && !skip(b));
+          const arriving = allBookings.find(b => (b.room === room || b.room === 'full') && b.checkin === todayStr && !skip(b));
+          let status = 'empty';
+          if (arriving && departing) status = 'turnover';
+          else if (arriving) status = 'check-in';
+          else if (departing) status = 'check-out';
+          else if (occupied) status = 'occupied';
+          return { room: labels[room], status, guest: occupied?.guest || arriving?.guest || departing?.guest || null, daysLeft: occupied ? Math.round((new Date(occupied.checkout).getTime() - new Date(todayStr).getTime()) / 86400000) : null };
+        });
+
+        const checkingIn = allBookings.filter(b => b.checkin === todayStr && !skip(b));
+        const checkingOut = allBookings.filter(b => b.checkout === todayStr && !skip(b));
+        const inHouse = allBookings.filter(b => todayStr >= b.checkin && todayStr < b.checkout && !skip(b));
+
+        // Guest TM30 status
+        const guests = readGuests();
+        const guestTm30 = inHouse.map(b => {
+          const g = b.guestId ? guests.find(gg => gg.id === b.guestId) : guests.find(gg => gg.fullName?.toLowerCase() === b.guest?.toLowerCase());
+          const hasTm30 = g && g.nationality && g.passportNumber && g.dateOfBirth;
+          return { guest: b.guest, room: labels[b.room] || b.room, tm30Ready: !!hasTm30, missing: !hasTm30 ? [!g?.nationality && 'nationality', !g?.passportNumber && 'passport', !g?.dateOfBirth && 'DOB'].filter(Boolean) : [] };
+        });
+
+        const hkTasks = readTasks();
+        const todayHk = hkTasks.filter(t => t.date === todayStr);
+        const inquiries = readInquiries();
+        const newInq = inquiries.filter(i => i.status === 'new');
+
+        // Monthly revenue so far
+        const stats = await computeMonthlyStats();
+
+        return {
+          date: todayStr,
+          rooms: roomStatus,
+          arrivals: checkingIn.map(b => ({ guest: b.guest, room: labels[b.room] || b.room, nights: Math.round((new Date(b.checkout).getTime() - new Date(b.checkin).getTime()) / 86400000), checkout: b.checkout })),
+          departures: checkingOut.map(b => ({ guest: b.guest, room: labels[b.room] || b.room })),
+          inHouse: guestTm30,
+          housekeeping: { pending: todayHk.filter(t => t.status === 'pending').length, inProgress: todayHk.filter(t => t.status === 'in_progress').length, done: todayHk.filter(t => t.status === 'done').length },
+          inquiries: { new: newInq.length, total: inquiries.length },
+          monthToDate: { occupancy: stats.occupancyPercent + '%', revenue: stats.estimatedRevenue + ' THB' },
+        };
+      } catch (err: any) {
+        return { error: 'Could not generate summary: ' + err.message };
+      }
+    }
+
+    case 'get_revenue_insights': {
+      try {
+        const monthsBack = args.months || 3;
+        const now = new Date();
+        const results: any[] = [];
+
+        for (let i = 0; i < monthsBack; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const stats = await computeMonthlyStats(key);
+          results.push(stats);
+        }
+
+        // Calculate ADR and RevPAR
+        const totalRevenue = results.reduce((s, r) => s + (r.estimatedRevenue || 0), 0);
+        const totalBookedNights = results.reduce((s, r) => s + (r.bookedNights || 0), 0);
+        const totalRoomNights = results.reduce((s, r) => s + (r.totalRoomNights || 0), 0);
+        const adr = totalBookedNights > 0 ? Math.round(totalRevenue / totalBookedNights) : 0;
+        const revpar = totalRoomNights > 0 ? Math.round(totalRevenue / totalRoomNights) : 0;
+
+        // Direct vs Airbnb split
+        const allBookings = await getMergedBookings();
+        const recentBookings = allBookings.filter(b => {
+          const ci = new Date(b.checkin);
+          const cutoff = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+          return ci >= cutoff && (b.type === 'airbnb' || b.type === 'direct');
+        });
+        const directCount = recentBookings.filter(b => b.type === 'direct').length;
+        const airbnbCount = recentBookings.filter(b => b.type === 'airbnb').length;
+
+        return {
+          period: `Last ${monthsBack} months`,
+          months: results.map(r => ({ month: r.month, occupancy: r.occupancyPercent + '%', revenue: r.estimatedRevenue })),
+          averageDailyRate: adr,
+          revPAR: revpar,
+          channelSplit: { direct: directCount, airbnb: airbnbCount, directPercent: recentBookings.length > 0 ? Math.round(directCount / recentBookings.length * 100) : 0 },
+          recommendation: adr > 0 ? `ADR is ${adr} THB. RevPAR is ${revpar} THB. ${directCount > airbnbCount ? 'Direct bookings are leading -- great margin.' : 'Most bookings via Airbnb -- consider promoting direct bookings for better margins.'}` : 'Not enough data for recommendations.',
+        };
+      } catch (err: any) {
+        return { error: 'Could not compute insights: ' + err.message };
+      }
+    }
+
+    case 'get_gap_nights': {
+      try {
+        const daysAhead = args.days || 14;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const allBookings = await getMergedBookings();
+        const rooms = ['nest', 'master', 'nomad'];
+        const labels: Record<string, string> = { nest: 'The Nest', master: 'The Explorer', nomad: 'The Nomad' };
+        const rates = readRates();
+        const skip = (b: Booking) => b.type === 'blocked' || b.type === 'waitlist';
+
+        const gapsByRoom: Record<string, { emptyDates: string[]; estimatedLostRevenue: number }> = {};
+
+        for (const room of rooms) {
+          const emptyDates: string[] = [];
+          const roomRates = rates[room] || { high: 2400, low: 1680 };
+          let lostRevenue = 0;
+          for (let i = 0; i < daysAhead; i++) {
+            const d = new Date(); d.setDate(d.getDate() + i);
+            const dStr = d.toISOString().slice(0, 10);
+            const booked = allBookings.find(b => (b.room === room || b.room === 'full') && dStr >= b.checkin && dStr < b.checkout && !skip(b));
+            if (!booked) {
+              emptyDates.push(dStr);
+              lostRevenue += isLowSeason(dStr) ? roomRates.low : roomRates.high;
+            }
+          }
+          if (emptyDates.length > 0) {
+            gapsByRoom[labels[room]] = { emptyDates, estimatedLostRevenue: lostRevenue };
+          }
+        }
+
+        const totalLost = Object.values(gapsByRoom).reduce((s, g) => s + g.estimatedLostRevenue, 0);
+        const totalEmpty = Object.values(gapsByRoom).reduce((s, g) => s + g.emptyDates.length, 0);
+
+        return {
+          lookAhead: `${daysAhead} days from ${todayStr}`,
+          gaps: gapsByRoom,
+          totalEmptyNights: totalEmpty,
+          totalEstimatedLostRevenue: totalLost,
+          suggestion: totalEmpty > 5 ? `${totalEmpty} empty nights could generate up to ${totalLost} THB. Consider last-minute deals or reaching out to past guests.` : totalEmpty > 0 ? `Only ${totalEmpty} gap night(s) -- looking good.` : 'Fully booked! No gaps.',
+        };
+      } catch (err: any) {
+        return { error: 'Could not compute gaps: ' + err.message };
+      }
+    }
+
     default:
       return { error: `Unknown tool: ${name}` };
   }
 }
+
+// DELETE: Clear chat session
+export const DELETE: APIRoute = async () => {
+  try { if (fs.existsSync(CHAT_FILE)) fs.unlinkSync(CHAT_FILE); } catch { /* ok */ }
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+};
+
+// GET: Load previous chat session
+export const GET: APIRoute = async () => {
+  const session = loadChatSession();
+  return new Response(JSON.stringify({ messages: session?.messages || [], updatedAt: session?.updatedAt || null }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
 
 export const POST: APIRoute = async ({ request }) => {
   let openai: OpenAI;
@@ -671,8 +1100,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Check if any message has image content (triggers gpt-4o for vision)
   let hasImages = false;
+  const systemPrompt = await getSystemPrompt();
   const aiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: 'system', content: getSystemPrompt() },
+    { role: 'system', content: systemPrompt },
     ...messages.map((m: any) => {
       if (Array.isArray(m.content)) {
         // Multi-part message (text + images)
@@ -759,6 +1189,9 @@ export const POST: APIRoute = async ({ request }) => {
 
           break;
         }
+
+        // Save chat session server-side (last 30 messages for continuity)
+        saveChatSession(messages);
 
         send({ type: 'done' });
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));

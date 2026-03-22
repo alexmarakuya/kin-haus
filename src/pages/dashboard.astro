@@ -280,10 +280,10 @@ import '../styles/dashboard.css';
         <div class="chat-welcome-title" id="chat-welcome-title">Hey there</div>
         <div class="chat-welcome-sub">Your Kin Haus villa manager. Ask me anything.</div>
         <div class="chat-suggestions" id="chat-suggestions">
+          <button class="chat-suggestion" data-q="Give me my morning briefing">Morning briefing</button>
           <button class="chat-suggestion" data-q="Add a booking">Add a booking</button>
-          <button class="chat-suggestion" data-q="When is The Nest available next?">Availability</button>
-          <button class="chat-suggestion" data-q="What's our occupancy this month?">Occupancy</button>
-          <button class="chat-suggestion" data-q="How's our revenue looking this month?">Revenue</button>
+          <button class="chat-suggestion" data-q="Show me gap nights and revenue opportunities">Gap nights</button>
+          <button class="chat-suggestion" data-q="How's our revenue looking? Give me insights.">Revenue insights</button>
         </div>
       </div>
     </div>
@@ -3632,6 +3632,8 @@ import '../styles/dashboard.css';
   function clearChat() {
     if (isStreaming) return;
     chatHistory = [];
+    // Clear server-side session too
+    fetch('/api/chat', { method: 'DELETE' }).catch(() => {});
     const messagesContainer = document.getElementById('chat-messages');
     if (messagesContainer) {
       const welcome = messagesContainer.querySelector('#chat-welcome');
@@ -3921,6 +3923,15 @@ import '../styles/dashboard.css';
       get_monitors: 'Checking monitors...',
       get_monitor_revenue: 'Getting revenue data...',
       create_booking: 'Creating booking...',
+      update_booking: 'Updating booking...',
+      delete_booking: 'Deleting booking...',
+      update_inquiry: 'Updating inquiry...',
+      create_housekeeping_task: 'Creating task...',
+      get_today_summary: 'Preparing briefing...',
+      get_revenue_insights: 'Analyzing revenue...',
+      get_gap_nights: 'Finding gaps...',
+      save_guest_profile: 'Saving guest profile...',
+      find_guest: 'Looking up guest...',
     };
     indicator.textContent = labels[name] || 'Thinking...';
     indicator.style.display = 'block';
@@ -4588,5 +4599,39 @@ import '../styles/dashboard.css';
     fetchInquiries();
     setInterval(() => loadBookings(), 30 * 60 * 1000);
   }
+
+  // ─── RESTORE CHAT SESSION ──────────────────────────────────────────────────
+  (async () => {
+    try {
+      const res = await fetch('/api/chat');
+      if (!res.ok) return;
+      const { messages, updatedAt } = await res.json();
+      if (!messages || !messages.length) return;
+      chatHistory = messages;
+      const welcome = document.getElementById('chat-welcome');
+      if (welcome) welcome.style.display = 'none';
+      const newBtn = document.getElementById('chat-new-btn');
+      if (newBtn) newBtn.style.display = '';
+      const container = document.getElementById('chat-messages');
+      messages.forEach(m => {
+        if (m.role === 'user') {
+          const text = Array.isArray(m.content) ? m.content.find(c => c.type === 'text')?.text || '' : m.content;
+          if (text) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.textContent = text;
+            container.appendChild(bubble);
+          }
+        } else if (m.role === 'assistant' && m.content) {
+          const bubble = document.createElement('div');
+          bubble.className = 'chat-bubble assistant';
+          bubble.innerHTML = typeof marked !== 'undefined' ? marked.parse(m.content, { breaks: true }) : m.content;
+          addCopyButton(bubble);
+          container.appendChild(bubble);
+        }
+      });
+      scrollChatToBottom();
+    } catch (e) { /* silent fail */ }
+  })();
   </script>
 </BaseLayout>
