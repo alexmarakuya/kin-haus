@@ -9,7 +9,7 @@ export type RoomSlug = (typeof VALID_ROOMS)[number];
 export const ROOM_LABELS: Record<string, string> = {
   nest: 'The Nest',
   master: 'The Explorer',
-  nomad: 'Nomad Room',
+  nomad: 'The Nomad',
   theater: 'Theater Room',
 };
 

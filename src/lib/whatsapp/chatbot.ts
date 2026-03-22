@@ -29,7 +29,7 @@ King bed, ensuite bathroom, panoramic sunrise/pool/sea views, AC, blackout blind
 2. The Explorer (lower floor)
 King bed, shared bathroom, full wardrobe, desk, sunrise views, AC. Spacious and comfortable.
 
-3. Nomad Room
+3. The Nomad
 King bed, shared bathroom, dedicated desk, AC, blackout blinds, 500+ Mbps WiFi, monitor rental available. Built for remote workers.
 
 SEASONS & DISCOUNTS:
@@ -96,7 +96,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         properties: {
           room: {
             type: 'string',
-            enum: ['The Nest', 'The Explorer', 'Nomad Room'],
+            enum: ['The Nest', 'The Explorer', 'The Nomad'],
             description: 'Room name',
           },
           checkin: { type: 'string', description: 'Check-in date YYYY-MM-DD' },
@@ -418,7 +418,7 @@ function executeLookupPricing(): Record<string, unknown> {
       rooms: {
         nest: { name: 'The Nest', ...rates['nest'] },
         master: { name: 'The Explorer', ...rates['master'] },
-        nomad: { name: 'Nomad Room', ...rates['nomad'] },
+        nomad: { name: 'The Nomad', ...rates['nomad'] },
       },
     };
   } catch (err: any) {

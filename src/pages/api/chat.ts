@@ -80,7 +80,7 @@ When context allows, briefly mention:
 ROOMS:
 - The Nest (slug: nest) -- top floor, king bed, ensuite, panoramic views. Premium room.
 - The Explorer (slug: master) -- lower floor, king bed, shared bathroom, spacious.
-- Nomad Room (slug: nomad) -- king bed, shared bathroom, dedicated desk, monitor rental available. Built for remote workers.
+- The Nomad (slug: nomad) -- king bed, shared bathroom, dedicated desk, monitor rental available. Built for remote workers.
 - Theater Room (slug: theater) -- manual bookings only.
 
 SEASONS & PRICING:
@@ -524,7 +524,7 @@ async function executeTool(name: string, args: Record<string, any>): Promise<Rec
           rooms: {
             nest: { name: 'The Nest', ...rates['nest'] },
             master: { name: 'The Explorer', ...rates['master'] },
-            nomad: { name: 'Nomad Room', ...rates['nomad'] },
+            nomad: { name: 'The Nomad', ...rates['nomad'] },
           },
         };
       } catch (err: any) {
