@@ -517,6 +517,27 @@ import '../styles/dashboard.css';
         </div>
       </div>
       <div class="detail-amount-info" id="dm-amount-info"></div>
+
+      <!-- Payment Status -->
+      <div class="fg" id="dm-payment-row" style="margin-top:16px">
+        <label>Payment Status</label>
+        <div class="seg-buttons" id="dm-payment-seg">
+          <button type="button" class="seg-btn seg-unpaid" data-value="unpaid">Unpaid</button>
+          <button type="button" class="seg-btn seg-deposit" data-value="deposit">Deposit</button>
+          <button type="button" class="seg-btn seg-paid" data-value="paid">Paid</button>
+        </div>
+      </div>
+
+      <!-- TM30 Status -->
+      <div class="fg" id="dm-tm30-row" style="margin-top:12px">
+        <label>TM30 Registration</label>
+        <div class="seg-buttons" id="dm-tm30-seg">
+          <button type="button" class="seg-btn seg-pending" data-value="pending">Pending</button>
+          <button type="button" class="seg-btn seg-submitted" data-value="submitted">Submitted</button>
+          <button type="button" class="seg-btn seg-na" data-value="not_required">N/A</button>
+        </div>
+        <div class="tm30-hint" id="dm-tm30-hint" style="display:none"></div>
+      </div>
     </div>
     <div class="detail-panel-footer">
       <button class="btn btn-danger" id="dm-delete" style="display:none">Delete Booking</button>
@@ -1271,6 +1292,17 @@ import '../styles/dashboard.css';
                 const name = presentMode ? scrambleName(stayBk.guest || '?') : (stayBk.guest || '?');
                 init.textContent = name.charAt(0).toUpperCase();
                 cell.appendChild(init);
+
+                // TM30 dot indicator
+                const noTm30Types = ['blocked', 'owner', 'hold', 'waitlist'];
+                if (!noTm30Types.includes(stayBk.type)) {
+                  const dot = document.createElement('div');
+                  dot.className = 'tm30-dot';
+                  if (stayBk.tm30Status === 'submitted') dot.style.background = '#22c55e';
+                  else if (stayBk.tm30Status === 'not_required') { /* skip */ }
+                  else dot.style.background = '#f97316';
+                  if (stayBk.tm30Status !== 'not_required') cell.appendChild(dot);
+                }
               }
             }
 
@@ -1577,6 +1609,17 @@ import '../styles/dashboard.css';
     bar.style.borderBottom = '2px solid ' + colors.accent;
     if (colors.bs === 'bar-dashed') bar.style.borderBottomStyle = 'dashed';
     if (colors.bs === 'bar-dotted') bar.style.borderBottomStyle = 'dotted';
+    // Payment status indicator on bar
+    const skipPayment = ['blocked', 'owner', 'hold', 'friend', 'waitlist'];
+    if (!skipPayment.includes(bk.type)) {
+      if (bk.paymentStatus === 'unpaid' || (!bk.paymentStatus && bk.type === 'direct')) {
+        bar.style.borderBottomStyle = 'dashed';
+        bar.style.borderBottomColor = '#dc3545';
+      } else if (bk.paymentStatus === 'deposit') {
+        bar.style.borderBottomStyle = 'dashed';
+        bar.style.borderBottomColor = '#f59e0b';
+      }
+    }
     bar.dataset.bookingId = bk.id;
     bar.dataset.room = bk.room;
     bar.dataset.checkout = bk.checkout;
@@ -1909,6 +1952,36 @@ import '../styles/dashboard.css';
     // Save button
     document.getElementById('dm-save').style.display = presentMode ? 'none' : '';
 
+    // Payment + TM30 status
+    const hideStatusTypes = ['blocked', 'owner', 'hold'];
+    const showStatus = !hideStatusTypes.includes(b.type) && !presentMode;
+    document.getElementById('dm-payment-row').style.display = showStatus ? '' : 'none';
+    document.getElementById('dm-tm30-row').style.display = showStatus ? '' : 'none';
+    if (showStatus) {
+      setSegActive('dm-payment-seg', b.paymentStatus || 'unpaid');
+      setSegActive('dm-tm30-seg', b.tm30Status || 'pending');
+      // Show TM30 hint if guest profile is missing details
+      const tm30Hint = document.getElementById('dm-tm30-hint');
+      const guestProfile = allGuests.find(g => g.fullName && b.guest && g.fullName.toLowerCase() === b.guest.toLowerCase());
+      if (guestProfile) {
+        const missing = [];
+        if (!guestProfile.passportNumber) missing.push('passport');
+        if (!guestProfile.dateOfBirth) missing.push('DOB');
+        if (!guestProfile.nationality) missing.push('nationality');
+        if (missing.length > 0) {
+          tm30Hint.textContent = `Missing: ${missing.join(', ')}`;
+          tm30Hint.style.display = '';
+        } else {
+          tm30Hint.style.display = 'none';
+        }
+      } else if (b.guest && !['Guest', ''].includes(b.guest)) {
+        tm30Hint.textContent = 'No guest profile found';
+        tm30Hint.style.display = '';
+      } else {
+        tm30Hint.style.display = 'none';
+      }
+    }
+
     document.getElementById('detail-panel').classList.add('open');
     document.getElementById('detail-overlay').classList.add('open');
     if (!presentMode) document.getElementById('dm-guest').focus();
@@ -1948,6 +2021,28 @@ import '../styles/dashboard.css';
     updateDetailAmountInfo(n);
   });
 
+  // Segmented button helper
+  function setSegActive(containerId, value) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.seg-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === value);
+    });
+  }
+  function getSegValue(containerId) {
+    const active = document.querySelector(`#${containerId} .seg-btn.active`);
+    return active ? active.dataset.value : null;
+  }
+  // Wire up segmented button clicks
+  document.querySelectorAll('.seg-buttons').forEach(container => {
+    container.addEventListener('click', (e) => {
+      const btn = e.target.closest('.seg-btn');
+      if (!btn) return;
+      container.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
   function closeDetailModal() {
     document.getElementById('detail-panel').classList.remove('open');
     document.getElementById('detail-overlay').classList.remove('open');
@@ -1963,7 +2058,9 @@ import '../styles/dashboard.css';
     const isManual = detailBookingSource === 'manual';
 
     const notes = document.getElementById('dm-notes-input').value.trim();
-    const payload = { amount, guest, notes };
+    const paymentStatus = getSegValue('dm-payment-seg');
+    const tm30Status = getSegValue('dm-tm30-seg');
+    const payload = { amount, guest, notes, paymentStatus, tm30Status };
 
     if (isManual) {
       // Include all editable fields for manual bookings
@@ -2012,6 +2109,20 @@ import '../styles/dashboard.css';
       <div class="tt-detail">${ROOM_LABELS[b.room]||b.room}</div>
       ${ttNotes}
       <div class="tt-badge" style="background:${typeColor}22;color:${typeColor}">${typeLabel}</div>
+      ${(() => {
+        const skip = ['blocked','owner','hold','friend','waitlist'];
+        const ps = b.paymentStatus || (b.source === 'ical' ? 'paid' : 'unpaid');
+        const psLabel = ps === 'paid' ? 'Paid' : ps === 'deposit' ? 'Deposit' : 'Unpaid';
+        const psColor = ps === 'paid' ? '#166534' : ps === 'deposit' ? '#92400e' : '#b42a1e';
+        const psBg = ps === 'paid' ? '#f0fdf4' : ps === 'deposit' ? '#fefce8' : '#fef2f2';
+        const paymentHtml = skip.includes(b.type) ? '' : `<div class="tt-badge" style="background:${psBg};color:${psColor}">${psLabel}</div>`;
+        const tm30 = b.tm30Status || 'pending';
+        const tm30Label = tm30 === 'submitted' ? 'TM30 \u2713' : tm30 === 'not_required' ? '' : 'TM30 pending';
+        const tm30Color = tm30 === 'submitted' ? '#166534' : '#9a3412';
+        const tm30Bg = tm30 === 'submitted' ? '#f0fdf4' : '#fff7ed';
+        const tm30Html = !tm30Label ? '' : `<div class="tt-badge" style="background:${tm30Bg};color:${tm30Color}">${tm30Label}</div>`;
+        return paymentHtml + tm30Html;
+      })()}
       ${b.conflict ? `<div class="tt-conflict">&#x26A0; Booking conflict</div>` : ''}`;
     tt.style.display = 'block';
     moveTooltip(e);
@@ -4506,16 +4617,28 @@ import '../styles/dashboard.css';
       return null;
     }
 
-    // Helper: TM30 readiness
-    function tm30Status(guest) {
-      if (!guest) return { ready: false, label: 'No profile', cls: 'today-badge-empty' };
+    // Helper: TM30 readiness (three-state: submitted > ready > missing)
+    function tm30Info(guest, booking) {
+      if (booking.tm30Status === 'not_required') return { state: 'na', label: 'N/A', cls: 'today-badge-empty', icon: '' };
+      if (booking.tm30Status === 'submitted') return { state: 'submitted', label: 'TM30 submitted', cls: 'today-badge-checkin', icon: '\u2713' };
+      if (!guest) return { state: 'missing', label: 'No profile', cls: 'today-badge-checkout', icon: '\u2717' };
       const has = guest.nationality && guest.passportNumber && guest.dateOfBirth;
-      if (has) return { ready: true, label: 'TM30 ready', cls: 'today-badge-checkin' };
+      if (has) return { state: 'ready', label: 'TM30 ready', cls: 'today-badge-turnover', icon: '\u25CB' };
       const missing = [];
       if (!guest.nationality) missing.push('nationality');
       if (!guest.passportNumber) missing.push('passport');
       if (!guest.dateOfBirth) missing.push('DOB');
-      return { ready: false, label: 'Missing: ' + missing.join(', '), cls: 'today-badge-turnover' };
+      return { state: 'missing', label: 'Missing: ' + missing.join(', '), cls: 'today-badge-checkout', icon: '\u2717' };
+    }
+
+    // Helper: payment badge
+    function paymentBadge(booking) {
+      const skip = ['blocked', 'owner', 'hold', 'friend'];
+      if (skip.includes(booking.type)) return '';
+      const ps = booking.paymentStatus || 'unpaid';
+      if (ps === 'paid') return `<span class="today-badge today-badge-checkin">Paid</span>`;
+      if (ps === 'deposit') return `<span class="today-badge today-badge-turnover">Deposit</span>`;
+      return `<span class="today-badge today-badge-checkout">Unpaid</span>`;
     }
 
     // Helper: render guest card
@@ -4525,7 +4648,7 @@ import '../styles/dashboard.css';
       const initial = (b.guest || '?').charAt(0).toUpperCase();
       const nights = Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000);
       const guest = guestForBooking(b);
-      const tm30 = tm30Status(guest);
+      const tm30 = tm30Info(guest, b);
       const daysLeft = Math.round((new Date(b.checkout) - new Date(today)) / 86400000);
       const detail = badge === 'Arriving'
         ? `${room} &middot; ${nights} night${nights!==1?'s':''} &middot; until ${new Date(b.checkout+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`
@@ -4541,7 +4664,8 @@ import '../styles/dashboard.css';
         </div>
         <div class="today-guest-badges">
           <span class="today-badge ${badgeClass}">${badge}</span>
-          <span class="today-badge ${tm30.cls}" title="${tm30.label}">${tm30.ready ? 'TM30 \u2713' : 'TM30 \u2717'}</span>
+          ${tm30.state !== 'na' ? `<span class="today-badge ${tm30.cls}" title="${tm30.label}">TM30 ${tm30.icon}</span>` : ''}
+          ${paymentBadge(b)}
         </div>
       </div>`;
     }
@@ -4584,6 +4708,51 @@ import '../styles/dashboard.css';
           ${checkingOut.map(b => guestCard(b, 'Departing', 'today-badge-checkout')).join('')}
         </div>
       </div>` : ''}
+
+      <!-- ACTION ITEMS -->
+      ${(() => {
+        const actions = [];
+        // Upcoming check-ins missing TM30 details (next 5 days)
+        const fiveDaysOut = new Date(now); fiveDaysOut.setDate(fiveDaysOut.getDate() + 5);
+        const fiveDaysStr = ds(fiveDaysOut.getFullYear(), fiveDaysOut.getMonth(), fiveDaysOut.getDate());
+        const upcoming = allBk.filter(b => b.checkin >= today && b.checkin <= fiveDaysStr && !skip(b));
+        upcoming.forEach(b => {
+          const guest = guestForBooking(b);
+          const tm30 = tm30Info(guest, b);
+          if (tm30.state === 'missing') {
+            const nm = presentMode ? scrambleName(b.guest || 'Guest') : (b.guest || 'Guest');
+            const when = b.checkin === today ? 'today' : `${new Date(b.checkin+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+            actions.push({ text: `Collect passport details from ${nm} (arriving ${when})`, id: b.id, type: 'tm30' });
+          }
+        });
+        // In-house guests with TM30 ready but not submitted
+        inHouse.forEach(b => {
+          const guest = guestForBooking(b);
+          const tm30 = tm30Info(guest, b);
+          if (tm30.state === 'ready') {
+            const nm = presentMode ? scrambleName(b.guest || 'Guest') : (b.guest || 'Guest');
+            actions.push({ text: `Submit TM30 for ${nm}`, id: b.id, type: 'tm30' });
+          }
+        });
+        // Unpaid direct bookings checking in today or in-house
+        [...checkingIn, ...inHouse].forEach(b => {
+          if (b.type === 'direct' && (b.paymentStatus === 'unpaid' || !b.paymentStatus)) {
+            const nm = presentMode ? scrambleName(b.guest || 'Guest') : (b.guest || 'Guest');
+            const room = ROOM_LABELS[b.room] || b.room;
+            if (!actions.find(a => a.id === b.id && a.type === 'payment')) {
+              actions.push({ text: `Collect payment from ${nm} - ${room}`, id: b.id, type: 'payment' });
+            }
+          }
+        });
+        if (!actions.length) return '';
+        return `<div class="today-section">
+          <div class="today-section-title" style="color:#b42a1e">Action Items (${actions.length})</div>
+          ${actions.map(a => `<div class="today-action-item" onclick="openBookingDetail('${a.id}')">
+            <span class="today-action-icon">${a.type === 'tm30' ? '\u{1F4C4}' : '\u{1F4B0}'}</span>
+            <span class="today-action-text">${a.text}</span>
+          </div>`).join('')}
+        </div>`;
+      })()}
 
       <!-- IN-HOUSE -->
       <div class="today-section">

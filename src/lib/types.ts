@@ -1,5 +1,8 @@
 import type { RoomKey } from './config.ts';
 
+export type PaymentStatus = 'unpaid' | 'deposit' | 'paid';
+export type Tm30Status = 'pending' | 'submitted' | 'not_required';
+
 export interface Booking {
   id: string;
   guest: string;
@@ -12,10 +15,12 @@ export interface Booking {
   source?: 'ical' | 'manual';
   conflict?: boolean;
   conflictWith?: string | null;
+  paymentStatus?: PaymentStatus;
+  tm30Status?: Tm30Status;
 }
 
 export interface BookingOverrides {
-  [id: string]: { amount?: number; guest?: string; notes?: string };
+  [id: string]: { amount?: number; guest?: string; notes?: string; paymentStatus?: PaymentStatus; tm30Status?: Tm30Status };
 }
 
 export interface Inquiry {

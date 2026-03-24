@@ -14,6 +14,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   const type = body.type !== undefined ? String(body.type) : undefined;
   const room = body.room !== undefined ? String(body.room) : undefined;
   const notes = body.notes !== undefined ? String(body.notes) : undefined;
+  const paymentStatus = body.paymentStatus !== undefined ? String(body.paymentStatus) : undefined;
+  const tm30Status = body.tm30Status !== undefined ? String(body.tm30Status) : undefined;
 
   if (amount !== undefined && (isNaN(amount) || amount < 0)) {
     return jsonError('Invalid amount');
@@ -42,6 +44,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       manual.room = room;
     }
     if (notes !== undefined) manual.notes = notes;
+    if (paymentStatus !== undefined) (manual as any).paymentStatus = paymentStatus;
+    if (tm30Status !== undefined) (manual as any).tm30Status = tm30Status;
 
     // Validate dates if both provided
     const finalCheckin = checkin || manual.checkin;
@@ -58,6 +62,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (amount !== undefined) overrides[id!].amount = amount;
     if (guest !== undefined) overrides[id!].guest = guest;
     if (notes !== undefined) overrides[id!].notes = notes;
+    if (paymentStatus !== undefined) (overrides[id!] as any).paymentStatus = paymentStatus;
+    if (tm30Status !== undefined) (overrides[id!] as any).tm30Status = tm30Status;
     writeOverrides(overrides);
   }
 

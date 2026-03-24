@@ -115,6 +115,7 @@ body.present-mode .present-banner { display:block; }
 .cal-cell.today-outline { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; background:rgba(42,97,59,0.04); }
 .cal-cell.today-outline::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent); border-radius:1px 1px 0 0; z-index:3; }
 .cell-initial { position:absolute; top:4px; left:5px; font-family:'JetBrains Mono',monospace; font-size:11px; opacity:0.6; z-index:2; }
+.tm30-dot { position:absolute; top:3px; right:3px; width:6px; height:6px; border-radius:50%; z-index:3; }
 .cal-cell.inactive { border-color:transparent; cursor:default; background:transparent; margin:0; }
 .cal-cell.drag-selected { background:var(--direct-light); border-color:var(--accent); }
 .cal-cell.extend-highlight { background:rgba(42,97,59,0.08); border-color:var(--accent); border-style:dashed; }
@@ -218,6 +219,20 @@ body.present-mode .present-banner { display:block; }
 .detail-panel-body { flex:1; overflow-y:auto; padding:20px 24px; }
 .detail-amount-row { display:flex; gap:12px; }
 .detail-amount-info { font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8b85; margin-top:4px; min-height:16px; }
+
+/* SEGMENTED BUTTONS (payment + TM30 status) */
+.seg-buttons { display:flex; gap:0; border-radius:8px; overflow:hidden; border:1px solid #d9d7d3; }
+.seg-btn { flex:1; padding:8px 10px; font-size:12px; font-family:'Inter',sans-serif; font-weight:500; border:none; background:#fafaf8; color:#8b8b85; cursor:pointer; transition:all 0.15s; text-align:center; }
+.seg-btn:not(:last-child) { border-right:1px solid #d9d7d3; }
+.seg-btn:hover { background:#f0efed; }
+.seg-btn.active.seg-unpaid { background:#fef2f2; color:#b42a1e; border-color:#fecaca; }
+.seg-btn.active.seg-deposit { background:#fefce8; color:#92400e; border-color:#fde68a; }
+.seg-btn.active.seg-paid { background:#f0fdf4; color:#166534; border-color:#bbf7d0; }
+.seg-btn.active.seg-pending { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+.seg-btn.active.seg-submitted { background:#f0fdf4; color:#166534; border-color:#bbf7d0; }
+.seg-btn.active.seg-na { background:#f5f5f4; color:#6b6b66; border-color:#d9d7d3; }
+.tm30-hint { font-family:'JetBrains Mono',monospace; font-size:10px; color:#b42a1e; margin-top:4px; }
+
 .detail-panel-footer { padding:16px 24px; border-top:1px solid #eae8e5; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .detail-panel-footer-right { display:flex; gap:10px; }
 .detail-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #eae8e5; }
@@ -576,6 +591,12 @@ body.present-mode .present-banner { display:block; }
 
 /* Movements combined section */
 .today-movements { display:flex; flex-direction:column; }
+
+/* Action items */
+.today-action-item { display:flex; align-items:center; gap:10px; padding:10px 12px; margin:4px 0; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; cursor:pointer; transition:background 0.15s; }
+.today-action-item:hover { background:#fee2e2; }
+.today-action-icon { font-size:16px; flex-shrink:0; }
+.today-action-text { font-size:13px; color:#991b1b; }
 
 @media (max-width:768px) {
   .today-header { padding:16px 20px 8px; }

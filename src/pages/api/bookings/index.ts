@@ -19,6 +19,19 @@ export const GET: APIRoute = async ({ request }) => {
     const manualBookings = readManualBookings().map((b) => ({ ...b, source: 'manual' as const }));
     const overrides = readOverrides();
     const allBookings = [...icalBookings, ...manualBookings].map((b) => {
+      // Apply smart defaults for payment + TM30 status
+      const noPaymentTypes = ['blocked', 'owner', 'hold', 'friend'];
+      const noTm30Types = ['blocked', 'owner', 'hold'];
+      if (!b.paymentStatus) {
+        if (b.source === 'ical' || b.type === 'airbnb') b.paymentStatus = 'paid';
+        else if (noPaymentTypes.includes(b.type)) b.paymentStatus = 'paid';
+        else b.paymentStatus = 'unpaid';
+      }
+      if (!b.tm30Status) {
+        if (noTm30Types.includes(b.type)) b.tm30Status = 'not_required';
+        else b.tm30Status = 'pending';
+      }
+
       const ov = overrides[b.id];
       if (!ov) return b;
       return {
@@ -26,6 +39,8 @@ export const GET: APIRoute = async ({ request }) => {
         amount: ov.amount !== undefined ? ov.amount : b.amount,
         guest: ov.guest !== undefined ? ov.guest : b.guest,
         notes: ov.notes !== undefined ? ov.notes : b.notes,
+        paymentStatus: ov.paymentStatus !== undefined ? ov.paymentStatus : b.paymentStatus,
+        tm30Status: ov.tm30Status !== undefined ? ov.tm30Status : b.tm30Status,
       };
     });
 
@@ -50,7 +65,7 @@ export const GET: APIRoute = async ({ request }) => {
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
-  const { guest, type, room, checkin, checkout, amount, notes } = body;
+  const { guest, type, room, checkin, checkout, amount, notes, paymentStatus, tm30Status } = body;
 
   if (!checkin || !checkout || checkin >= checkout) {
     return jsonError('Invalid check-in / check-out dates');
@@ -65,6 +80,13 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const bookings = readManualBookings();
+
+  // Smart defaults for payment + TM30 status
+  const noPaymentTypes = ['blocked', 'owner', 'hold', 'friend'];
+  const noTm30Types = ['blocked', 'owner', 'hold'];
+  const defaultPayment = paymentStatus || (noPaymentTypes.includes(type) ? 'paid' : 'unpaid');
+  const defaultTm30 = tm30Status || (noTm30Types.includes(type) ? 'not_required' : 'pending');
+
   const newBooking = {
     id: `manual-${Date.now()}`,
     guest: guest || 'Guest',
@@ -74,6 +96,8 @@ export const POST: APIRoute = async ({ request }) => {
     checkout,
     amount: parseFloat(amount) || 0,
     notes: notes || '',
+    paymentStatus: defaultPayment,
+    tm30Status: defaultTm30,
   };
 
   bookings.push(newBooking);

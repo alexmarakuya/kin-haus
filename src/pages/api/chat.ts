@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { getOpenAIClient } from '../../lib/ai/client.ts';
 import { getNextAvailable, getAllAvailability } from '../../lib/availability.ts';
 import { calculatePrice, getCurrentRates, validatePromoCode } from '../../lib/ai/pricing-calculator.ts';
-import { readManualBookings, writeManualBookings, readOverrides } from '../../lib/bookings.ts';
+import { readManualBookings, writeManualBookings, readOverrides, writeOverrides } from '../../lib/bookings.ts';
 import { readInquiries, writeInquiries } from '../../lib/inquiries.ts';
 import { readTasks, createTask } from '../../lib/housekeeping.ts';
 import { fetchAllIcalBookings } from '../../lib/ical.ts';
@@ -237,6 +237,9 @@ Users may attach screenshots (WhatsApp conversations, booking confirmations, etc
 PASSPORT SCANNING:
 When a user uploads a passport photo, extract: Full name, Nationality, Passport number, Date of birth, Gender (M/F). Use save_guest_profile to store. Link to active booking if found. Confirm extracted details.
 
+TM30 & PAYMENT TRACKING:
+Bookings have paymentStatus (unpaid/deposit/paid) and tm30Status (pending/submitted/not_required). When asked about check-in readiness, surface both. After completing TM30 registration, use mark_tm30_submitted to update the status. Use update_booking with payment_status to track payments. Airbnb bookings default to paid. Direct bookings default to unpaid.
+
 GUEST PROFILES:
 Use find_guest to look up existing profiles. Use save_guest_profile to create/update. Profiles persist for TM30 registration, guest management, etc.
 
@@ -424,8 +427,24 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           type: { type: 'string', enum: ['direct', 'friend', 'blocked', 'owner', 'hold', 'waitlist'], description: 'New type' },
           amount: { type: 'number', description: 'New amount in THB' },
           notes: { type: 'string', description: 'New notes' },
+          payment_status: { type: 'string', enum: ['unpaid', 'deposit', 'paid'], description: 'Payment status' },
+          tm30_status: { type: 'string', enum: ['pending', 'submitted', 'not_required'], description: 'TM30 registration status' },
         },
         required: ['id'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'mark_tm30_submitted',
+      description: 'Mark a booking TM30 registration as submitted. Use after completing the TM30 form.',
+      parameters: {
+        type: 'object',
+        properties: {
+          booking_id: { type: 'string', description: 'Booking ID to mark as TM30 submitted' },
+        },
+        required: ['booking_id'],
       },
     },
   },
@@ -870,10 +889,32 @@ async function executeTool(name: string, args: Record<string, any>): Promise<Rec
         if (args.type !== undefined) bookings[idx].type = args.type;
         if (args.amount !== undefined) bookings[idx].amount = parseFloat(args.amount) || 0;
         if (args.notes !== undefined) bookings[idx].notes = args.notes;
+        if (args.payment_status !== undefined) (bookings[idx] as any).paymentStatus = args.payment_status;
+        if (args.tm30_status !== undefined) (bookings[idx] as any).tm30Status = args.tm30_status;
         writeManualBookings(bookings);
         return { success: true, booking: bookings[idx], message: `Booking updated for ${bookings[idx].guest}` };
       } catch (err: any) {
         return { error: 'Could not update booking: ' + err.message };
+      }
+    }
+
+    case 'mark_tm30_submitted': {
+      try {
+        const bookings = readManualBookings();
+        const idx = bookings.findIndex(b => b.id === args.booking_id);
+        if (idx !== -1) {
+          (bookings[idx] as any).tm30Status = 'submitted';
+          writeManualBookings(bookings);
+          return { success: true, message: `TM30 marked as submitted for ${bookings[idx].guest}` };
+        }
+        // Try iCal override
+        const overrides = readOverrides();
+        if (!overrides[args.booking_id]) overrides[args.booking_id] = {};
+        (overrides[args.booking_id] as any).tm30Status = 'submitted';
+        writeOverrides(overrides);
+        return { success: true, message: `TM30 marked as submitted for booking ${args.booking_id}` };
+      } catch (err: any) {
+        return { error: 'Could not mark TM30: ' + err.message };
       }
     }
 
