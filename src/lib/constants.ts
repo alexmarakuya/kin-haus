@@ -34,6 +34,16 @@ export const DEFAULT_PRICING: Record<string, { high: number; low: number }> = {
 export const VALID_INQUIRY_STATUSES = ["new", "responded", "booked", "archived"] as const;
 export type InquiryStatus = (typeof VALID_INQUIRY_STATUSES)[number];
 
+/** Booking types where payment is implicit (no cash changes hands).
+ *  These get paymentStatus = 'paid' as a smart default.
+ *  Keep in sync with the inline JS in dashboard.astro. */
+export const NO_PAYMENT_TYPES = ["blocked", "owner", "hold", "friend"] as const;
+
+/** Booking types exempt from TM30 immigration reporting.
+ *  These get tm30Status = 'not_required' as a smart default.
+ *  Keep in sync with the inline JS in dashboard.astro. */
+export const NO_TM30_TYPES = ["blocked", "owner", "hold"] as const;
+
 export const VALID_EXPENSE_CATEGORIES = [
   "supplies",
   "food",

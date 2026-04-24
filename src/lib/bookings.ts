@@ -1,35 +1,35 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import type { Booking, BookingOverrides } from './types.ts';
+import fs from "node:fs";
+import path from "node:path";
+import { DATA_DIR } from "./paths.ts";
+import type { Booking, BookingOverrides } from "./types.ts";
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
+const BOOKINGS_FILE = path.join(DATA_DIR, "bookings.json");
 
 export function readManualBookings(): Booking[] {
   try {
     if (!fs.existsSync(BOOKINGS_FILE)) return [];
-    const raw = fs.readFileSync(BOOKINGS_FILE, 'utf8');
+    const raw = fs.readFileSync(BOOKINGS_FILE, "utf8");
     return JSON.parse(raw);
   } catch (err: any) {
-    console.error('[bookings] error reading file:', err.message);
+    console.error("[bookings] error reading file:", err.message);
     return [];
   }
 }
 
 export function writeManualBookings(bookings: Booking[]): void {
-  fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf8');
+  fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), "utf8");
 }
 
-const OVERRIDES_FILE = path.join(DATA_DIR, 'overrides.json');
+const OVERRIDES_FILE = path.join(DATA_DIR, "overrides.json");
 
 export function readOverrides(): BookingOverrides {
   try {
     if (!fs.existsSync(OVERRIDES_FILE)) return {};
-    const raw = fs.readFileSync(OVERRIDES_FILE, 'utf8');
+    const raw = fs.readFileSync(OVERRIDES_FILE, "utf8");
     const data = JSON.parse(raw);
     const result: BookingOverrides = {};
     for (const [k, v] of Object.entries(data)) {
-      result[k] = typeof v === 'number' ? { amount: v } : (v as any);
+      result[k] = typeof v === "number" ? { amount: v } : (v as any);
     }
     return result;
   } catch {
@@ -38,7 +38,7 @@ export function readOverrides(): BookingOverrides {
 }
 
 export function writeOverrides(overrides: BookingOverrides): void {
-  fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(overrides, null, 2), 'utf8');
+  fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(overrides, null, 2), "utf8");
 }
 
 // Keep old helpers for backward compat

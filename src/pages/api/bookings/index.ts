@@ -1,35 +1,38 @@
-import type { APIRoute } from 'astro';
-import { fetchAllIcalBookings } from '../../../lib/ical.ts';
-import { readManualBookings, writeManualBookings, readOverrides } from '../../../lib/bookings.ts';
-import { detectConflicts } from '../../../lib/conflicts.ts';
-import { filterByDateRange } from '../../../lib/dates.ts';
-import { getLastSyncTimes } from '../../../lib/cache.ts';
-import { VALID_BOOKING_TYPES, VALID_ROOMS } from '../../../lib/constants.ts';
-import { json, jsonError } from '../../../lib/api-response.ts';
-import { saveGuestProfile, syncGuestStats } from '../../../lib/guests.ts';
+import type { APIRoute } from "astro";
+import { fetchAllIcalBookings } from "../../../lib/ical.ts";
+import { readManualBookings, writeManualBookings, readOverrides } from "../../../lib/bookings.ts";
+import { detectConflicts } from "../../../lib/conflicts.ts";
+import { filterByDateRange } from "../../../lib/dates.ts";
+import { getLastSyncTimes } from "../../../lib/cache.ts";
+import {
+  VALID_BOOKING_TYPES,
+  VALID_ROOMS,
+  NO_PAYMENT_TYPES,
+  NO_TM30_TYPES,
+} from "../../../lib/constants.ts";
+import { json, jsonError } from "../../../lib/api-response.ts";
+import { saveGuestProfile, syncGuestStats } from "../../../lib/guests.ts";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
-  const from = url.searchParams.get('from');
-  const to = url.searchParams.get('to');
-  const forceRefresh = url.searchParams.get('refresh') === 'true';
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+  const forceRefresh = url.searchParams.get("refresh") === "true";
 
   try {
     const icalBookings = await fetchAllIcalBookings(forceRefresh);
-    const manualBookings = readManualBookings().map((b) => ({ ...b, source: 'manual' as const }));
+    const manualBookings = readManualBookings().map((b) => ({ ...b, source: "manual" as const }));
     const overrides = readOverrides();
     const allBookings = [...icalBookings, ...manualBookings].map((b) => {
       // Apply smart defaults for payment + TM30 status
-      const noPaymentTypes = ['blocked', 'owner', 'hold', 'friend'];
-      const noTm30Types = ['blocked', 'owner', 'hold'];
       if (!b.paymentStatus) {
-        if (b.source === 'ical' || b.type === 'airbnb') b.paymentStatus = 'paid';
-        else if (noPaymentTypes.includes(b.type)) b.paymentStatus = 'paid';
-        else b.paymentStatus = 'unpaid';
+        if (b.source === "ical" || b.type === "airbnb") b.paymentStatus = "paid";
+        else if ((NO_PAYMENT_TYPES as readonly string[]).includes(b.type)) b.paymentStatus = "paid";
+        else b.paymentStatus = "unpaid";
       }
       if (!b.tm30Status) {
-        if (noTm30Types.includes(b.type)) b.tm30Status = 'not_required';
-        else b.tm30Status = 'pending';
+        if ((NO_TM30_TYPES as readonly string[]).includes(b.type)) b.tm30Status = "not_required";
+        else b.tm30Status = "pending";
       }
 
       const ov = overrides[b.id];
@@ -58,8 +61,8 @@ export const GET: APIRoute = async ({ request }) => {
       },
     });
   } catch (err: any) {
-    console.error('[api] /api/bookings error:', err);
-    return jsonError('Failed to fetch bookings', 500, err.message);
+    console.error("[api] /api/bookings error:", err);
+    return jsonError("Failed to fetch bookings", 500, err.message);
   }
 };
 
@@ -68,34 +71,35 @@ export const POST: APIRoute = async ({ request }) => {
   const { guest, type, room, checkin, checkout, amount, notes, paymentStatus, tm30Status } = body;
 
   if (!checkin || !checkout || checkin >= checkout) {
-    return jsonError('Invalid check-in / check-out dates');
+    return jsonError("Invalid check-in / check-out dates");
   }
 
   if (!VALID_BOOKING_TYPES.includes(type)) {
-    return jsonError(`type must be one of: ${VALID_BOOKING_TYPES.join(', ')}`);
+    return jsonError(`type must be one of: ${VALID_BOOKING_TYPES.join(", ")}`);
   }
 
   if (!VALID_ROOMS.includes(room)) {
-    return jsonError(`room must be one of: ${VALID_ROOMS.join(', ')}`);
+    return jsonError(`room must be one of: ${VALID_ROOMS.join(", ")}`);
   }
 
   const bookings = readManualBookings();
 
   // Smart defaults for payment + TM30 status
-  const noPaymentTypes = ['blocked', 'owner', 'hold', 'friend'];
-  const noTm30Types = ['blocked', 'owner', 'hold'];
-  const defaultPayment = paymentStatus || (noPaymentTypes.includes(type) ? 'paid' : 'unpaid');
-  const defaultTm30 = tm30Status || (noTm30Types.includes(type) ? 'not_required' : 'pending');
+  const defaultPayment =
+    paymentStatus || ((NO_PAYMENT_TYPES as readonly string[]).includes(type) ? "paid" : "unpaid");
+  const defaultTm30 =
+    tm30Status ||
+    ((NO_TM30_TYPES as readonly string[]).includes(type) ? "not_required" : "pending");
 
   const newBooking = {
     id: `manual-${Date.now()}`,
-    guest: guest || 'Guest',
+    guest: guest || "Guest",
     type,
     room,
     checkin,
     checkout,
     amount: parseFloat(amount) || 0,
-    notes: notes || '',
+    notes: notes || "",
     paymentStatus: defaultPayment,
     tm30Status: defaultTm30,
   };
@@ -104,14 +108,14 @@ export const POST: APIRoute = async ({ request }) => {
   writeManualBookings(bookings);
 
   // Auto-create or link guest profile (skip generic names and blocks)
-  const skipNames = ['guest', 'blocked', 'owner', 'hold'];
+  const skipNames = ["guest", "blocked", "owner", "hold"];
   if (newBooking.guest && !skipNames.includes(newBooking.guest.toLowerCase())) {
     try {
       const guestProfile = saveGuestProfile({
         fullName: newBooking.guest,
         bookingIds: [newBooking.id],
         preferredRoom: newBooking.room,
-        source: newBooking.type === 'direct' ? 'direct' : newBooking.type,
+        source: newBooking.type === "direct" ? "direct" : newBooking.type,
         totalStays: 1,
         totalRevenue: newBooking.amount || 0,
         firstStay: newBooking.checkin,
@@ -120,12 +124,16 @@ export const POST: APIRoute = async ({ request }) => {
       // Re-sync stats from all linked bookings
       const allBookings = readManualBookings();
       syncGuestStats(guestProfile.id, allBookings);
-      console.log(`[guests] auto-linked booking ${newBooking.id} to guest profile ${guestProfile.id} (${guestProfile.fullName})`);
+      console.log(
+        `[guests] auto-linked booking ${newBooking.id} to guest profile ${guestProfile.id} (${guestProfile.fullName})`,
+      );
     } catch (err: any) {
-      console.error('[guests] auto-create error:', err.message);
+      console.error("[guests] auto-create error:", err.message);
     }
   }
 
-  console.log(`[bookings] added: ${newBooking.id} — ${newBooking.guest} (${room}, ${checkin}–${checkout})`);
+  console.log(
+    `[bookings] added: ${newBooking.id} — ${newBooking.guest} (${room}, ${checkin}–${checkout})`,
+  );
   return json(newBooking, 201);
 };

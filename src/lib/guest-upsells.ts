@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { DATA_DIR } from "./paths.ts";
 import type { GuestUpsell } from "./types.ts";
 
-const DATA_DIR = path.join(process.cwd(), "data");
 const UPSELLS_FILE = path.join(DATA_DIR, "guest-upsells.json");
 
 export function readUpsells(): GuestUpsell[] {

@@ -1,9 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import type { Monitor, MonitorRental } from './types.ts';
+import fs from "node:fs";
+import path from "node:path";
+import { DATA_DIR } from "./paths.ts";
+import type { Monitor, MonitorRental } from "./types.ts";
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DATA_FILE = path.join(DATA_DIR, 'monitor-rentals.json');
+const DATA_FILE = path.join(DATA_DIR, "monitor-rentals.json");
 
 interface MonitorRentalData {
   monitors: Monitor[];
@@ -13,24 +13,24 @@ interface MonitorRentalData {
 function readData(): MonitorRentalData {
   try {
     if (!fs.existsSync(DATA_FILE)) return { monitors: [], rentals: [] };
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
+    const raw = fs.readFileSync(DATA_FILE, "utf8");
     const data = JSON.parse(raw) as MonitorRentalData;
     // Backward compat: map legacy 'active' status to 'delivered'
     for (const r of data.rentals) {
-      if ((r.status as string) === 'active') {
-        r.status = 'delivered';
+      if ((r.status as string) === "active") {
+        r.status = "delivered";
         if (!r.deliveryDate) r.deliveryDate = r.startDate;
       }
     }
     return data;
   } catch (err: any) {
-    console.error('[monitor-rentals] error reading file:', err.message);
+    console.error("[monitor-rentals] error reading file:", err.message);
     return { monitors: [], rentals: [] };
   }
 }
 
 function writeData(data: MonitorRentalData): void {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
 }
 
 export function readMonitors(): Monitor[] {
@@ -54,23 +54,23 @@ export function writeRentals(rentals: MonitorRental[]): void {
 }
 
 export function getBookedRentals(): MonitorRental[] {
-  return readRentals().filter(r => r.status === 'booked');
+  return readRentals().filter((r) => r.status === "booked");
 }
 
 export function getDeliveredRentals(): MonitorRental[] {
-  return readRentals().filter(r => r.status === 'delivered');
+  return readRentals().filter((r) => r.status === "delivered");
 }
 
 export function getActiveRentals(): MonitorRental[] {
-  return readRentals().filter(r => r.status === 'booked' || r.status === 'delivered');
+  return readRentals().filter((r) => r.status === "booked" || r.status === "delivered");
 }
 
 export function getCompletedRentals(): MonitorRental[] {
-  return readRentals().filter(r => r.status === 'completed');
+  return readRentals().filter((r) => r.status === "completed");
 }
 
 export function getFinishedRentals(): MonitorRental[] {
-  return readRentals().filter(r => r.status === 'completed' || r.status === 'cancelled');
+  return readRentals().filter((r) => r.status === "completed" || r.status === "cancelled");
 }
 
 /** Calculate days between two YYYY-MM-DD dates */
@@ -90,19 +90,17 @@ function billingStart(rental: MonitorRental): string {
 }
 
 export function calculateRevenue(rental: MonitorRental): number {
-  if (rental.status === 'booked' || rental.status === 'cancelled') return 0;
-  const endDate = rental.status === 'completed' && rental.completedAt
-    ? rental.completedAt.slice(0, 10)
-    : today();
+  if (rental.status === "booked" || rental.status === "cancelled") return 0;
+  const endDate =
+    rental.status === "completed" && rental.completedAt ? rental.completedAt.slice(0, 10) : today();
   const days = daysBetween(billingStart(rental), endDate);
   return rental.dailyRate * days;
 }
 
 export function getDaysRented(rental: MonitorRental): number {
-  if (rental.status === 'booked') return 0;
-  const endDate = rental.status === 'completed' && rental.completedAt
-    ? rental.completedAt.slice(0, 10)
-    : today();
+  if (rental.status === "booked") return 0;
+  const endDate =
+    rental.status === "completed" && rental.completedAt ? rental.completedAt.slice(0, 10) : today();
   return daysBetween(billingStart(rental), endDate);
 }
 
@@ -113,7 +111,7 @@ export function getDaysRemaining(rental: MonitorRental): number | null {
 }
 
 export function isOverdue(rental: MonitorRental): boolean {
-  if (rental.status !== 'delivered' || !rental.endDate) return false;
+  if (rental.status !== "delivered" || !rental.endDate) return false;
   return today() > rental.endDate;
 }
 
@@ -128,19 +126,17 @@ export function getMonthlyRevenueSummary(): {
   const monitors = readMonitors();
   const rentals = readRentals();
   const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   const monthEnd = today();
 
   // Revenue from completed rentals this month
-  const completedThisMonth = rentals.filter(r =>
-    r.status === 'completed' &&
-    r.completedAt &&
-    r.completedAt.slice(0, 10) >= monthStart
+  const completedThisMonth = rentals.filter(
+    (r) => r.status === "completed" && r.completedAt && r.completedAt.slice(0, 10) >= monthStart,
   );
   let totalRevenue = completedThisMonth.reduce((sum, r) => sum + r.revenue, 0);
 
   // Add accrued revenue from delivered rentals
-  const delivered = rentals.filter(r => r.status === 'delivered');
+  const delivered = rentals.filter((r) => r.status === "delivered");
   for (const r of delivered) {
     const start = billingStart(r);
     const accrualStart = start >= monthStart ? start : monthStart;
@@ -154,27 +150,26 @@ export function getMonthlyRevenueSummary(): {
   let totalRentedDays = 0;
 
   for (const r of rentals) {
-    if (r.status === 'completed' && r.completedAt) {
+    if (r.status === "completed" && r.completedAt) {
       const start = billingStart(r);
       const rStart = start >= monthStart ? start : monthStart;
       const end = r.completedAt.slice(0, 10) <= monthEnd ? r.completedAt.slice(0, 10) : monthEnd;
       if (rStart <= end) totalRentedDays += daysBetween(rStart, end);
-    } else if (r.status === 'delivered') {
+    } else if (r.status === "delivered") {
       const start = billingStart(r);
       const rStart = start >= monthStart ? start : monthStart;
       if (rStart <= monthEnd) totalRentedDays += daysBetween(rStart, monthEnd);
     }
   }
 
-  const utilisationPercent = totalPossibleDays > 0
-    ? Math.round((totalRentedDays / totalPossibleDays) * 1000) / 10
-    : 0;
+  const utilisationPercent =
+    totalPossibleDays > 0 ? Math.round((totalRentedDays / totalPossibleDays) * 1000) / 10 : 0;
 
   return {
     totalRevenueThisMonth: totalRevenue,
     activeRentals: delivered.length,
-    bookedRentals: rentals.filter(r => r.status === 'booked').length,
-    availableMonitors: monitors.filter(m => m.status === 'available').length,
+    bookedRentals: rentals.filter((r) => r.status === "booked").length,
+    availableMonitors: monitors.filter((m) => m.status === "available").length,
     totalMonitors: monitors.length,
     utilisationPercent,
   };

@@ -1,5 +1,5 @@
-import type { Booking } from './types.ts';
-import { CACHE_TTL_MS } from './config.ts';
+import type { Booking } from "./types.ts";
+import { CACHE_TTL_MS, ROOMS } from "./config.ts";
 
 const cache: {
   data: Record<string, Booking[]>;
@@ -26,28 +26,29 @@ export function setCachedBookings(room: string, bookings: Booking[]): void {
 export function clearCache(): void {
   cache.data = {};
   cache.fetchedAt = {};
-  console.log('[cache] cleared');
+  console.log("[cache] cleared");
 }
 
-export function getCacheStatus(): Record<string, { age: string; events: number } | 'empty'> {
-  const status: Record<string, { age: string; events: number } | 'empty'> = {};
-  for (const room of ['nest', 'master', 'nomad']) {
+export function getCacheStatus(): Record<string, { age: string; events: number } | "empty"> {
+  const status: Record<string, { age: string; events: number } | "empty"> = {};
+  for (const room of ROOMS) {
     if (cache.fetchedAt[room]) {
       status[room] = {
-        age: Math.round((Date.now() - cache.fetchedAt[room]) / 1000) + 's',
+        age: Math.round((Date.now() - cache.fetchedAt[room]) / 1000) + "s",
         events: cache.data[room]?.length || 0,
       };
     } else {
-      status[room] = 'empty';
+      status[room] = "empty";
     }
   }
   return status;
 }
 
 export function getLastSyncTimes(): Record<string, string | null> {
-  return {
-    nest: cache.fetchedAt.nest ? new Date(cache.fetchedAt.nest).toISOString() : null,
-    master: cache.fetchedAt.master ? new Date(cache.fetchedAt.master).toISOString() : null,
-    nomad: cache.fetchedAt.nomad ? new Date(cache.fetchedAt.nomad).toISOString() : null,
-  };
+  return Object.fromEntries(
+    ROOMS.map((room) => [
+      room,
+      cache.fetchedAt[room] ? new Date(cache.fetchedAt[room]).toISOString() : null,
+    ]),
+  );
 }

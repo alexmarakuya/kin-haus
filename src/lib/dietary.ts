@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { DATA_DIR } from "./paths.ts";
 import type { DietaryRequirements } from "./types.ts";
 
-const DATA_DIR = path.join(process.cwd(), "data");
 const DIETARY_FILE = path.join(DATA_DIR, "dietary.json");
 
 export function readDietary(): DietaryRequirements[] {

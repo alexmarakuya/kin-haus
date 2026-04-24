@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { DATA_DIR } from "./paths.ts";
 import crypto from "node:crypto";
 import type { Expense } from "./types.ts";
 import { VALID_EXPENSE_CATEGORIES, VALID_ACCOUNTING_SCOPES } from "./constants.ts";
 
-const DATA_DIR = path.join(process.cwd(), "data");
 const EXPENSES_FILE = path.join(DATA_DIR, "expenses.json");
 const RECEIPTS_DIR = path.join(DATA_DIR, "receipts");
 
