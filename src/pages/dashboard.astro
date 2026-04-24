@@ -743,6 +743,27 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
+  <!-- Draft Reply Modal -->
+  <div class="overlay" id="draft-reply-modal">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header">
+        <div class="modal-title">Draft WhatsApp Reply</div>
+        <button class="modal-close" onclick="closeDraftReplyModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="draft-reply-loading" style="text-align:center; padding:24px 0; color:#888;">
+          <span style="font-size:14px;">Generating draft...</span>
+        </div>
+        <div id="draft-reply-error" style="display:none; color:#c0392b; font-size:13px; padding:8px 0;"></div>
+        <textarea id="draft-reply-text" rows="9" style="display:none; width:100%; box-sizing:border-box; font-size:13px; line-height:1.6; border:1px solid #ddd; border-radius:6px; padding:10px; resize:vertical; font-family:inherit;"></textarea>
+        <div id="draft-reply-actions" style="display:none; margin-top:12px; gap:8px; justify-content:flex-end;">
+          <button class="btn" id="draft-copy-btn" onclick="copyDraftReply()">Copy to Clipboard</button>
+          <button class="btn btn-primary" onclick="closeDraftReplyModal()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script is:inline>
   // ─── CONSTANTS ────────────────────────────────────────────────────────────
   // NOTE: These client-side constants mirror the canonical values in
@@ -2426,6 +2447,9 @@ import '../styles/dashboard.css';
     if (inq.whatsapp && !presentMode) {
       actions += `<a class="inq-action-btn inq-action-wa" href="${waLink(inq.whatsapp)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:3px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.37 0-4.567-.82-6.293-2.188l-.44-.358-3.281 1.1 1.1-3.281-.358-.44A9.95 9.95 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>Reply</a>`;
     }
+    if (inq.checkin && inq.checkout && !presentMode) {
+      actions += `<button class="inq-action-btn inq-action-draft" onclick="event.stopPropagation();draftReply('${inq.id}')">Draft Reply</button>`;
+    }
     if (inq.status === 'new') {
       actions += `<button class="inq-action-btn" onclick="event.stopPropagation();updateInquiryStatus('${inq.id}','responded')">Mark Responded</button>`;
       actions += `<button class="inq-action-btn inq-action-convert" onclick="event.stopPropagation();convertToBooking('${inq.id}')">Convert to Booking</button>`;
@@ -2504,6 +2528,67 @@ import '../styles/dashboard.css';
     updateEstimate();
     // Archive the inquiry
     updateInquiryStatus(id, 'booked');
+  }
+
+  // ─── DRAFT REPLY ─────────────────────────────────────────────────────────────
+  async function draftReply(id) {
+    const modal = document.getElementById('draft-reply-modal');
+    const loading = document.getElementById('draft-reply-loading');
+    const errorEl = document.getElementById('draft-reply-error');
+    const textarea = document.getElementById('draft-reply-text');
+    const actions = document.getElementById('draft-reply-actions');
+    const copyBtn = document.getElementById('draft-copy-btn');
+
+    // Reset state
+    loading.style.display = '';
+    loading.innerHTML = '<span style="font-size:14px;">Generating draft...</span>';
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+    textarea.style.display = 'none';
+    textarea.value = '';
+    actions.style.display = 'none';
+    if (copyBtn) copyBtn.textContent = 'Copy to Clipboard';
+
+    modal.classList.add('open');
+
+    try {
+      const res = await fetch(`/api/inquiries/${encodeURIComponent(id)}/draft-reply`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.draft) {
+        loading.style.display = 'none';
+        textarea.value = data.draft;
+        textarea.style.display = '';
+        actions.style.display = 'flex';
+      } else {
+        loading.style.display = 'none';
+        errorEl.textContent = data.error || 'Failed to generate draft. Check that OPENAI_API_KEY is configured.';
+        errorEl.style.display = '';
+      }
+    } catch (err) {
+      loading.style.display = 'none';
+      errorEl.textContent = 'Network error. Could not reach the server.';
+      errorEl.style.display = '';
+    }
+  }
+
+  function copyDraftReply() {
+    const textarea = document.getElementById('draft-reply-text');
+    const btn = document.getElementById('draft-copy-btn');
+    if (!textarea || !btn) return;
+    navigator.clipboard.writeText(textarea.value).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+    }).catch(() => {
+      // Fallback: select the text
+      textarea.select();
+      document.execCommand('copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+    });
+  }
+
+  function closeDraftReplyModal() {
+    document.getElementById('draft-reply-modal').classList.remove('open');
   }
 
   // ─── WAITLIST PROMOTE ────────────────────────────────────────────────────────

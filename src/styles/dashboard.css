@@ -1386,6 +1386,15 @@ body.present-mode .present-banner {
   margin-left: 8px;
   font-weight: 400;
 }
+.inq-action-draft {
+  background: #f0edff;
+  color: #5a4fcf;
+  border-color: #c8c0f7;
+}
+.inq-action-draft:hover {
+  background: #e4dfff;
+  border-color: #9f96e8;
+}
 .inq-action-delete {
   color: #b5b3ad;
   border-color: transparent;
