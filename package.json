@@ -7,7 +7,15 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "start": "node dist/server/entry.mjs"
+    "start": "node dist/server/entry.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,js,astro,css,json,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@astrojs/node": "^9.5.4",
@@ -16,7 +24,17 @@
     "node-ical": "^0.19.0",
     "openai": "^6.27.0"
   },
+  "packageManager": "pnpm@10.30.2",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
+    "vitest": "^4.1.2"
   }
 }
