@@ -1,0 +1,217 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Dietary Requirements -- Kin Haus Admin">
+  <style>
+    .admin-page { max-width: 1200px; margin: 0 auto; padding: 32px; }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .admin-header-left { display: flex; align-items: baseline; gap: 14px; }
+    .admin-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; letter-spacing: -0.5px; }
+    .admin-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8b8b85; text-transform: uppercase; letter-spacing: 0.1em; }
+    .admin-actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.15s; border: 1px solid #d9d7d3; background: transparent; color: var(--ink); text-decoration: none; }
+    .btn:hover { background: var(--warm); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .count-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #8b8b85;
+      background: var(--warm);
+      padding: 4px 10px;
+      border-radius: 10px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #8b8b85;
+    }
+    .empty-state p { font-size: 14px; margin-top: 8px; }
+
+    .dietary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .dietary-table thead { position: sticky; top: 0; z-index: 1; }
+    .dietary-table th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b8b85;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 2px solid #e4e2de;
+      background: var(--paper);
+      white-space: nowrap;
+    }
+    .dietary-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f0eeeb;
+      vertical-align: top;
+    }
+    .dietary-table tr:hover td { background: #fafaf6; }
+
+    .guest-name { font-weight: 500; }
+    .guest-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 11px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+    .guest-link:hover { text-decoration: underline; }
+
+    .arrival-date { font-family: 'JetBrains Mono', monospace; font-size: 12px; white-space: nowrap; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin: 1px 2px;
+      white-space: nowrap;
+    }
+    .tag-style { background: #d4ede3; color: #1a5c3a; }
+    .tag-allergy { background: #fde8e8; color: #8a1010; }
+    .tag-intolerance { background: #fff3cd; color: #664d03; }
+    .tag-cuisine { background: #dde3f5; color: #3b4f8a; }
+
+    .spice-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .spice-none { background: #f0eeeb; color: #8b8b85; }
+    .spice-mild { background: #d4ede3; color: #1a5c3a; }
+    .spice-medium { background: #fff3cd; color: #664d03; }
+    .spice-hot { background: #fdebd8; color: #7a4010; }
+    .spice-extra { background: #fde8e8; color: #8a1010; }
+
+    .notes-cell { font-size: 12px; color: #64645f; max-width: 200px; }
+
+    @media print {
+      .admin-actions, .guest-link, .btn { display: none !important; }
+      .admin-page { padding: 16px; max-width: none; }
+      .dietary-table th { background: white; }
+      .dietary-table td, .dietary-table th { padding: 6px 8px; font-size: 11px; }
+      .tag { font-size: 9px; padding: 1px 5px; }
+      .admin-title { font-size: 20px; }
+    }
+
+    @media (max-width: 900px) {
+      .admin-page { padding: 20px 16px; }
+      .dietary-table { display: block; overflow-x: auto; }
+    }
+  </style>
+
+  <div class="admin-page">
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <h1 class="admin-title">Dietary Requirements</h1>
+        <span class="count-badge" id="count-badge">Loading...</span>
+      </div>
+      <div class="admin-actions">
+        <a href="/dashboard" class="btn btn-sm">&larr; Dashboard</a>
+        <button class="btn btn-sm" id="btn-print" onclick="window.print()">&#x1F5A8; Print</button>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="empty-state" id="loading-state">
+        <p>Loading dietary requirements...</p>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function() {
+      var contentEl = document.getElementById('content');
+      var badgeEl = document.getElementById('count-badge');
+
+      var SPICE_CLASSES = {
+        'None': 'spice-none',
+        'Mild': 'spice-mild',
+        'Medium': 'spice-medium',
+        'Hot': 'spice-hot',
+        'Extra hot': 'spice-extra'
+      };
+
+      function escHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function renderTags(items, cls) {
+        if (!items || !items.length) return '<span style="color:#b0ada8">--</span>';
+        return items.map(function(t) { return '<span class="tag ' + cls + '">' + escHtml(t) + '</span>'; }).join(' ');
+      }
+
+      function formatDate(dateStr) {
+        try {
+          var d = new Date(dateStr + 'T12:00:00');
+          return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch(_) { return dateStr; }
+      }
+
+      function render(entries) {
+        badgeEl.textContent = entries.length + ' submission' + (entries.length !== 1 ? 's' : '');
+
+        if (!entries.length) {
+          contentEl.innerHTML = '<div class="empty-state"><p>No dietary requirements submitted yet.</p></div>';
+          return;
+        }
+
+        var html = '<table class="dietary-table"><thead><tr>'
+          + '<th>Guest</th><th>Arrival</th><th>Dietary Style</th><th>Allergies</th>'
+          + '<th>Intolerances</th><th>Spice</th><th>Cuisines</th><th>Notes</th>'
+          + '</tr></thead><tbody>';
+
+        entries.forEach(function(e) {
+          var spiceCls = SPICE_CLASSES[e.spiceTolerance] || 'spice-medium';
+          html += '<tr>'
+            + '<td><div class="guest-name">' + escHtml(e.guestName) + '</div>'
+            + (e.guestId ? '<a class="guest-link" href="/dashboard#guest-' + e.guestId + '">View profile</a>' : '')
+            + '</td>'
+            + '<td class="arrival-date">' + formatDate(e.arrivalDate) + '</td>'
+            + '<td>' + renderTags(e.dietaryStyles, 'tag-style') + '</td>'
+            + '<td>' + renderTags(e.allergies, 'tag-allergy') + '</td>'
+            + '<td>' + renderTags(e.intolerances, 'tag-intolerance') + '</td>'
+            + '<td><span class="spice-badge ' + spiceCls + '">' + escHtml(e.spiceTolerance || 'Medium') + '</span></td>'
+            + '<td>' + renderTags(e.favouriteCuisines, 'tag-cuisine') + '</td>'
+            + '<td class="notes-cell">' + (e.notes ? escHtml(e.notes) : '<span style="color:#b0ada8">--</span>') + '</td>'
+            + '</tr>';
+        });
+
+        html += '</tbody></table>';
+        contentEl.innerHTML = html;
+      }
+
+      fetch('/api/dietary', { credentials: 'same-origin' })
+        .then(function(res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function(data) { render(data.dietary || []); })
+        .catch(function(err) {
+          contentEl.innerHTML = '<div class="empty-state"><p style="color:#e05a5a">Failed to load: ' + escHtml(err.message) + '</p></div>';
+          badgeEl.textContent = 'Error';
+        });
+    })();
+  </script>
+</BaseLayout>
