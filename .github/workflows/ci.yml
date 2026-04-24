@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Opt into Node.js 24 for action runners ahead of the forced migration
+    # on 2026-06-02 (Node.js 20 actions will be removed 2026-09-16).
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v4
