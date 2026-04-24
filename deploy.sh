@@ -48,8 +48,19 @@ ssh $VPS "cd $APP_DIR && npm install 2>&1 | tail -1"
 echo "==> Building..."
 ssh $VPS "cd $APP_DIR && npm run build 2>&1 | tail -1"
 
-echo "==> Restarting server on port $PORT..."
-ssh $VPS "fuser -k ${PORT}/tcp 2>/dev/null || true; sleep 2; cd $APP_DIR && HOST=0.0.0.0 PORT=$PORT nohup node dist/server/entry.mjs > $LOG 2>&1 &" || true
+echo "==> Restarting server via PM2..."
+ssh $VPS "
+  cd $APP_DIR
+  APP_NAME=$( [ '$ENV' = 'staging' ] && echo 'kin-haus-staging' || echo 'kin-haus' )
+  if pm2 describe \$APP_NAME > /dev/null 2>&1; then
+    pm2 reload ecosystem.config.cjs --only \$APP_NAME --update-env
+    echo '  PM2 reload complete'
+  else
+    pm2 start ecosystem.config.cjs --only \$APP_NAME
+    pm2 save
+    echo '  PM2 start complete (first run)'
+  fi
+"
 
 sleep 3
 
@@ -58,5 +69,5 @@ STATUS=$(ssh $VPS "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT
 if [ "$STATUS" = "200" ]; then
   echo "$LABEL deploy complete! Server responding with 200 on port $PORT."
 else
-  echo "WARNING: $LABEL server returned $STATUS"
+  echo "WARNING: $LABEL server returned $STATUS (check: pm2 logs kin-haus)"
 fi
