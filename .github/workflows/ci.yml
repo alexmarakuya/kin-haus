@@ -13,17 +13,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version is read from "packageManager" in package.json — no duplicate here.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - run: pnpm build
+      - name: Build
+        run: pnpm build
+        env:
+          # Provide dummy values so Astro/vite doesn't hard-fail on missing
+          # env vars during the CI build. No secrets needed for a build check.
+          DASHBOARD_PASSWORD: ci-placeholder
+          ICAL_URL_NEST: https://example.com/nest.ics
+          ICAL_URL_MASTER: https://example.com/master.ics
+          ICAL_URL_NOMAD: https://example.com/nomad.ics
 
-      - run: pnpm test
+      - name: Test
+        run: pnpm test
