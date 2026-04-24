@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DATA_DIR } from "./paths.ts";
+import { fetchAllIcalBookings } from "./ical.ts";
 import type { Booking, BookingOverrides } from "./types.ts";
 
 const BOOKINGS_FILE = path.join(DATA_DIR, "bookings.json");
@@ -39,6 +40,28 @@ export function readOverrides(): BookingOverrides {
 
 export function writeOverrides(overrides: BookingOverrides): void {
   fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(overrides, null, 2), "utf8");
+}
+
+/**
+ * Merge live Airbnb iCal bookings with manual bookings, applying overrides.
+ * Single source of truth used by the dashboard chat, bookings API, and stats.
+ */
+export async function getMergedBookings(): Promise<Booking[]> {
+  const [ical, manual] = await Promise.all([
+    fetchAllIcalBookings(),
+    Promise.resolve(readManualBookings()),
+  ]);
+  const overrides = readOverrides();
+  return [...ical, ...manual].map((b) => {
+    const ov = overrides[b.id];
+    if (!ov) return b;
+    return {
+      ...b,
+      amount: ov.amount !== undefined ? ov.amount : b.amount,
+      guest: ov.guest !== undefined ? ov.guest : b.guest,
+      notes: ov.notes !== undefined ? ov.notes : b.notes,
+    };
+  });
 }
 
 // Keep old helpers for backward compat

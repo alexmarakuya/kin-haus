@@ -442,6 +442,107 @@ const currentPath = Astro.url.pathname;
 
   <!-- Booking Inquiry Modal -->
   <style is:global>
+    /* Pricing Calculator Widget */
+    .room-price-calc {
+      background: var(--paper);
+      border: 1px solid #e4e2de;
+      border-radius: 12px;
+      padding: 20px 20px 16px;
+      margin-bottom: 20px;
+    }
+    .rpc-title {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #8b8b85;
+      margin-bottom: 12px;
+    }
+    .rpc-dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .rpc-date-label {
+      display: block;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #8b8b85;
+      margin-bottom: 4px;
+    }
+    .rpc-date-input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #e4e2de;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+      color: var(--ink);
+    }
+    .rpc-date-input:focus, .rpc-date-input:hover { border-color: var(--accent); }
+    .rpc-nights {
+      font-size: 12px;
+      color: #8b8b85;
+      text-align: center;
+      margin-bottom: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 18px;
+    }
+    .rpc-breakdown {
+      background: white;
+      border: 1px solid #e4e2de;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      display: none;
+    }
+    .rpc-breakdown.visible { display: block; }
+    .rpc-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      color: #52524e;
+    }
+    .rpc-discount-row { color: var(--accent); }
+    .rpc-divider { height: 1px; background: #eeecea; margin: 6px 0; }
+    .rpc-total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .rpc-cta {
+      display: block;
+      width: 100%;
+      padding: 11px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.15s;
+    }
+    .rpc-cta:hover { background: #245a3b; }
+    .rpc-cta:disabled { background: #c5c3be; cursor: not-allowed; }
+    @media (max-width: 480px) {
+      .rpc-dates { grid-template-columns: 1fr; }
+    }
+
     /* CTA Button */
     .avail-cta {
       display: block; width: 100%; padding: 16px 24px;
@@ -1232,12 +1333,19 @@ const currentPath = Astro.url.pathname;
 
     // CTA button click handler
     document.addEventListener('click', function(e) {
-      var btn = e.target.closest('.avail-cta');
+      var btn = e.target.closest('.avail-cta, .sticky-cta-btn');
       if (btn && btn.dataset.room) {
         e.preventDefault();
         openModal(btn.dataset.room);
       }
     });
+
+    // Hook for the pricing calculator to pre-fill dates after modal opens
+    window._bmSetDates = function(ci, co) {
+      if (fpInstance && ci && co) {
+        fpInstance.setDate([ci, co], true);
+      }
+    };
 
     modal.querySelector('.bm-close').addEventListener('click', closeModal);
     modal.addEventListener('click', function(e) {
@@ -1659,6 +1767,127 @@ const currentPath = Astro.url.pathname;
         messages.appendChild(welcome);
       }
     });
+  })();
+  </script>
+
+  <!-- Pricing Calculator Widget (activates on room pages with data-room-slug) -->
+  <script is:inline>
+  (function() {
+    var roomPage = document.querySelector('.room-page[data-room-slug]');
+    var calcEl = document.querySelector('.room-price-calc');
+    if (!roomPage || !calcEl || typeof flatpickr === 'undefined') return;
+
+    var roomSlug = roomPage.dataset.roomSlug;
+    var highRate = parseInt(roomPage.dataset.thbHigh) || 0;
+    var lowRate = parseInt(roomPage.dataset.thbLow) || 0;
+    if (!highRate || !lowRate) return;
+
+    var checkinInput = document.getElementById('rpcCheckin');
+    var checkoutInput = document.getElementById('rpcCheckout');
+    var nightsEl = document.getElementById('rpcNights');
+    var breakdownEl = document.getElementById('rpcBreakdown');
+    var ctaBtn = document.getElementById('rpcCta');
+    if (!checkinInput || !checkoutInput) return;
+
+    var EUR_RATE = 37;
+    var USD_RATE = 34;
+    function fmtAmt(thb) {
+      var cur = localStorage.getItem('kin-currency') || 'thb';
+      if (cur === 'eur') return '\u20AC' + Math.round(thb / EUR_RATE).toLocaleString();
+      if (cur === 'usd') return '$' + Math.round(thb / USD_RATE).toLocaleString();
+      return '\u0E3F' + thb.toLocaleString();
+    }
+    function isLow(dateStr) {
+      var m = new Date(dateStr + 'T12:00:00').getMonth();
+      return m >= 3 && m <= 9;
+    }
+
+    // Fetch booked dates to disable them
+    var bookedDates = [];
+    fetch('/api/availability/' + roomSlug)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        bookedDates = d.bookedDates || [];
+        initPicker();
+      })
+      .catch(function() { initPicker(); });
+
+    var fp;
+    function initPicker() {
+      var sharedConfig = {
+        disableMobile: true,
+        disable: bookedDates,
+        minDate: 'today',
+        maxDate: new Date(Date.now() + 365 * 86400000),
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'D j M',
+      };
+      var ciPicker = flatpickr(checkinInput, Object.assign({}, sharedConfig, {
+        onClose: function(dates) {
+          if (dates.length) {
+            coPicker.set('minDate', dates[0]);
+            coPicker.open();
+          }
+          updateCalc();
+        }
+      }));
+      var coPicker = flatpickr(checkoutInput, Object.assign({}, sharedConfig, {
+        onClose: function() { updateCalc(); }
+      }));
+      fp = { ci: ciPicker, co: coPicker };
+    }
+
+    function updateCalc() {
+      var ci = checkinInput.value;
+      var co = checkoutInput.value;
+      if (!ci || !co) {
+        if (nightsEl) nightsEl.textContent = '';
+        if (breakdownEl) breakdownEl.classList.remove('visible');
+        if (ctaBtn) ctaBtn.disabled = true;
+        return;
+      }
+      var nights = Math.round((new Date(co + 'T12:00:00') - new Date(ci + 'T12:00:00')) / 86400000);
+      if (nights <= 0) return;
+
+      // Calculate per-night cost walking each day (approximate: use checkin season)
+      var rate = isLow(ci) ? lowRate : highRate;
+      var subtotal = rate * nights;
+      var pct = nights >= 28 ? 40 : nights >= 7 ? 15 : 0;
+      var discountAmt = Math.round(subtotal * pct / 100);
+      var total = subtotal - discountAmt;
+
+      if (nightsEl) {
+        nightsEl.textContent = nights + ' night' + (nights !== 1 ? 's' : '') +
+          ' \u00B7 ' + (isLow(ci) ? 'low season' : 'high season');
+      }
+
+      if (breakdownEl) {
+        var html = '<div class="rpc-row"><span>' + fmtAmt(rate) + ' \u00D7 ' + nights + ' nights</span><span>' + fmtAmt(subtotal) + '</span></div>';
+        if (pct > 0) {
+          html += '<div class="rpc-row rpc-discount-row"><span>' + pct + '% stay discount</span><span>\u2212' + fmtAmt(discountAmt) + '</span></div>';
+        }
+        html += '<div class="rpc-divider"></div>';
+        html += '<div class="rpc-total-row"><span>Total</span><span>' + fmtAmt(total) + '</span></div>';
+        breakdownEl.innerHTML = html;
+        breakdownEl.classList.add('visible');
+      }
+      if (ctaBtn) ctaBtn.disabled = false;
+    }
+
+    // CTA opens booking modal with pre-filled dates
+    if (ctaBtn) {
+      ctaBtn.addEventListener('click', function() {
+        var btn = document.querySelector('.avail-cta[data-room="' + roomSlug + '"]');
+        if (btn) btn.click();
+        // Pre-fill dates in modal after it opens (short delay)
+        setTimeout(function() {
+          var ci = checkinInput.value;
+          var co = checkoutInput.value;
+          if (ci && co && window._bmSetDates) window._bmSetDates(ci, co);
+        }, 200);
+      });
+    }
   })();
   </script>
 

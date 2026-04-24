@@ -12,10 +12,10 @@ import {
   writeManualBookings,
   readOverrides,
   writeOverrides,
+  getMergedBookings,
 } from "../../lib/bookings.ts";
 import { readInquiries, writeInquiries } from "../../lib/inquiries.ts";
 import { readTasks, createTask } from "../../lib/housekeeping.ts";
-import { fetchAllIcalBookings } from "../../lib/ical.ts";
 import { detectConflicts } from "../../lib/conflicts.ts";
 import {
   readMonitors,
@@ -769,25 +769,6 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-// ─── Helper: get merged bookings with overrides ─────────────────────────────
-async function getMergedBookings(): Promise<Booking[]> {
-  const [ical, manual] = await Promise.all([
-    fetchAllIcalBookings(),
-    Promise.resolve(readManualBookings()),
-  ]);
-  const overrides = readOverrides();
-  return [...ical, ...manual].map((b) => {
-    const ov = overrides[b.id];
-    if (!ov) return b;
-    return {
-      ...b,
-      amount: ov.amount !== undefined ? ov.amount : b.amount,
-      guest: ov.guest !== undefined ? ov.guest : b.guest,
-      notes: ov.notes !== undefined ? ov.notes : b.notes,
-    };
-  });
-}
-
 // ─── Helper: read pricing.json rates ────────────────────────────────────────
 function readRates(): Record<string, { high: number; low: number }> {
   try {
@@ -1165,15 +1146,13 @@ async function executeTool(
         const guests = readGuests();
         return {
           total: guests.length,
-          guests: guests
-            .slice(0, 20)
-            .map((g) => ({
-              id: g.id,
-              fullName: g.fullName,
-              nationality: g.nationality,
-              passportNumber: g.passportNumber,
-              bookingIds: g.bookingIds,
-            })),
+          guests: guests.slice(0, 20).map((g) => ({
+            id: g.id,
+            fullName: g.fullName,
+            nationality: g.nationality,
+            passportNumber: g.passportNumber,
+            bookingIds: g.bookingIds,
+          })),
         };
       } catch (err: any) {
         return { error: "Could not search guests: " + err.message };

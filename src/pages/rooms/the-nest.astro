@@ -141,6 +141,23 @@ const jsonLd = [
       <span class="room-feature"><span class="room-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>Blackout blinds</span>
     </div>
 
+    <div class="room-price-calc">
+      <div class="rpc-title">Calculate your stay</div>
+      <div class="rpc-dates">
+        <div>
+          <label class="rpc-date-label" for="rpcCheckin">Check-in</label>
+          <input class="rpc-date-input" id="rpcCheckin" type="text" placeholder="Select date" readonly>
+        </div>
+        <div>
+          <label class="rpc-date-label" for="rpcCheckout">Check-out</label>
+          <input class="rpc-date-input" id="rpcCheckout" type="text" placeholder="Select date" readonly>
+        </div>
+      </div>
+      <div class="rpc-nights" id="rpcNights"></div>
+      <div class="rpc-breakdown" id="rpcBreakdown"></div>
+      <button class="rpc-cta" id="rpcCta" disabled>Book this room</button>
+    </div>
+
     <button class="avail-cta" data-room="nest">Check Availability</button>
 
     <div class="room-quick-facts">
