@@ -1,0 +1,379 @@
+---
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+---
+
+<MarketingLayout
+  title="Dietary Preferences -- Kin Haus Co-Living, Koh Phangan"
+  description="Tell us about your dietary requirements and food preferences so we can make sure you're well fed during your stay at Kin Haus."
+>
+  <style>
+    .dietary-page { padding: 60px 40px; max-width: 600px; margin: 0 auto; }
+    .dietary-page h1 { font-weight: 600; font-size: 36px; margin-bottom: 8px; }
+    .dietary-intro { font-size: 15px; color: #64645f; line-height: 1.6; margin-bottom: 36px; }
+
+    .form-section { margin-bottom: 32px; }
+    .form-section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b8b85;
+      margin-bottom: 10px;
+    }
+
+    .form-row { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e4e2de;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+
+    .chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      padding: 8px 14px;
+      border: 1px solid #e4e2de;
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .chip:hover { border-color: #ccc; background: var(--warm); }
+    .chip.selected { background: var(--accent); color: white; border-color: var(--accent); }
+
+    .chip-allergy.selected { background: #dc3545; border-color: #dc3545; color: white; }
+    .chip-allergy:hover:not(.selected) { border-color: #e8a0a0; background: #fef2f2; }
+
+    .spice-control {
+      display: flex;
+      border: 1px solid #e4e2de;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    }
+    .spice-option {
+      flex: 1;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      border-right: 1px solid #e4e2de;
+      transition: all 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+      background: white;
+    }
+    .spice-option:last-child { border-right: none; }
+    .spice-option:hover { background: var(--warm); }
+    .spice-option.selected { background: var(--accent); color: white; }
+
+    .form-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e4e2de;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.15s;
+    }
+    .form-textarea:focus { outline: none; border-color: var(--accent); }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .submit-btn:hover { background: #225539; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .form-error {
+      padding: 12px 16px;
+      background: #fde8e8;
+      border: 1px solid #e05a5a;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #8a1010;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .success-screen { display: none; text-align: center; padding: 80px 20px; }
+    .success-screen h2 { font-size: 28px; font-weight: 600; margin-bottom: 12px; }
+    .success-screen p { font-size: 15px; color: #64645f; line-height: 1.6; }
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: #d4ede3;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 28px;
+    }
+
+    @media (max-width: 640px) {
+      .dietary-page { padding: 40px 20px; }
+      .dietary-page h1 { font-size: 28px; }
+      .spice-option { padding: 10px 4px; font-size: 12px; }
+    }
+  </style>
+
+  <div class="dietary-page">
+    <div id="form-view">
+      <h1>Dietary Preferences</h1>
+      <p class="dietary-intro">Help us prepare for your stay. Tell us about your dietary needs and food preferences, and we'll make sure you're well looked after.</p>
+
+      <div class="form-error" id="form-error"></div>
+
+      <form id="dietary-form" novalidate>
+        <!-- Name + Arrival -->
+        <div class="form-section">
+          <div class="form-section-label">About You</div>
+          <div class="form-row">
+            <label class="form-label" for="guest-name">Your name *</label>
+            <input class="form-input" type="text" id="guest-name" placeholder="First and last name" required>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="arrival-date">Arrival date *</label>
+            <input class="form-input" type="date" id="arrival-date" required>
+          </div>
+        </div>
+
+        <!-- Dietary Style -->
+        <div class="form-section">
+          <div class="form-section-label">Dietary Style</div>
+          <div class="chip-grid" id="dietary-styles">
+            <button type="button" class="chip" data-value="No restrictions">No restrictions</button>
+            <button type="button" class="chip" data-value="Vegetarian">Vegetarian</button>
+            <button type="button" class="chip" data-value="Vegan">Vegan</button>
+            <button type="button" class="chip" data-value="Pescatarian">Pescatarian</button>
+            <button type="button" class="chip" data-value="Halal">Halal</button>
+            <button type="button" class="chip" data-value="Kosher">Kosher</button>
+            <button type="button" class="chip" data-value="Keto / low carb">Keto / low carb</button>
+            <button type="button" class="chip" data-value="Paleo">Paleo</button>
+            <button type="button" class="chip" data-value="Raw food">Raw food</button>
+          </div>
+        </div>
+
+        <!-- Allergies -->
+        <div class="form-section">
+          <div class="form-section-label">Allergies</div>
+          <div class="chip-grid" id="allergies">
+            <button type="button" class="chip chip-allergy" data-value="None">None</button>
+            <button type="button" class="chip chip-allergy" data-value="Tree nuts">Tree nuts</button>
+            <button type="button" class="chip chip-allergy" data-value="Peanuts">Peanuts</button>
+            <button type="button" class="chip chip-allergy" data-value="Gluten / wheat">Gluten / wheat</button>
+            <button type="button" class="chip chip-allergy" data-value="Dairy">Dairy</button>
+            <button type="button" class="chip chip-allergy" data-value="Eggs">Eggs</button>
+            <button type="button" class="chip chip-allergy" data-value="Shellfish">Shellfish</button>
+            <button type="button" class="chip chip-allergy" data-value="Fish">Fish</button>
+            <button type="button" class="chip chip-allergy" data-value="Soy">Soy</button>
+            <button type="button" class="chip chip-allergy" data-value="Sesame">Sesame</button>
+            <button type="button" class="chip chip-allergy" data-value="Sulfites">Sulfites</button>
+          </div>
+        </div>
+
+        <!-- Intolerances -->
+        <div class="form-section">
+          <div class="form-section-label">Intolerances / Preferences</div>
+          <div class="chip-grid" id="intolerances">
+            <button type="button" class="chip" data-value="Lactose sensitive">Lactose sensitive</button>
+            <button type="button" class="chip" data-value="Low FODMAP">Low FODMAP</button>
+            <button type="button" class="chip" data-value="No pork">No pork</button>
+            <button type="button" class="chip" data-value="No beef">No beef</button>
+            <button type="button" class="chip" data-value="No alcohol in cooking">No alcohol in cooking</button>
+            <button type="button" class="chip" data-value="Low sugar">Low sugar</button>
+            <button type="button" class="chip" data-value="Low salt">Low salt</button>
+            <button type="button" class="chip" data-value="No MSG">No MSG</button>
+          </div>
+        </div>
+
+        <!-- Spice Tolerance -->
+        <div class="form-section">
+          <div class="form-section-label">Spice Tolerance</div>
+          <div class="spice-control" id="spice-control">
+            <div class="spice-option" data-value="None">None</div>
+            <div class="spice-option" data-value="Mild">Mild</div>
+            <div class="spice-option selected" data-value="Medium">Medium</div>
+            <div class="spice-option" data-value="Hot">Hot</div>
+            <div class="spice-option" data-value="Extra hot">Extra hot</div>
+          </div>
+        </div>
+
+        <!-- Favourite Cuisines -->
+        <div class="form-section">
+          <div class="form-section-label">Favourite Cuisines</div>
+          <div class="chip-grid" id="favourite-cuisines">
+            <button type="button" class="chip" data-value="Thai">Thai</button>
+            <button type="button" class="chip" data-value="Japanese">Japanese</button>
+            <button type="button" class="chip" data-value="Indian">Indian</button>
+            <button type="button" class="chip" data-value="Mediterranean">Mediterranean</button>
+            <button type="button" class="chip" data-value="Mexican">Mexican</button>
+            <button type="button" class="chip" data-value="Middle Eastern">Middle Eastern</button>
+            <button type="button" class="chip" data-value="Italian">Italian</button>
+            <button type="button" class="chip" data-value="American">American</button>
+            <button type="button" class="chip" data-value="Chinese">Chinese</button>
+            <button type="button" class="chip" data-value="Korean">Korean</button>
+            <button type="button" class="chip" data-value="Vietnamese">Vietnamese</button>
+            <button type="button" class="chip" data-value="French">French</button>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-section">
+          <div class="form-section-label">Additional Notes</div>
+          <textarea class="form-textarea" id="notes" placeholder="Anything else we should know..."></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">Submit Preferences</button>
+      </form>
+    </div>
+
+    <div class="success-screen" id="success-screen">
+      <div class="success-icon">&#x2713;</div>
+      <h2>Thank you!</h2>
+      <p>We'll make sure you're well fed during your stay at Kin Haus.</p>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function() {
+      const form = document.getElementById('dietary-form');
+      const errorEl = document.getElementById('form-error');
+      const submitBtn = document.getElementById('submit-btn');
+      const formView = document.getElementById('form-view');
+      const successScreen = document.getElementById('success-screen');
+
+      function getSelectedValues(containerId) {
+        const chips = document.querySelectorAll('#' + containerId + ' .chip.selected');
+        return Array.from(chips).map(function(c) { return c.dataset.value; });
+      }
+
+      function getSpiceValue() {
+        var sel = document.querySelector('#spice-control .spice-option.selected');
+        return sel ? sel.dataset.value : 'Medium';
+      }
+
+      // Multi-select chip toggle
+      document.querySelectorAll('.chip-grid .chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          var container = chip.parentElement;
+          var isAllergy = container.id === 'allergies';
+          var value = chip.dataset.value;
+
+          if (isAllergy) {
+            if (value === 'None') {
+              container.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('selected'); });
+              chip.classList.add('selected');
+            } else {
+              container.querySelector('[data-value="None"]').classList.remove('selected');
+              chip.classList.toggle('selected');
+            }
+          } else {
+            chip.classList.toggle('selected');
+          }
+        });
+      });
+
+      // Single-select spice control
+      document.querySelectorAll('#spice-control .spice-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+          document.querySelectorAll('#spice-control .spice-option').forEach(function(o) { o.classList.remove('selected'); });
+          opt.classList.add('selected');
+        });
+      });
+
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        errorEl.style.display = 'none';
+
+        var guestName = document.getElementById('guest-name').value.trim();
+        var arrivalDate = document.getElementById('arrival-date').value;
+
+        if (!guestName) {
+          errorEl.textContent = 'Please enter your name.';
+          errorEl.style.display = 'block';
+          document.getElementById('guest-name').focus();
+          return;
+        }
+        if (!arrivalDate) {
+          errorEl.textContent = 'Please select your arrival date.';
+          errorEl.style.display = 'block';
+          document.getElementById('arrival-date').focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        var payload = {
+          guestName: guestName,
+          arrivalDate: arrivalDate,
+          dietaryStyles: getSelectedValues('dietary-styles'),
+          allergies: getSelectedValues('allergies'),
+          intolerances: getSelectedValues('intolerances'),
+          spiceTolerance: getSpiceValue(),
+          favouriteCuisines: getSelectedValues('favourite-cuisines'),
+          notes: document.getElementById('notes').value.trim()
+        };
+
+        fetch('/api/dietary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(result) {
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || 'Something went wrong. Please try again.';
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Preferences';
+            return;
+          }
+          formView.querySelector('form').style.display = 'none';
+          successScreen.style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .catch(function() {
+          errorEl.textContent = 'Network error. Please check your connection and try again.';
+          errorEl.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Preferences';
+        });
+      });
+    })();
+  </script>
+</MarketingLayout>

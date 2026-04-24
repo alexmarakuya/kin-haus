@@ -1,0 +1,767 @@
+---
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import { findPortalByToken } from '../../lib/guest-portals.ts';
+
+const { token } = Astro.params;
+const portal = token ? findPortalByToken(token) : null;
+
+if (!portal) {
+  return Astro.redirect('/');
+}
+---
+
+<MarketingLayout
+  title={`Your Stay at Kin Haus`}
+  description="Prepare for your stay at Kin Haus co-living villa on Koh Phangan."
+>
+  <style>
+    .portal { padding: 40px 20px 80px; max-width: 560px; margin: 0 auto; }
+
+    /* Progress bar */
+    .progress { display: flex; gap: 6px; margin-bottom: 36px; }
+    .progress-dot {
+      flex: 1; height: 4px; border-radius: 2px; background: #e4e2de; transition: background 0.3s;
+    }
+    .progress-dot.done { background: var(--accent); }
+    .progress-dot.active { background: var(--accent); opacity: 0.5; }
+
+    /* Step container */
+    .step { display: none; }
+    .step.active { display: block; }
+
+    /* Step header */
+    .step-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #8b8b85; margin-bottom: 8px;
+    }
+    .step h2 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+    .step-intro { font-size: 14px; color: #64645f; line-height: 1.6; margin-bottom: 28px; }
+
+    /* Welcome step */
+    .welcome-card {
+      background: white; border: 1px solid #e4e2de; border-radius: 12px; padding: 28px; margin-bottom: 24px;
+    }
+    .welcome-room { font-size: 13px; color: var(--accent); font-weight: 500; margin-bottom: 4px; }
+    .welcome-dates {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8b8b85;
+    }
+    .welcome-nights { font-size: 20px; font-weight: 600; margin: 16px 0 4px; }
+    .returning-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #d4ede3; color: #1a5c3a; font-size: 12px; font-weight: 500;
+      padding: 4px 12px; border-radius: 16px; margin-top: 16px;
+    }
+
+    /* Booking history */
+    .history-section { margin-top: 24px; }
+    .history-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #8b8b85; margin-bottom: 10px;
+    }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #f0eeeb; font-size: 13px;
+    }
+    .history-room { font-weight: 500; }
+    .history-dates { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8b8b85; }
+
+    /* Form elements */
+    .fg { margin-bottom: 16px; }
+    .fg label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .fg input, .fg select, .fg textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid #e4e2de; border-radius: 8px;
+      font-size: 14px; font-family: 'Inter', sans-serif; background: white; transition: border-color 0.15s;
+    }
+    .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--accent); }
+    .fg textarea { resize: vertical; min-height: 80px; }
+
+    /* Chip grids */
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .chip {
+      padding: 8px 14px; border: 1px solid #e4e2de; border-radius: 20px; font-size: 13px;
+      font-family: 'Inter', sans-serif; background: white; cursor: pointer;
+      transition: all 0.15s; user-select: none; -webkit-user-select: none;
+    }
+    .chip:hover { border-color: #ccc; background: var(--warm); }
+    .chip.selected { background: var(--accent); color: white; border-color: var(--accent); }
+    .chip-allergy.selected { background: #dc3545; border-color: #dc3545; }
+    .chip-allergy:hover:not(.selected) { border-color: #e8a0a0; background: #fef2f2; }
+
+    /* Spice control */
+    .spice-control {
+      display: flex; border: 1px solid #e4e2de; border-radius: 8px; overflow: hidden; background: white;
+    }
+    .spice-opt {
+      flex: 1; padding: 10px 6px; text-align: center; font-size: 12px; font-family: 'Inter', sans-serif;
+      cursor: pointer; border-right: 1px solid #e4e2de; transition: all 0.15s; user-select: none; background: white;
+    }
+    .spice-opt:last-child { border-right: none; }
+    .spice-opt:hover { background: var(--warm); }
+    .spice-opt.selected { background: var(--accent); color: white; }
+
+    /* Chef upsell card */
+    .upsell-card {
+      background: white; border: 1px solid #e4e2de; border-radius: 12px; padding: 20px; margin-bottom: 16px;
+      transition: border-color 0.15s;
+    }
+    .upsell-card.selected { border-color: var(--accent); background: #f8fdf9; }
+    .upsell-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .upsell-title { font-size: 15px; font-weight: 600; }
+    .upsell-price {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 500;
+    }
+    .upsell-desc { font-size: 13px; color: #64645f; line-height: 1.5; margin-bottom: 12px; }
+    .upsell-toggle {
+      display: flex; gap: 8px;
+    }
+    .upsell-btn {
+      flex: 1; padding: 10px; border: 1px solid #e4e2de; border-radius: 8px; font-size: 13px;
+      font-family: 'Inter', sans-serif; background: white; cursor: pointer; text-align: center;
+      transition: all 0.15s;
+    }
+    .upsell-btn:hover { background: var(--warm); }
+    .upsell-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .upsell-btn.active-no { background: #f0eeeb; border-color: #d9d7d3; color: #8b8b85; }
+    .chef-people {
+      display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0eeeb;
+    }
+    .chef-people.visible { display: block; }
+    .chef-total {
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent);
+      font-weight: 500; margin-top: 8px;
+    }
+
+    /* Arrival transport */
+    .transport-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .transport-opt {
+      padding: 12px 16px; border: 1px solid #e4e2de; border-radius: 8px; font-size: 14px;
+      cursor: pointer; transition: all 0.15s; background: white;
+    }
+    .transport-opt:hover { background: var(--warm); }
+    .transport-opt.selected { border-color: var(--accent); background: #f8fdf9; }
+    .transport-label { font-weight: 500; }
+    .transport-sub { font-size: 12px; color: #8b8b85; margin-top: 2px; }
+
+    /* Pickup toggle */
+    .pickup-toggle {
+      display: flex; align-items: center; gap: 12px; padding: 16px; background: white;
+      border: 1px solid #e4e2de; border-radius: 8px; cursor: pointer; margin-top: 16px;
+    }
+    .pickup-toggle.selected { border-color: var(--accent); background: #f8fdf9; }
+    .pickup-check {
+      width: 22px; height: 22px; border: 2px solid #d9d7d3; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s;
+    }
+    .pickup-toggle.selected .pickup-check { background: var(--accent); border-color: var(--accent); color: white; }
+    .pickup-text { font-size: 14px; }
+    .pickup-sub { font-size: 12px; color: #8b8b85; }
+
+    /* Practical info */
+    .info-card {
+      background: white; border: 1px solid #e4e2de; border-radius: 10px; padding: 16px 20px;
+      margin-bottom: 12px; display: flex; align-items: flex-start; gap: 14px;
+    }
+    .info-icon { font-size: 20px; flex-shrink: 0; width: 32px; text-align: center; }
+    .info-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #8b8b85; margin-bottom: 2px;
+    }
+    .info-value { font-size: 14px; font-weight: 500; }
+    .info-detail { font-size: 12px; color: #64645f; margin-top: 2px; }
+    .info-value a { color: var(--accent); text-decoration: none; }
+    .info-value a:hover { text-decoration: underline; }
+
+    /* Buttons */
+    .btn-next {
+      width: 100%; padding: 14px; background: var(--accent); color: white; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 500; font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: background 0.15s; margin-top: 24px;
+    }
+    .btn-next:hover { background: #225539; }
+    .btn-next:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-skip {
+      display: block; width: 100%; text-align: center; padding: 12px; font-size: 13px;
+      color: #8b8b85; background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .btn-skip:hover { color: var(--ink); }
+
+    /* Hub (during stay) */
+    .hub-header { text-align: center; margin-bottom: 28px; }
+    .hub-header h1 { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+    .hub-subtitle { font-size: 14px; color: #64645f; }
+    .hub-section-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #8b8b85; margin-bottom: 10px; margin-top: 28px;
+    }
+    .hub-action {
+      display: block; width: 100%; padding: 14px 16px; background: white; border: 1px solid #e4e2de;
+      border-radius: 8px; font-size: 14px; text-align: left; cursor: pointer; margin-bottom: 8px;
+      font-family: 'Inter', sans-serif; transition: all 0.15s; text-decoration: none; color: var(--ink);
+    }
+    .hub-action:hover { background: var(--warm); }
+
+    /* Feedback (checkout) */
+    .feedback-section { text-align: center; }
+    .feedback-section h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+    .feedback-intro { font-size: 14px; color: #64645f; margin-bottom: 32px; }
+    .star-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .star {
+      font-size: 36px; cursor: pointer; color: #e4e2de; transition: color 0.15s; user-select: none;
+    }
+    .star.active { color: #f5c518; }
+    .star:hover { color: #f5c518; }
+    .review-links { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+    .review-link {
+      display: block; padding: 12px 16px; border: 1px solid #e4e2de; border-radius: 8px;
+      font-size: 14px; text-decoration: none; color: var(--ink); text-align: center; transition: all 0.15s;
+    }
+    .review-link:hover { background: var(--warm); }
+    .thanks-screen { text-align: center; padding: 60px 0; }
+    .thanks-screen h2 { font-size: 24px; margin-bottom: 12px; }
+    .thanks-screen p { font-size: 14px; color: #64645f; line-height: 1.6; }
+
+    .form-error {
+      padding: 12px 16px; background: #fde8e8; border: 1px solid #e05a5a; border-radius: 8px;
+      font-size: 13px; color: #8a1010; margin-bottom: 16px; display: none;
+    }
+
+    .loading-screen { text-align: center; padding: 80px 20px; color: #8b8b85; font-size: 14px; }
+  </style>
+
+  <div class="portal" id="portal">
+    <div class="loading-screen" id="loading">Loading your portal...</div>
+  </div>
+
+  <script is:inline define:vars={{ portalToken: portal.token }}>
+    (function() {
+      var TOKEN = portalToken;
+      var portalEl = document.getElementById('portal');
+      var data = null;
+      var currentStep = 0;
+      var STEPS = ['welcome', 'tm30', 'dietary', 'extras', 'arrival', 'practical'];
+
+      function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+      function fmtDate(d) {
+        try { return new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+        catch(_) { return d; }
+      }
+
+      function nightCount(checkin, checkout) {
+        return Math.round((new Date(checkout + 'T12:00:00') - new Date(checkin + 'T12:00:00')) / 86400000);
+      }
+
+      function api(path, body) {
+        return fetch('/api/guest-portal/' + path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ token: TOKEN }, body))
+        }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); });
+      }
+
+      function getChips(id) {
+        return Array.from(document.querySelectorAll('#' + id + ' .chip.selected')).map(function(c) { return c.dataset.value; });
+      }
+
+      function initChips(container) {
+        var el = document.getElementById(container);
+        if (!el) return;
+        var isAllergy = container === 'p-allergies';
+        el.querySelectorAll('.chip').forEach(function(chip) {
+          chip.addEventListener('click', function() {
+            if (isAllergy) {
+              if (chip.dataset.value === 'None') {
+                el.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('selected'); });
+                chip.classList.add('selected');
+              } else {
+                el.querySelector('[data-value="None"]').classList.remove('selected');
+                chip.classList.toggle('selected');
+              }
+            } else {
+              chip.classList.toggle('selected');
+            }
+          });
+        });
+      }
+
+      // ─── RENDER: PRE-ARRIVAL WIZARD ────────────────────────────────────────────
+      function renderWizard() {
+        var p = data.portal;
+        var gp = data.guestProfile;
+        var nights = nightCount(p.checkin, p.checkout);
+        var isReturning = gp && gp.totalStays > 0;
+
+        // Determine first incomplete step
+        var completedSteps = p.completedSteps || [];
+        currentStep = 0;
+        for (var i = 0; i < STEPS.length; i++) {
+          if (!completedSteps.includes(STEPS[i])) { currentStep = i; break; }
+          if (i === STEPS.length - 1) currentStep = STEPS.length - 1;
+        }
+
+        var html = '<div class="progress" id="progress">';
+        for (var i = 0; i < STEPS.length; i++) {
+          var cls = completedSteps.includes(STEPS[i]) ? 'done' : (i === currentStep ? 'active' : '');
+          html += '<div class="progress-dot ' + cls + '" data-step="' + i + '"></div>';
+        }
+        html += '</div>';
+
+        // STEP 1: Welcome
+        html += '<div class="step" data-step="welcome"><div class="step-label">Step 1 of 6</div>';
+        html += '<h2>' + (isReturning ? 'Welcome back, ' : 'Hi ') + esc(p.guestName.split(' ')[0]) + '!</h2>';
+        html += '<p class="step-intro">' + (isReturning ? 'Great to have you back at Kin Haus.' : 'We\'re getting everything ready for your arrival.') + ' Here\'s a quick rundown and a few things we\'d love to know.</p>';
+        html += '<div class="welcome-card">';
+        html += '<div class="welcome-room">' + esc(data.roomLabel) + '</div>';
+        html += '<div class="welcome-dates">' + fmtDate(p.checkin) + ' &rarr; ' + fmtDate(p.checkout) + '</div>';
+        html += '<div class="welcome-nights">' + nights + ' night' + (nights !== 1 ? 's' : '') + '</div>';
+        if (isReturning) {
+          html += '<div class="returning-badge">&#x2B50; Returning guest &middot; ' + gp.totalStays + ' previous stay' + (gp.totalStays !== 1 ? 's' : '') + '</div>';
+        }
+        html += '</div>';
+
+        // Booking history for returning guests
+        if (data.bookingHistory && data.bookingHistory.length > 0) {
+          html += '<div class="history-section"><div class="history-title">Your past stays</div>';
+          data.bookingHistory.forEach(function(h) {
+            html += '<div class="history-item"><span class="history-room">' + esc(h.room) + '</span>';
+            html += '<span class="history-dates">' + fmtDate(h.checkin) + ' &mdash; ' + fmtDate(h.checkout) + '</span></div>';
+          });
+          html += '</div>';
+        }
+        html += '<button class="btn-next" id="welcome-next">Let\'s go</button></div>';
+
+        // STEP 2: TM30
+        html += '<div class="step" data-step="tm30"><div class="step-label">Step 2 of 6</div>';
+        html += '<h2>Passport Details</h2>';
+        html += '<p class="step-intro">Thai immigration requires us to register foreign guests (TM30). This only takes a moment.</p>';
+        html += '<div class="form-error" id="tm30-error"></div>';
+        html += '<div class="fg"><label>Full name (as on passport)</label><input id="tm30-name" type="text" value="' + esc(gp ? gp.fullName : p.guestName) + '"></div>';
+        html += '<div class="fg"><label>Nationality</label><input id="tm30-nationality" type="text" placeholder="e.g. British, American, German" value="' + esc(gp ? gp.nationality || '' : '') + '"></div>';
+        html += '<div class="fg"><label>Gender</label><select id="tm30-gender"><option value="">Select...</option><option value="Male"' + (gp && gp.gender === 'Male' ? ' selected' : '') + '>Male</option><option value="Female"' + (gp && gp.gender === 'Female' ? ' selected' : '') + '>Female</option><option value="Other"' + (gp && gp.gender === 'Other' ? ' selected' : '') + '>Other</option></select></div>';
+        html += '<div class="fg"><label>Passport number</label><input id="tm30-passport" type="text" placeholder="e.g. AB1234567" value="' + esc(gp ? gp.passportNumber || '' : '') + '"></div>';
+        html += '<button class="btn-next" id="tm30-next">Continue</button></div>';
+
+        // STEP 3: Dietary & Chef
+        html += '<div class="step" data-step="dietary"><div class="step-label">Step 3 of 6</div>';
+        html += '<h2>Food & Dining</h2>';
+        html += '<p class="step-intro">Tell us about your dietary needs so we can make sure you\'re well fed.</p>';
+        html += '<div class="form-error" id="dietary-error"></div>';
+
+        html += '<div class="fg"><label>Dietary style</label><div class="chip-grid" id="p-styles">';
+        ['No restrictions','Vegetarian','Vegan','Pescatarian','Halal','Kosher','Keto / low carb','Paleo','Raw food'].forEach(function(v) {
+          html += '<button type="button" class="chip" data-value="' + v + '">' + v + '</button>';
+        });
+        html += '</div></div>';
+
+        html += '<div class="fg"><label>Allergies</label><div class="chip-grid" id="p-allergies">';
+        ['None','Tree nuts','Peanuts','Gluten / wheat','Dairy','Eggs','Shellfish','Fish','Soy','Sesame','Sulfites'].forEach(function(v) {
+          html += '<button type="button" class="chip chip-allergy" data-value="' + v + '">' + v + '</button>';
+        });
+        html += '</div></div>';
+
+        html += '<div class="fg"><label>Intolerances / preferences</label><div class="chip-grid" id="p-intolerances">';
+        ['Lactose sensitive','Low FODMAP','No pork','No beef','No alcohol in cooking','Low sugar','Low salt','No MSG'].forEach(function(v) {
+          html += '<button type="button" class="chip" data-value="' + v + '">' + v + '</button>';
+        });
+        html += '</div></div>';
+
+        html += '<div class="fg"><label>Spice tolerance</label><div class="spice-control" id="p-spice">';
+        ['None','Mild','Medium','Hot','Extra hot'].forEach(function(v) {
+          html += '<div class="spice-opt' + (v === 'Medium' ? ' selected' : '') + '" data-value="' + v + '">' + v + '</div>';
+        });
+        html += '</div></div>';
+
+        html += '<div class="fg"><label>Favourite cuisines</label><div class="chip-grid" id="p-cuisines">';
+        ['Thai','Japanese','Indian','Mediterranean','Mexican','Middle Eastern','Italian','American','Chinese','Korean','Vietnamese','French'].forEach(function(v) {
+          html += '<button type="button" class="chip" data-value="' + v + '">' + v + '</button>';
+        });
+        html += '</div></div>';
+
+        html += '<div class="fg"><label>Anything else about food?</label><textarea id="p-dietary-notes" placeholder="e.g. I prefer light breakfasts, love spicy Thai salads..."></textarea></div>';
+
+        // Chef upsell
+        html += '<div class="upsell-card" id="chef-card">';
+        html += '<div class="upsell-header"><div class="upsell-title">Private Chef Experience</div><div class="upsell-price">1,000 THB / person</div></div>';
+        html += '<div class="upsell-desc">Have a private chef prepare a curated meal at the villa. Thai, Western, or fusion -- we\'ll tailor it to your preferences.</div>';
+        html += '<div class="upsell-toggle"><button class="upsell-btn" id="chef-yes" data-val="yes">Yes, I\'m interested</button><button class="upsell-btn" id="chef-no" data-val="no">No thanks</button></div>';
+        html += '<div class="chef-people" id="chef-people-section"><div class="fg"><label>How many people?</label><input id="chef-people" type="number" value="2" min="1" max="20"></div>';
+        html += '<div class="chef-total" id="chef-total">Total: 2,000 THB</div></div>';
+        html += '</div>';
+
+        html += '<button class="btn-next" id="dietary-next">Continue</button></div>';
+
+        // STEP 4: Extras
+        html += '<div class="step" data-step="extras"><div class="step-label">Step 4 of 6</div>';
+        html += '<h2>Extras</h2>';
+        html += '<p class="step-intro">A couple of things that might make your stay even better.</p>';
+
+        html += '<div class="upsell-card" id="monitor-card">';
+        html += '<div class="upsell-header"><div class="upsell-title">External Monitor</div><div class="upsell-price">' + data.monitorRate + ' THB / day</div></div>';
+        html += '<div class="upsell-desc">Need a second screen for work? We have ' + data.monitorsAvailable + ' monitor' + (data.monitorsAvailable !== 1 ? 's' : '') + ' available to rent.</div>';
+        html += '<div class="upsell-toggle"><button class="upsell-btn" id="monitor-yes">Yes please</button><button class="upsell-btn" id="monitor-no">No thanks</button></div>';
+        html += '</div>';
+
+        html += '<div class="upsell-card" id="scooter-card">';
+        html += '<div class="upsell-header"><div class="upsell-title">Scooter Rental</div><div class="upsell-price">300 THB / day</div></div>';
+        html += '<div class="upsell-desc">Explore Koh Phangan on your own schedule. We\'ll have it ready for your arrival.</div>';
+        html += '<div class="upsell-toggle"><button class="upsell-btn" id="scooter-yes">Yes please</button><button class="upsell-btn" id="scooter-no">No thanks</button></div>';
+        html += '</div>';
+
+        html += '<button class="btn-next" id="extras-next">Continue</button></div>';
+
+        // STEP 5: Arrival
+        html += '<div class="step" data-step="arrival"><div class="step-label">Step 5 of 6</div>';
+        html += '<h2>Getting Here</h2>';
+        html += '<p class="step-intro">Let us know how you\'re arriving so we can help you get to the villa smoothly.</p>';
+        html += '<div class="form-error" id="arrival-error"></div>';
+
+        html += '<div class="fg"><label>How are you getting to Koh Phangan?</label>';
+        html += '<div class="transport-options" id="transport-opts">';
+        html += '<div class="transport-opt" data-value="ferry"><div class="transport-label">Ferry</div><div class="transport-sub">Direct ferry from Surat Thani, Chumphon, or Koh Samui</div></div>';
+        html += '<div class="transport-opt" data-value="flight_ferry"><div class="transport-label">Flight + ferry</div><div class="transport-sub">Flying into Koh Samui (USM) then ferry across</div></div>';
+        html += '<div class="transport-opt" data-value="other"><div class="transport-label">Other</div><div class="transport-sub">Private boat, already on the island, etc.</div></div>';
+        html += '</div></div>';
+
+        html += '<div class="fg"><label>Ferry / flight details</label><input id="arrival-detail" type="text" placeholder="e.g. Lomprayah 11:00 from Surat Thani"></div>';
+        html += '<div class="fg"><label>Estimated arrival time on Koh Phangan</label><input id="arrival-time" type="text" placeholder="e.g. 14:30"></div>';
+
+        html += '<div class="pickup-toggle" id="pickup-toggle">';
+        html += '<div class="pickup-check" id="pickup-check">&#x2713;</div>';
+        html += '<div><div class="pickup-text">Arrange a pier pickup</div><div class="pickup-sub">We\'ll have someone meet you at Thongsala Pier</div></div>';
+        html += '</div>';
+
+        html += '<button class="btn-next" id="arrival-next">Continue</button>';
+        html += '<button class="btn-skip" id="arrival-skip">I\'ll sort my own transport</button></div>';
+
+        // STEP 6: Practical Info
+        html += '<div class="step" data-step="practical"><div class="step-label">Step 6 of 6</div>';
+        html += '<h2>Essentials</h2>';
+        html += '<p class="step-intro">Everything you need to know before you arrive. You can always come back to this page during your stay.</p>';
+
+        html += '<div class="info-card"><div class="info-icon">&#x1F4F6;</div><div><div class="info-label">WiFi</div><div class="info-value">KinHaus_5G</div><div class="info-detail">Password: available on arrival. 500+ Mbps fibre with mesh coverage.</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F55B;</div><div><div class="info-label">Check-in / Check-out</div><div class="info-value">3:00 PM / 12:00 PM</div><div class="info-detail">Early check-in or late check-out may be possible. Just ask via WhatsApp.</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4CD;</div><div><div class="info-label">Location</div><div class="info-value"><a href="https://maps.app.goo.gl/KinHausKPG" target="_blank" rel="noopener">Open in Google Maps</a></div><div class="info-detail">Thongsala, Koh Phangan. 5 minutes from the pier by scooter.</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4AC;</div><div><div class="info-label">WhatsApp</div><div class="info-value"><a href="https://wa.me/66638034860" target="_blank" rel="noopener">Message us anytime</a></div><div class="info-detail">Fastest way to reach us for questions or requests.</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F3CA;</div><div><div class="info-label">Pool & Shared Spaces</div><div class="info-value">Open daily, all hours</div><div class="info-detail">Infinity pool, shared kitchen, living area, and outdoor terrace are all yours.</div></div></div>';
+
+        html += '<button class="btn-next" id="practical-done">All set!</button></div>';
+
+        portalEl.innerHTML = html;
+        showStep(currentStep);
+        bindWizardEvents();
+      }
+
+      // ─── RENDER: DURING-STAY HUB ──────────────────────────────────────────────
+      function renderHub() {
+        var p = data.portal;
+        var html = '<div class="hub-header"><h1>Welcome to Kin Haus</h1>';
+        html += '<div class="hub-subtitle">' + esc(data.roomLabel) + ' &middot; ' + fmtDate(p.checkin) + ' &mdash; ' + fmtDate(p.checkout) + '</div></div>';
+
+        html += '<div class="hub-section-title">Quick Reference</div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4F6;</div><div><div class="info-label">WiFi</div><div class="info-value">KinHaus_5G</div><div class="info-detail">500+ Mbps fibre with mesh coverage.</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F55B;</div><div><div class="info-label">Check-out</div><div class="info-value">12:00 PM on ' + fmtDate(p.checkout) + '</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4AC;</div><div><div class="info-label">WhatsApp</div><div class="info-value"><a href="https://wa.me/66638034860" target="_blank" rel="noopener">Message us</a></div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4CD;</div><div><div class="info-label">Location</div><div class="info-value"><a href="https://maps.app.goo.gl/KinHausKPG" target="_blank" rel="noopener">Google Maps</a></div></div></div>';
+
+        html += '<div class="hub-section-title">Need anything?</div>';
+        html += '<a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Message us on WhatsApp</a>';
+
+        portalEl.innerHTML = html;
+      }
+
+      // ─── RENDER: POST-CHECKOUT FEEDBACK ────────────────────────────────────────
+      function renderFeedback() {
+        var p = data.portal;
+        if (p.feedback) {
+          portalEl.innerHTML = '<div class="thanks-screen"><h2>Thanks for staying with us!</h2><p>We loved having you at Kin Haus. Hope to see you again on Koh Phangan.</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Stay in touch on WhatsApp</a></div></div>';
+          return;
+        }
+
+        var html = '<div class="feedback-section">';
+        html += '<h1>Thanks for staying!</h1>';
+        html += '<p class="feedback-intro">We hope you had a wonderful time at Kin Haus. How was your stay?</p>';
+
+        html += '<div class="star-row" id="star-row">';
+        for (var i = 1; i <= 5; i++) {
+          html += '<span class="star" data-rating="' + i + '">&#x2606;</span>';
+        }
+        html += '</div>';
+
+        html += '<div class="fg"><textarea id="feedback-comment" placeholder="Tell us about your experience (optional)"></textarea></div>';
+        html += '<button class="btn-next" id="feedback-submit" disabled>Submit Feedback</button>';
+
+        html += '<div class="review-links" style="margin-top:28px">';
+        html += '<div class="hub-section-title">Leave us a review</div>';
+        html += '<a class="review-link" href="https://www.airbnb.com/rooms/1511809226602265595" target="_blank" rel="noopener">&#x2B50; Review on Airbnb</a>';
+        html += '<a class="review-link" href="https://g.page/r/KinHausKPG/review" target="_blank" rel="noopener">&#x2B50; Review on Google</a>';
+        html += '</div></div>';
+
+        portalEl.innerHTML = html;
+        bindFeedbackEvents();
+      }
+
+      // ─── STEP NAVIGATION ──────────────────────────────────────────────────────
+      function showStep(idx) {
+        currentStep = idx;
+        document.querySelectorAll('.step').forEach(function(s, i) {
+          s.classList.toggle('active', i === idx);
+        });
+        document.querySelectorAll('.progress-dot').forEach(function(d, i) {
+          d.className = 'progress-dot' + (i < idx ? ' done' : (i === idx ? ' active' : ''));
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function nextStep() {
+        if (currentStep < STEPS.length - 1) showStep(currentStep + 1);
+      }
+
+      function showError(id, msg) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = msg; el.style.display = 'block'; }
+      }
+      function hideError(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      }
+
+      // ─── EVENT BINDING ─────────────────────────────────────────────────────────
+      function bindWizardEvents() {
+        // Init all chip grids
+        ['p-styles', 'p-allergies', 'p-intolerances', 'p-cuisines'].forEach(initChips);
+
+        // Spice control
+        document.querySelectorAll('#p-spice .spice-opt').forEach(function(o) {
+          o.addEventListener('click', function() {
+            document.querySelectorAll('#p-spice .spice-opt').forEach(function(x) { x.classList.remove('selected'); });
+            o.classList.add('selected');
+          });
+        });
+
+        // Welcome next
+        var welcomeBtn = document.getElementById('welcome-next');
+        if (welcomeBtn) welcomeBtn.addEventListener('click', function() {
+          fetch('/api/guest-portal/step/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: TOKEN, step: 'welcome' })
+          }).catch(function(){});
+          nextStep();
+        });
+
+        // TM30 submit
+        var tm30Btn = document.getElementById('tm30-next');
+        if (tm30Btn) tm30Btn.addEventListener('click', function() {
+          hideError('tm30-error');
+          var name = document.getElementById('tm30-name').value.trim();
+          if (!name) { showError('tm30-error', 'Please enter your full name.'); return; }
+          tm30Btn.disabled = true; tm30Btn.textContent = 'Saving...';
+          api('step/tm30', {
+            fullName: name,
+            nationality: document.getElementById('tm30-nationality').value.trim(),
+            gender: document.getElementById('tm30-gender').value,
+            passportNumber: document.getElementById('tm30-passport').value.trim()
+          }).then(function(r) {
+            tm30Btn.disabled = false; tm30Btn.textContent = 'Continue';
+            if (!r.ok) { showError('tm30-error', r.data.error || 'Failed to save.'); return; }
+            nextStep();
+          }).catch(function() { tm30Btn.disabled = false; tm30Btn.textContent = 'Continue'; showError('tm30-error', 'Network error.'); });
+        });
+
+        // Chef upsell toggle
+        var chefYes = document.getElementById('chef-yes');
+        var chefNo = document.getElementById('chef-no');
+        var chefSection = document.getElementById('chef-people-section');
+        var chefCard = document.getElementById('chef-card');
+        if (chefYes) chefYes.addEventListener('click', function() {
+          chefYes.classList.add('active'); chefYes.classList.remove('active-no');
+          chefNo.classList.remove('active'); chefNo.classList.remove('active-no');
+          chefSection.classList.add('visible'); chefCard.classList.add('selected');
+          updateChefTotal();
+        });
+        if (chefNo) chefNo.addEventListener('click', function() {
+          chefNo.classList.add('active-no'); chefNo.classList.remove('active');
+          chefYes.classList.remove('active'); chefYes.classList.remove('active-no');
+          chefSection.classList.remove('visible'); chefCard.classList.remove('selected');
+        });
+
+        var chefPeopleInput = document.getElementById('chef-people');
+        if (chefPeopleInput) chefPeopleInput.addEventListener('input', updateChefTotal);
+
+        function updateChefTotal() {
+          var n = parseInt(document.getElementById('chef-people').value) || 1;
+          var el = document.getElementById('chef-total');
+          if (el) el.textContent = 'Total: ' + (n * 1000).toLocaleString() + ' THB';
+        }
+
+        // Dietary submit
+        var dietaryBtn = document.getElementById('dietary-next');
+        if (dietaryBtn) dietaryBtn.addEventListener('click', function() {
+          hideError('dietary-error');
+          var spiceEl = document.querySelector('#p-spice .spice-opt.selected');
+          dietaryBtn.disabled = true; dietaryBtn.textContent = 'Saving...';
+          api('step/dietary', {
+            dietaryStyles: getChips('p-styles'),
+            allergies: getChips('p-allergies'),
+            intolerances: getChips('p-intolerances'),
+            spiceTolerance: spiceEl ? spiceEl.dataset.value : 'Medium',
+            favouriteCuisines: getChips('p-cuisines'),
+            dietaryNotes: (document.getElementById('p-dietary-notes') || {}).value || '',
+            wantChef: chefYes && chefYes.classList.contains('active'),
+            chefPeople: (document.getElementById('chef-people') || {}).value || '1'
+          }).then(function(r) {
+            dietaryBtn.disabled = false; dietaryBtn.textContent = 'Continue';
+            if (!r.ok) { showError('dietary-error', r.data.error || 'Failed to save.'); return; }
+            nextStep();
+          }).catch(function() { dietaryBtn.disabled = false; dietaryBtn.textContent = 'Continue'; showError('dietary-error', 'Network error.'); });
+        });
+
+        // Extras toggles
+        bindUpsellToggle('monitor');
+        bindUpsellToggle('scooter');
+
+        function bindUpsellToggle(type) {
+          var yesBtn = document.getElementById(type + '-yes');
+          var noBtn = document.getElementById(type + '-no');
+          var card = document.getElementById(type + '-card');
+          if (yesBtn) yesBtn.addEventListener('click', function() {
+            yesBtn.classList.add('active'); yesBtn.classList.remove('active-no');
+            noBtn.classList.remove('active'); noBtn.classList.remove('active-no');
+            card.classList.add('selected');
+          });
+          if (noBtn) noBtn.addEventListener('click', function() {
+            noBtn.classList.add('active-no');
+            yesBtn.classList.remove('active');
+            card.classList.remove('selected');
+          });
+        }
+
+        // Extras submit
+        var extrasBtn = document.getElementById('extras-next');
+        if (extrasBtn) extrasBtn.addEventListener('click', function() {
+          extrasBtn.disabled = true; extrasBtn.textContent = 'Saving...';
+          var monitorYes = document.getElementById('monitor-yes');
+          var scooterYes = document.getElementById('scooter-yes');
+          api('step/upsells', {
+            wantMonitor: monitorYes && monitorYes.classList.contains('active'),
+            wantScooter: scooterYes && scooterYes.classList.contains('active')
+          }).then(function(r) {
+            extrasBtn.disabled = false; extrasBtn.textContent = 'Continue';
+            if (r.ok) nextStep();
+          }).catch(function() { extrasBtn.disabled = false; extrasBtn.textContent = 'Continue'; });
+        });
+
+        // Transport options
+        document.querySelectorAll('#transport-opts .transport-opt').forEach(function(opt) {
+          opt.addEventListener('click', function() {
+            document.querySelectorAll('#transport-opts .transport-opt').forEach(function(o) { o.classList.remove('selected'); });
+            opt.classList.add('selected');
+          });
+        });
+
+        // Pickup toggle
+        var pickupToggle = document.getElementById('pickup-toggle');
+        if (pickupToggle) pickupToggle.addEventListener('click', function() {
+          pickupToggle.classList.toggle('selected');
+        });
+
+        // Arrival submit
+        var arrivalBtn = document.getElementById('arrival-next');
+        if (arrivalBtn) arrivalBtn.addEventListener('click', function() {
+          var selectedTransport = document.querySelector('#transport-opts .transport-opt.selected');
+          arrivalBtn.disabled = true; arrivalBtn.textContent = 'Saving...';
+          api('step/arrival', {
+            method: selectedTransport ? selectedTransport.dataset.value : 'ferry',
+            flightOrFerry: (document.getElementById('arrival-detail') || {}).value || '',
+            arrivalTime: (document.getElementById('arrival-time') || {}).value || '',
+            wantPickup: pickupToggle && pickupToggle.classList.contains('selected')
+          }).then(function(r) {
+            arrivalBtn.disabled = false; arrivalBtn.textContent = 'Continue';
+            if (r.ok) nextStep();
+          }).catch(function() { arrivalBtn.disabled = false; arrivalBtn.textContent = 'Continue'; });
+        });
+
+        // Arrival skip
+        var arrivalSkip = document.getElementById('arrival-skip');
+        if (arrivalSkip) arrivalSkip.addEventListener('click', function() {
+          api('step/arrival', { method: 'other', flightOrFerry: '', arrivalTime: '', wantPickup: false }).catch(function(){});
+          nextStep();
+        });
+
+        // Practical done
+        var practicalBtn = document.getElementById('practical-done');
+        if (practicalBtn) practicalBtn.addEventListener('click', function() {
+          fetch('/api/guest-portal/step/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: TOKEN, step: 'practical' })
+          }).catch(function(){});
+          portalEl.innerHTML = '<div class="thanks-screen"><h2>You\'re all set!</h2><p>We can\'t wait to welcome you to Kin Haus. If you need anything before your arrival, just message us on WhatsApp.</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Message us on WhatsApp</a></div></div>';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+
+      // ─── FEEDBACK EVENTS ───────────────────────────────────────────────────────
+      function bindFeedbackEvents() {
+        var selectedRating = 0;
+        var stars = document.querySelectorAll('#star-row .star');
+        var submitBtn = document.getElementById('feedback-submit');
+
+        stars.forEach(function(star) {
+          star.addEventListener('click', function() {
+            selectedRating = parseInt(star.dataset.rating);
+            stars.forEach(function(s, i) {
+              s.classList.toggle('active', i < selectedRating);
+              s.innerHTML = i < selectedRating ? '&#x2605;' : '&#x2606;';
+            });
+            submitBtn.disabled = false;
+          });
+          star.addEventListener('mouseenter', function() {
+            var r = parseInt(star.dataset.rating);
+            stars.forEach(function(s, i) {
+              s.innerHTML = i < r ? '&#x2605;' : '&#x2606;';
+            });
+          });
+        });
+
+        var starRow = document.getElementById('star-row');
+        if (starRow) starRow.addEventListener('mouseleave', function() {
+          stars.forEach(function(s, i) {
+            s.innerHTML = i < selectedRating ? '&#x2605;' : '&#x2606;';
+          });
+        });
+
+        if (submitBtn) submitBtn.addEventListener('click', function() {
+          if (!selectedRating) return;
+          submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
+          api('step/feedback', {
+            rating: selectedRating,
+            comment: (document.getElementById('feedback-comment') || {}).value || ''
+          }).then(function(r) {
+            if (r.ok) {
+              portalEl.innerHTML = '<div class="thanks-screen"><h2>Thank you!</h2><p>We appreciate your feedback. Hope to see you again at Kin Haus!</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Stay in touch on WhatsApp</a></div></div>';
+            } else {
+              submitBtn.disabled = false; submitBtn.textContent = 'Submit Feedback';
+            }
+          }).catch(function() { submitBtn.disabled = false; submitBtn.textContent = 'Submit Feedback'; });
+        });
+      }
+
+      // ─── LOAD DATA & RENDER ────────────────────────────────────────────────────
+      fetch('/api/guest-portal/' + TOKEN)
+        .then(function(r) {
+          if (!r.ok) throw new Error('Portal not found');
+          return r.json();
+        })
+        .then(function(d) {
+          data = d;
+          if (d.phase === 'post-checkout') renderFeedback();
+          else if (d.phase === 'during-stay') renderHub();
+          else renderWizard();
+        })
+        .catch(function(err) {
+          portalEl.innerHTML = '<div class="loading-screen" style="color:#e05a5a">Unable to load your portal. Please try again later.</div>';
+        });
+    })();
+  </script>
+</MarketingLayout>

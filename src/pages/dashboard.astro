@@ -539,6 +539,13 @@ import '../styles/dashboard.css';
         </div>
         <div class="tm30-hint" id="dm-tm30-hint" style="display:none"></div>
       </div>
+
+      <!-- Guest Portal -->
+      <div class="fg" id="dm-portal-row" style="margin-top:16px;padding-top:16px;border-top:1px solid #e4e2de">
+        <label>Guest Portal</label>
+        <div id="dm-portal-status"></div>
+        <div id="dm-portal-actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
     </div>
     <div class="detail-panel-footer">
       <button class="btn btn-danger" id="dm-delete" style="display:none">Delete Booking</button>
@@ -1983,9 +1990,67 @@ import '../styles/dashboard.css';
       }
     }
 
+    // Guest Portal status
+    loadPortalStatus(b);
+
     document.getElementById('detail-panel').classList.add('open');
     document.getElementById('detail-overlay').classList.add('open');
     if (!presentMode) document.getElementById('dm-guest').focus();
+  }
+
+  function loadPortalStatus(booking) {
+    const statusEl = document.getElementById('dm-portal-status');
+    const actionsEl = document.getElementById('dm-portal-actions');
+    const portalRow = document.getElementById('dm-portal-row');
+    const hideTypes = ['blocked', 'owner'];
+    if (hideTypes.includes(booking.type) || presentMode) {
+      portalRow.style.display = 'none';
+      return;
+    }
+    portalRow.style.display = '';
+    statusEl.innerHTML = '<span style="font-size:12px;color:#8b8b85">Checking...</span>';
+    actionsEl.innerHTML = '';
+
+    fetch('/api/guest-portal', { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        const portal = (data.portals || []).find(p => p.bookingId === booking.id);
+        if (portal) {
+          const steps = portal.completedSteps || [];
+          const total = 6;
+          const done = steps.length;
+          const stepLabels = { welcome: 'Welcome', tm30: 'TM30', dietary: 'Dietary', extras: 'Extras', arrival: 'Arrival', practical: 'Info' };
+          const dots = ['welcome','tm30','dietary','extras','arrival','practical'].map(s =>
+            `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${steps.includes(s) ? 'var(--accent)' : '#e4e2de'};margin-right:3px" title="${stepLabels[s]}"></span>`
+          ).join('');
+          statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:12px">${dots}<span style="color:#8b8b85">${done}/${total} steps</span></div>`;
+          const url = `${window.location.origin}/guest/${portal.token}`;
+          actionsEl.innerHTML = `<button class="btn btn-sm" onclick="navigator.clipboard.writeText('${url}');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Link',1500)">Copy Link</button><a class="btn btn-sm" href="/guest/${portal.token}" target="_blank" style="text-decoration:none">Open Portal</a>`;
+        } else {
+          statusEl.innerHTML = '<span style="font-size:12px;color:#8b8b85">No portal created yet</span>';
+          actionsEl.innerHTML = `<button class="btn btn-sm btn-primary" id="dm-generate-portal">Generate Guest Link</button>`;
+          document.getElementById('dm-generate-portal').addEventListener('click', function() {
+            this.disabled = true; this.textContent = 'Generating...';
+            fetch('/api/guest-portal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ bookingId: booking.id })
+            })
+            .then(r => r.json())
+            .then(result => {
+              if (result.portal) {
+                const url = `${window.location.origin}${result.url}`;
+                statusEl.innerHTML = '<span style="font-size:12px;color:var(--accent)">Portal created!</span>';
+                actionsEl.innerHTML = `<button class="btn btn-sm" onclick="navigator.clipboard.writeText('${url}');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Link',1500)">Copy Link</button><a class="btn btn-sm" href="${result.url}" target="_blank" style="text-decoration:none">Open Portal</a>`;
+                navigator.clipboard.writeText(url).catch(() => {});
+              }
+            })
+            .catch(() => { this.disabled = false; this.textContent = 'Generate Guest Link'; });
+          });
+        }
+      })
+      .catch(() => { statusEl.innerHTML = ''; });
   }
 
   function updateDetailAmountInfo(nights) {

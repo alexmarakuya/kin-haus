@@ -1,5 +1,5 @@
-import { defineMiddleware } from 'astro:middleware';
-import { getSessionToken } from './lib/auth.ts';
+import { defineMiddleware } from "astro:middleware";
+import { getSessionToken } from "./lib/auth.ts";
 
 export const onRequest = defineMiddleware(async ({ request, cookies, redirect }, next) => {
   const url = new URL(request.url);
@@ -8,39 +8,60 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   // Public routes -- no auth needed
   // Allow POST to /api/inquiries from the marketing site (public booking form)
   // Allow GET to /api/availability/* (public availability calendar)
-  const isPublicInquiry = path === '/api/inquiries' && request.method === 'POST';
-  const isPublicAvailability = path.startsWith('/api/availability') && request.method === 'GET';
-  const isWhatsAppWebhook = path === '/api/whatsapp/webhook';
-  const isHousekeepingIcal = path === '/api/housekeeping/ical' && request.method === 'GET';
-  const isProtected = path.startsWith('/dashboard') || (path.startsWith('/api/') && !path.startsWith('/api/auth') && !isPublicInquiry && !isPublicAvailability && !isWhatsAppWebhook && !isHousekeepingIcal);
+  const isPublicInquiry = path === "/api/inquiries" && request.method === "POST";
+  const isPublicAvailability = path.startsWith("/api/availability") && request.method === "GET";
+  const isWhatsAppWebhook = path === "/api/whatsapp/webhook";
+  const isHousekeepingIcal = path === "/api/housekeeping/ical" && request.method === "GET";
+  const isPublicDietary = path === "/api/dietary" && request.method === "POST";
+  const isGuestPortalPage = path.startsWith("/guest/");
+  const isGuestPortalApi = path.startsWith("/api/guest-portal/");
+  const isProtected =
+    path.startsWith("/dashboard") ||
+    path.startsWith("/accounting") ||
+    path.startsWith("/admin") ||
+    (path.startsWith("/api/") &&
+      !path.startsWith("/api/auth") &&
+      !isPublicInquiry &&
+      !isPublicAvailability &&
+      !isWhatsAppWebhook &&
+      !isHousekeepingIcal &&
+      !isPublicDietary &&
+      !isGuestPortalApi);
+  if (isGuestPortalPage || isGuestPortalApi) {
+    const response = await next();
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    response.headers.set("X-Frame-Options", "DENY");
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    return response;
+  }
 
   if (!isProtected) {
     const response = await next();
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-Frame-Options', 'DENY');
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    response.headers.set("X-Frame-Options", "DENY");
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
     return response;
   }
 
   // Check session cookie
-  const session = cookies.get('kin_session')?.value;
+  const session = cookies.get("kin_session")?.value;
   const validToken = getSessionToken();
 
   if (session === validToken) {
     const response = await next();
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-Frame-Options', 'DENY');
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set("X-Content-Type-Options", "nosniff");
+    response.headers.set("X-Frame-Options", "DENY");
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
     return response;
   }
 
   // Not authenticated
-  if (path.startsWith('/api/')) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+  if (path.startsWith("/api/")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
-  return redirect('/login', 302);
+  return redirect("/login", 302);
 });
