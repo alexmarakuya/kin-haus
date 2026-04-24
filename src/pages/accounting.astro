@@ -1,0 +1,668 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/dashboard.css';
+---
+
+<BaseLayout title="Kin Haus — Accounting">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#2c6e49">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">Kin Haus</div>
+      <div class="header-sub">Income, expenses &amp; P&amp;L</div>
+    </div>
+    <div class="header-right">
+      <a class="btn btn-sm" href="/dashboard">&#x2190; Hub</a>
+      <button class="btn btn-sm" type="button" id="btn-add-expense">+ Expense</button>
+      <button class="btn btn-sm btn-primary" type="button" id="btn-add-income">+ Income</button>
+    </div>
+  </div>
+
+  <div class="alerts" id="alerts"></div>
+
+  <div class="layout" style="grid-template-columns: 1fr; max-width: 1100px; margin: 0 auto; padding: 16px 20px 48px;">
+    <p style="font-size:12px; color: var(--muted, #8b8b85); margin: 0 0 12px; line-height:1.45;">
+      Mark rows as <strong>Business</strong> for Kin Haus profitability (net = business income minus business expenses).
+      Use <strong>Personal</strong> for money you still want logged but not in that net. Deposit account tracks where cash landed (Wise, cash drawer, business bank, etc.).
+    </p>
+
+    <div class="tab-bar" style="margin-bottom: 14px;">
+      <div class="tab active" data-tab="overview">Overview</div>
+      <div class="tab" data-tab="expenses">Expenses</div>
+      <div class="tab" data-tab="income">Income</div>
+      <div class="tab-spacer"></div>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom: 16px; flex-wrap: wrap;">
+      <span class="filter-label">From</span>
+      <input type="date" id="filter-from" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;" />
+      <span class="filter-label">To</span>
+      <input type="date" id="filter-to" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;" />
+      <button class="btn btn-sm" type="button" id="btn-apply">Apply</button>
+    </div>
+
+    <div id="pane-overview" class="cal-pane" style="padding: 0;">
+      <div id="overview-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;"></div>
+      <div style="font-weight:600; margin-bottom:8px; font-size:13px;">Income by deposit (all scopes)</div>
+      <div id="overview-deposits" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted,#8b8b85);"></div>
+    </div>
+
+    <div id="pane-expenses" class="cal-pane" style="padding: 0; display: none;">
+      <div class="filter-bar" style="margin-bottom: 12px; flex-wrap: wrap;">
+        <span class="filter-label">Category</span>
+        <select id="filter-exp-cat" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
+        <span class="filter-label">Scope</span>
+        <select id="filter-exp-scope" class="login-input" style="width: auto; min-width: 120px; padding: 8px 10px;">
+          <option value="">All</option>
+          <option value="business">Business</option>
+          <option value="personal">Personal</option>
+        </select>
+      </div>
+      <div id="exp-summary" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted, #8b8b85); margin-bottom: 12px;"></div>
+      <div id="expense-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+
+    <div id="pane-income" class="cal-pane" style="padding: 0; display: none;">
+      <div class="filter-bar" style="margin-bottom: 12px; flex-wrap: wrap;">
+        <span class="filter-label">Category</span>
+        <select id="filter-inc-cat" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
+        <span class="filter-label">Deposit</span>
+        <select id="filter-inc-dep" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
+        <span class="filter-label">Scope</span>
+        <select id="filter-inc-scope" class="login-input" style="width: auto; min-width: 120px; padding: 8px 10px;">
+          <option value="">All</option>
+          <option value="business">Business</option>
+          <option value="personal">Personal</option>
+        </select>
+      </div>
+      <div id="inc-summary" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted, #8b8b85); margin-bottom: 12px;"></div>
+      <div id="income-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+  </div>
+
+  <div id="modal-exp-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:var(--card-bg, #fff); border-radius:12px; max-width:420px; width:100%; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.2); max-height:90vh; overflow:auto;">
+      <div style="font-weight:600; margin-bottom:14px;" id="modal-exp-title">Add expense</div>
+      <form id="form-expense">
+        <input type="hidden" id="f-exp-id" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Date</label>
+        <input type="date" id="f-exp-date" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Amount (THB)</label>
+        <input type="number" id="f-exp-amount" min="0" step="0.01" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Vendor</label>
+        <input type="text" id="f-exp-vendor" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Category</label>
+        <select id="f-exp-category" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;"></select>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Scope</label>
+        <select id="f-exp-scope" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;">
+          <option value="business">Business (Kin Haus P&amp;L)</option>
+          <option value="personal">Personal</option>
+        </select>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Notes</label>
+        <textarea id="f-exp-notes" rows="2" class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px; resize:vertical;"></textarea>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Receipt image (optional)</label>
+        <input type="file" id="f-exp-file" accept="image/jpeg,image/png,image/webp" class="login-input" style="width:100%; margin-bottom:14px; padding:8px 0;" />
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" class="btn btn-sm" id="btn-exp-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-inc-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:var(--card-bg, #fff); border-radius:12px; max-width:420px; width:100%; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.2); max-height:90vh; overflow:auto;">
+      <div style="font-weight:600; margin-bottom:14px;" id="modal-inc-title">Add income</div>
+      <form id="form-income">
+        <input type="hidden" id="f-inc-id" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Date</label>
+        <input type="date" id="f-inc-date" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Amount (THB)</label>
+        <input type="number" id="f-inc-amount" min="0" step="0.01" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Description</label>
+        <input type="text" id="f-inc-desc" required placeholder="e.g. Airbnb payout March" class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Category</label>
+        <select id="f-inc-category" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;"></select>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Deposit account</label>
+        <select id="f-inc-deposit" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;"></select>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Scope</label>
+        <select id="f-inc-scope" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;">
+          <option value="business">Business (Kin Haus P&amp;L)</option>
+          <option value="personal">Personal</option>
+        </select>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Notes</label>
+        <textarea id="f-inc-notes" rows="2" class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px; resize:vertical;"></textarea>
+        <label class="filter-label" style="display:block; margin-bottom:4px;">Attachment (optional)</label>
+        <input type="file" id="f-inc-file" accept="image/jpeg,image/png,image/webp" class="login-input" style="width:100%; margin-bottom:14px; padding:8px 0;" />
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" class="btn btn-sm" id="btn-inc-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script is:inline>
+    const EXP_CAT_LABELS = {
+      supplies: 'Supplies',
+      food: 'Food & groceries',
+      utilities: 'Utilities',
+      maintenance: 'Maintenance',
+      travel: 'Travel',
+      fees: 'Fees & subscriptions',
+      other: 'Other',
+    };
+    const INC_CAT_LABELS = {
+      airbnb: 'Airbnb / OTA',
+      direct_booking: 'Direct booking',
+      coworking: 'Coworking / desks',
+      monitor_rental: 'Monitor rental',
+      transfer: 'Transfer / other inflow',
+      other: 'Other income',
+    };
+    const DEP_LABELS = {
+      wise: 'Wise',
+      cash: 'Cash',
+      business: 'Business bank',
+      personal_other: 'Personal account / other',
+      other: 'Other',
+    };
+    const SCOPE_LABEL = { business: 'Business', personal: 'Personal' };
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    }
+
+    function fmtMoney(n) {
+      return new Intl.NumberFormat('en-TH', { maximumFractionDigits: 2 }).format(n);
+    }
+
+    const els = {
+      alerts: document.getElementById('alerts'),
+      filterFrom: document.getElementById('filter-from'),
+      filterTo: document.getElementById('filter-to'),
+      btnApply: document.getElementById('btn-apply'),
+      btnAddExp: document.getElementById('btn-add-expense'),
+      btnAddInc: document.getElementById('btn-add-income'),
+      paneOverview: document.getElementById('pane-overview'),
+      paneExp: document.getElementById('pane-expenses'),
+      paneInc: document.getElementById('pane-income'),
+      overviewCards: document.getElementById('overview-cards'),
+      overviewDeposits: document.getElementById('overview-deposits'),
+      expList: document.getElementById('expense-list'),
+      expSummary: document.getElementById('exp-summary'),
+      incList: document.getElementById('income-list'),
+      incSummary: document.getElementById('inc-summary'),
+      filterExpCat: document.getElementById('filter-exp-cat'),
+      filterExpScope: document.getElementById('filter-exp-scope'),
+      filterIncCat: document.getElementById('filter-inc-cat'),
+      filterIncDep: document.getElementById('filter-inc-dep'),
+      filterIncScope: document.getElementById('filter-inc-scope'),
+      modalExp: document.getElementById('modal-exp-backdrop'),
+      modalInc: document.getElementById('modal-inc-backdrop'),
+      modalExpTitle: document.getElementById('modal-exp-title'),
+      modalIncTitle: document.getElementById('modal-inc-title'),
+      formExp: document.getElementById('form-expense'),
+      formInc: document.getElementById('form-income'),
+      fExpId: document.getElementById('f-exp-id'),
+      fExpDate: document.getElementById('f-exp-date'),
+      fExpAmount: document.getElementById('f-exp-amount'),
+      fExpVendor: document.getElementById('f-exp-vendor'),
+      fExpCategory: document.getElementById('f-exp-category'),
+      fExpScope: document.getElementById('f-exp-scope'),
+      fExpNotes: document.getElementById('f-exp-notes'),
+      fExpFile: document.getElementById('f-exp-file'),
+      fIncId: document.getElementById('f-inc-id'),
+      fIncDate: document.getElementById('f-inc-date'),
+      fIncAmount: document.getElementById('f-inc-amount'),
+      fIncDesc: document.getElementById('f-inc-desc'),
+      fIncCategory: document.getElementById('f-inc-category'),
+      fIncDeposit: document.getElementById('f-inc-deposit'),
+      fIncScope: document.getElementById('f-inc-scope'),
+      fIncNotes: document.getElementById('f-inc-notes'),
+      fIncFile: document.getElementById('f-inc-file'),
+      btnExpCancel: document.getElementById('btn-exp-cancel'),
+      btnIncCancel: document.getElementById('btn-inc-cancel'),
+    };
+
+    let activeTab = 'overview';
+
+    function showAlert(msg, isErr) {
+      els.alerts.innerHTML = '<div class="alert ' + (isErr ? 'alert-error' : 'alert-success') + '" style="margin:12px 20px;">' + esc(msg) + '</div>';
+      setTimeout(function () { els.alerts.innerHTML = ''; }, 5000);
+    }
+
+    function fillSelect(sel, keys, labels) {
+      const keepFirst = sel.querySelector('option[value=""]');
+      sel.innerHTML = '';
+      if (keepFirst) sel.appendChild(keepFirst);
+      else {
+        const o0 = document.createElement('option');
+        o0.value = '';
+        o0.textContent = 'All';
+        sel.appendChild(o0);
+      }
+      for (const k of keys) {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = labels[k] || k;
+        sel.appendChild(o);
+      }
+    }
+
+    function fillSelectRequired(sel, keys, labels) {
+      sel.innerHTML = '';
+      for (const k of keys) {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = labels[k] || k;
+        sel.appendChild(o);
+      }
+    }
+
+    function queryRange() {
+      const p = new URLSearchParams();
+      if (els.filterFrom.value) p.set('from', els.filterFrom.value);
+      if (els.filterTo.value) p.set('to', els.filterTo.value);
+      return p;
+    }
+
+    async function loadSummary() {
+      const res = await fetch('/api/accounting/summary?' + queryRange().toString());
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert(data.error || 'Summary failed', true);
+        return;
+      }
+      const s = data.summary;
+      const b = s.business;
+      const p = s.personal;
+      const netClass = b.net >= 0 ? '#1b4332' : '#8a1010';
+      els.overviewCards.innerHTML =
+        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff);">' +
+        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Business income</div>' +
+        '<div style="font-size:20px; font-weight:600; margin-top:4px;">&#x0E3F;' + fmtMoney(b.incomeTotal) + '</div>' +
+        '<div style="font-size:11px; color:#999; margin-top:4px;">' + b.incomeCount + ' line(s)</div></div>' +
+        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff);">' +
+        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Business expenses</div>' +
+        '<div style="font-size:20px; font-weight:600; margin-top:4px;">&#x0E3F;' + fmtMoney(b.expenseTotal) + '</div>' +
+        '<div style="font-size:11px; color:#999; margin-top:4px;">' + b.expenseCount + ' line(s)</div></div>' +
+        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff); border-color:var(--accent,#2c6e49);">' +
+        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Business net</div>' +
+        '<div style="font-size:22px; font-weight:700; margin-top:4px; color:' + netClass + ';">&#x0E3F;' + fmtMoney(b.net) + '</div>' +
+        '<div style="font-size:11px; color:#999; margin-top:4px;">Income minus expenses</div></div>' +
+        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff);">' +
+        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Personal (tracked)</div>' +
+        '<div style="font-size:13px; margin-top:8px;">In &#x0E3F;' + fmtMoney(p.incomeTotal) + ' / Out &#x0E3F;' + fmtMoney(p.expenseTotal) + '</div>' +
+        '<div style="font-size:11px; color:#999; margin-top:4px;">Not in business net</div></div>';
+
+      const dep = s.incomeByDepositAccount || {};
+      const keys = Object.keys(dep).sort();
+      if (!keys.length) {
+        els.overviewDeposits.textContent = 'No income in this range.';
+      } else {
+        els.overviewDeposits.innerHTML = keys.map(function (k) {
+          const row = dep[k];
+          return '<div style="margin-bottom:6px;">' + esc(DEP_LABELS[k] || k) + ': &#x0E3F;' + fmtMoney(row.total) + ' (' + row.count + ')</div>';
+        }).join('');
+      }
+    }
+
+    async function loadExpenses() {
+      const p = queryRange();
+      if (els.filterExpCat.value) p.set('category', els.filterExpCat.value);
+      if (els.filterExpScope.value) p.set('scope', els.filterExpScope.value);
+      const res = await fetch('/api/expenses?' + p.toString());
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert(data.error || 'Failed to load expenses', true);
+        return;
+      }
+      if (data.meta && data.meta.categories) {
+        fillSelect(els.filterExpCat, data.meta.categories, EXP_CAT_LABELS);
+        fillSelectRequired(els.fExpCategory, data.meta.categories, EXP_CAT_LABELS);
+      }
+      els.expSummary.textContent = data.meta.total + ' expenses · Total ' + fmtMoney(data.meta.totalAmount) + ' THB';
+      els.expList.innerHTML = '';
+      for (let i = 0; i < data.expenses.length; i++) {
+        const e = data.expenses[i];
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--border, #e8e8e4); border-radius:10px; background:var(--card-bg, #fff);';
+        const thumb = document.createElement('div');
+        thumb.style.cssText = 'width:72px; height:72px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f0f0ec;';
+        if (e.imageFilename) {
+          const img = document.createElement('img');
+          img.src = '/api/expenses/' + encodeURIComponent(e.id) + '/file';
+          img.alt = '';
+          img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+          thumb.appendChild(img);
+        } else {
+          thumb.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:#999;">No image</div>';
+        }
+        const body = document.createElement('div');
+        body.style.flex = '1';
+        const scope = e.scope || 'business';
+        body.innerHTML = '<div style="font-weight:600;">' + esc(e.vendor) + '</div>' +
+          '<div style="font-size:12px; color:var(--muted,#8b8b85); margin-top:2px;">' + esc(e.date) + ' · ' + esc(EXP_CAT_LABELS[e.category] || e.category) +
+          ' · <strong style="color:var(--text,#1a1a18)">&#x0E3F;' + fmtMoney(e.amount) + '</strong> · ' + esc(SCOPE_LABEL[scope] || scope) + '</div>' +
+          (e.notes ? '<div style="font-size:12px; margin-top:6px;">' + esc(e.notes) + '</div>' : '') +
+          '<div style="font-size:10px; color:#aaa; margin-top:6px;">' + esc(e.source || 'manual') + ' · ' + esc(e.id) + '</div>';
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'btn btn-sm';
+        btnEdit.textContent = 'Edit';
+        btnEdit.onclick = function () { openExpModal(e); };
+        const btnDel = document.createElement('button');
+        btnDel.type = 'button';
+        btnDel.className = 'btn btn-sm';
+        btnDel.textContent = 'Delete';
+        btnDel.onclick = function () { delExpense(e.id); };
+        actions.appendChild(btnEdit);
+        actions.appendChild(btnDel);
+        card.appendChild(thumb);
+        card.appendChild(body);
+        card.appendChild(actions);
+        els.expList.appendChild(card);
+      }
+    }
+
+    async function loadIncomes() {
+      const p = queryRange();
+      if (els.filterIncCat.value) p.set('category', els.filterIncCat.value);
+      if (els.filterIncDep.value) p.set('depositAccount', els.filterIncDep.value);
+      if (els.filterIncScope.value) p.set('scope', els.filterIncScope.value);
+      const res = await fetch('/api/income?' + p.toString());
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert(data.error || 'Failed to load income', true);
+        return;
+      }
+      if (data.meta) {
+        if (data.meta.categories) {
+          fillSelect(els.filterIncCat, data.meta.categories, INC_CAT_LABELS);
+          fillSelectRequired(els.fIncCategory, data.meta.categories, INC_CAT_LABELS);
+        }
+        if (data.meta.depositAccounts) {
+          fillSelect(els.filterIncDep, data.meta.depositAccounts, DEP_LABELS);
+          fillSelectRequired(els.fIncDeposit, data.meta.depositAccounts, DEP_LABELS);
+        }
+      }
+      els.incSummary.textContent = data.meta.total + ' income line(s) · Total ' + fmtMoney(data.meta.totalAmount) + ' THB';
+      els.incList.innerHTML = '';
+      for (let i = 0; i < data.incomes.length; i++) {
+        const e = data.incomes[i];
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--border, #e8e8e4); border-radius:10px; background:var(--card-bg, #fff);';
+        const thumb = document.createElement('div');
+        thumb.style.cssText = 'width:72px; height:72px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f0f0ec;';
+        if (e.imageFilename) {
+          const img = document.createElement('img');
+          img.src = '/api/income/' + encodeURIComponent(e.id) + '/file';
+          img.alt = '';
+          img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+          thumb.appendChild(img);
+        } else {
+          thumb.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:#999;">No image</div>';
+        }
+        const body = document.createElement('div');
+        body.style.flex = '1';
+        body.innerHTML = '<div style="font-weight:600;">' + esc(e.description) + '</div>' +
+          '<div style="font-size:12px; color:var(--muted,#8b8b85); margin-top:2px;">' + esc(e.date) + ' · ' + esc(INC_CAT_LABELS[e.category] || e.category) +
+          ' · ' + esc(DEP_LABELS[e.depositAccount] || e.depositAccount) +
+          ' · <strong style="color:var(--text,#1a1a18)">&#x0E3F;' + fmtMoney(e.amount) + '</strong> · ' + esc(SCOPE_LABEL[e.scope] || e.scope) + '</div>' +
+          (e.notes ? '<div style="font-size:12px; margin-top:6px;">' + esc(e.notes) + '</div>' : '') +
+          '<div style="font-size:10px; color:#aaa; margin-top:6px;">' + esc(e.source || 'manual') + ' · ' + esc(e.id) + '</div>';
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'btn btn-sm';
+        btnEdit.textContent = 'Edit';
+        btnEdit.onclick = function () { openIncModal(e); };
+        const btnDel = document.createElement('button');
+        btnDel.type = 'button';
+        btnDel.className = 'btn btn-sm';
+        btnDel.textContent = 'Delete';
+        btnDel.onclick = function () { delIncome(e.id); };
+        actions.appendChild(btnEdit);
+        actions.appendChild(btnDel);
+        card.appendChild(thumb);
+        card.appendChild(body);
+        card.appendChild(actions);
+        els.incList.appendChild(card);
+      }
+    }
+
+    function refreshAll() {
+      loadSummary();
+      loadExpenses();
+      loadIncomes();
+    }
+
+    function setTab(name) {
+      activeTab = name;
+      document.querySelectorAll('.tab-bar .tab').forEach(function (t) {
+        t.classList.toggle('active', t.getAttribute('data-tab') === name);
+      });
+      els.paneOverview.style.display = name === 'overview' ? 'block' : 'none';
+      els.paneExp.style.display = name === 'expenses' ? 'block' : 'none';
+      els.paneInc.style.display = name === 'income' ? 'block' : 'none';
+    }
+
+    document.querySelectorAll('.tab-bar .tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        setTab(t.getAttribute('data-tab'));
+      });
+    });
+
+    function openExpModal(edit) {
+      els.modalExp.style.display = 'flex';
+      els.fExpFile.value = '';
+      if (edit) {
+        els.modalExpTitle.textContent = 'Edit expense';
+        els.fExpId.value = edit.id;
+        els.fExpDate.value = edit.date;
+        els.fExpAmount.value = String(edit.amount);
+        els.fExpVendor.value = edit.vendor;
+        els.fExpCategory.value = edit.category;
+        els.fExpScope.value = edit.scope === 'personal' ? 'personal' : 'business';
+        els.fExpNotes.value = edit.notes || '';
+      } else {
+        els.modalExpTitle.textContent = 'Add expense';
+        els.fExpId.value = '';
+        var t = new Date();
+        els.fExpDate.value = t.toISOString().slice(0, 10);
+        els.fExpAmount.value = '';
+        els.fExpVendor.value = '';
+        els.fExpCategory.selectedIndex = 0;
+        els.fExpScope.value = 'business';
+        els.fExpNotes.value = '';
+      }
+    }
+
+    function closeExpModal() {
+      els.modalExp.style.display = 'none';
+    }
+
+    function openIncModal(edit) {
+      els.modalInc.style.display = 'flex';
+      els.fIncFile.value = '';
+      if (edit) {
+        els.modalIncTitle.textContent = 'Edit income';
+        els.fIncId.value = edit.id;
+        els.fIncDate.value = edit.date;
+        els.fIncAmount.value = String(edit.amount);
+        els.fIncDesc.value = edit.description;
+        els.fIncCategory.value = edit.category;
+        els.fIncDeposit.value = edit.depositAccount;
+        els.fIncScope.value = edit.scope === 'personal' ? 'personal' : 'business';
+        els.fIncNotes.value = edit.notes || '';
+      } else {
+        els.modalIncTitle.textContent = 'Add income';
+        els.fIncId.value = '';
+        var t2 = new Date();
+        els.fIncDate.value = t2.toISOString().slice(0, 10);
+        els.fIncAmount.value = '';
+        els.fIncDesc.value = '';
+        els.fIncCategory.selectedIndex = 0;
+        els.fIncDeposit.selectedIndex = 0;
+        els.fIncScope.value = 'business';
+        els.fIncNotes.value = '';
+      }
+    }
+
+    function closeIncModal() {
+      els.modalInc.style.display = 'none';
+    }
+
+    async function delExpense(id) {
+      if (!confirm('Delete this expense?')) return;
+      const res = await fetch('/api/expenses/' + encodeURIComponent(id), { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert(data.error || 'Delete failed', true);
+        return;
+      }
+      showAlert('Deleted');
+      refreshAll();
+    }
+
+    async function delIncome(id) {
+      if (!confirm('Delete this income line?')) return;
+      const res = await fetch('/api/income/' + encodeURIComponent(id), { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert(data.error || 'Delete failed', true);
+        return;
+      }
+      showAlert('Deleted');
+      refreshAll();
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise(function (resolve, reject) {
+        var r = new FileReader();
+        r.onload = function () { resolve(r.result); };
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    els.btnApply.onclick = refreshAll;
+    els.btnAddExp.onclick = function () { openExpModal(null); };
+    els.btnAddInc.onclick = function () { openIncModal(null); };
+    els.btnExpCancel.onclick = closeExpModal;
+    els.btnIncCancel.onclick = closeIncModal;
+    els.modalExp.onclick = function (ev) { if (ev.target === els.modalExp) closeExpModal(); };
+    els.modalInc.onclick = function (ev) { if (ev.target === els.modalInc) closeIncModal(); };
+
+    els.filterExpCat.onchange = loadExpenses;
+    els.filterExpScope.onchange = loadExpenses;
+    els.filterIncCat.onchange = loadIncomes;
+    els.filterIncDep.onchange = loadIncomes;
+    els.filterIncScope.onchange = loadIncomes;
+
+    els.formExp.onsubmit = async function (ev) {
+      ev.preventDefault();
+      var id = els.fExpId.value;
+      var imageBase64;
+      var file = els.fExpFile.files && els.fExpFile.files[0];
+      if (file) {
+        if (file.size > 6 * 1024 * 1024) {
+          showAlert('Image must be under 6 MB', true);
+          return;
+        }
+        imageBase64 = await readFileAsDataUrl(file);
+      }
+      var payload = {
+        date: els.fExpDate.value,
+        amount: Number(els.fExpAmount.value),
+        vendor: els.fExpVendor.value,
+        category: els.fExpCategory.value,
+        scope: els.fExpScope.value,
+        notes: els.fExpNotes.value,
+        source: 'dashboard',
+      };
+      if (imageBase64) payload.imageBase64 = imageBase64;
+
+      var res;
+      if (id) {
+        var patch = Object.assign({}, payload);
+        if (!file) delete patch.imageBase64;
+        res = await fetch('/api/expenses/' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        });
+      } else {
+        res = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+      var data = await res.json();
+      if (!res.ok) {
+        showAlert(data.error || 'Save failed', true);
+        return;
+      }
+      closeExpModal();
+      showAlert('Saved');
+      refreshAll();
+    };
+
+    els.formInc.onsubmit = async function (ev) {
+      ev.preventDefault();
+      var id = els.fIncId.value;
+      var imageBase64;
+      var file2 = els.fIncFile.files && els.fIncFile.files[0];
+      if (file2) {
+        if (file2.size > 6 * 1024 * 1024) {
+          showAlert('Image must be under 6 MB', true);
+          return;
+        }
+        imageBase64 = await readFileAsDataUrl(file2);
+      }
+      var payload2 = {
+        date: els.fIncDate.value,
+        amount: Number(els.fIncAmount.value),
+        description: els.fIncDesc.value,
+        category: els.fIncCategory.value,
+        depositAccount: els.fIncDeposit.value,
+        scope: els.fIncScope.value,
+        notes: els.fIncNotes.value,
+        source: 'dashboard',
+      };
+      if (imageBase64) payload2.imageBase64 = imageBase64;
+
+      var res2;
+      if (id) {
+        var patch2 = Object.assign({}, payload2);
+        if (!file2) delete patch2.imageBase64;
+        res2 = await fetch('/api/income/' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch2),
+        });
+      } else {
+        res2 = await fetch('/api/income', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload2),
+        });
+      }
+      var data2 = await res2.json();
+      if (!res2.ok) {
+        showAlert(data2.error || 'Save failed', true);
+        return;
+      }
+      closeIncModal();
+      showAlert('Saved');
+      refreshAll();
+    };
+
+    refreshAll();
+  </script>
+</BaseLayout>
