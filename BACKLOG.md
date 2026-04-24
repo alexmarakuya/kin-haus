@@ -5,7 +5,6 @@
 
 ## Next Up
 
-- [ ] **LLM: Dashboard draft-reply for inquiries** -- Add a "Draft Reply" button to inquiry cards that generates a WhatsApp response with accurate pricing and availability. Phase 2 of LLM integration (design complete in plan file).
 - [ ] **LLM: Marketing site chat widget** -- Floating chat bubble on room pages and contact page, reusing the same AI tools as the WhatsApp chatbot. Phase 3 of LLM integration.
 
 ## Planned
@@ -23,7 +22,8 @@
 
 ## Completed
 
-- [x] **MCP server for Claude Code** -- 10-tool MCP server wrapping the REST API (list/create/update/delete bookings, inquiries, availability, pricing, status, cache refresh). Stdio transport with HMAC-SHA256 auth. *(completed 2026-03-11)*
-- [x] **WhatsApp chatbot: dynamic pricing + promo codes** -- Added 3 new tools (calculate_price, lookup_pricing, validate_promo_code), auto-calculated inquiry amounts, removed hardcoded rates from system prompt. *(completed 2026-03-11)*
-- [x] **Calendar half-day bars** -- Check-in cells show right-half colored, last-night cells show left-half colored, making booking boundaries visually clear. *(completed 2026-03-11)*
-- [x] **Waitlist/backup booking type** -- New `waitlist` type with purple dotted styling, excluded from conflicts/revenue/occupancy, with "Promote to Booking" flow. *(completed 2026-03-11)*
+- [x] **MCP server for Claude Code** -- 10-tool MCP server wrapping the REST API (list/create/update/delete bookings, inquiries, availability, pricing, status, cache refresh). Stdio transport with HMAC-SHA256 auth. _(completed 2026-03-11)_
+- [x] **WhatsApp chatbot: dynamic pricing + promo codes** -- Added 3 new tools (calculate_price, lookup_pricing, validate_promo_code), auto-calculated inquiry amounts, removed hardcoded rates from system prompt. _(completed 2026-03-11)_
+- [x] **LLM: Dashboard draft-reply for inquiries** -- "Draft Reply" button on inquiry cards generates a WhatsApp reply via gpt-4o-mini with live pricing and availability. _(completed 2026-04-24)_
+- [x] **Calendar half-day bars** -- Check-in cells show right-half colored, last-night cells show left-half colored, making booking boundaries visually clear. _(completed 2026-03-11)_
+- [x] **Waitlist/backup booking type** -- New `waitlist` type with purple dotted styling, excluded from conflicts/revenue/occupancy, with "Promote to Booking" flow. _(completed 2026-03-11)_
