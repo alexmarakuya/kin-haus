@@ -2672,6 +2672,10 @@ body.present-mode .present-banner {
 }
 .today-header {
   padding: 24px 28px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .today-date {
   font-size: 20px;
@@ -4028,4 +4032,197 @@ body.present-mode .present-banner {
     width: 48px;
     height: 48px;
   }
+}
+
+/* ─── COMMAND BAR (⌘K) ──────────────────────────────────────────────────────── */
+.cmdbar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9000;
+  display: none;
+  animation: fadeIn 0.12s ease;
+}
+.cmdbar-overlay.open {
+  display: block;
+}
+.cmdbar {
+  position: fixed;
+  top: 20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, calc(100vw - 40px));
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+  z-index: 9001;
+  overflow: hidden;
+  display: none;
+  animation: cmdbarSlideIn 0.15s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.cmdbar.open {
+  display: block;
+}
+@keyframes cmdbarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+.cmdbar-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eeecea;
+}
+.cmdbar-icon {
+  flex-shrink: 0;
+  color: #8b8b85;
+}
+.cmdbar-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 17px;
+  font-family: inherit;
+  color: var(--ink);
+  background: transparent;
+}
+.cmdbar-input::placeholder {
+  color: #b5b3ad;
+}
+.cmdbar-kbd {
+  flex-shrink: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: #8b8b85;
+  background: #f4f2ee;
+  border: 1px solid #dddbd7;
+  border-radius: 4px;
+  padding: 2px 6px;
+  letter-spacing: 0.05em;
+}
+.cmdbar-results {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.cmdbar-group-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8b8b85;
+  padding: 8px 20px 4px;
+}
+.cmdbar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink);
+  transition: background 0.08s;
+  border-radius: 0;
+}
+.cmdbar-item:hover,
+.cmdbar-item.selected {
+  background: #f4f2ee;
+}
+.cmdbar-item-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #f4f2ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.cmdbar-item.ai .cmdbar-item-icon {
+  background: #e8f5ee;
+  color: var(--accent);
+  opacity: 1;
+}
+.cmdbar-item-label {
+  flex: 1;
+  font-weight: 500;
+}
+.cmdbar-item-hint {
+  font-size: 12px;
+  color: #8b8b85;
+  font-family: "JetBrains Mono", monospace;
+}
+.cmdbar-empty {
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #8b8b85;
+}
+.cmdbar-footer {
+  border-top: 1px solid #eeecea;
+  padding: 8px 20px;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: #8b8b85;
+  font-family: "JetBrains Mono", monospace;
+}
+.cmdbar-footer kbd {
+  background: #f4f2ee;
+  border: 1px solid #dddbd7;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: inherit;
+}
+
+/* Today view: briefing button */
+.today-briefing-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: #e8f5ee;
+  color: var(--accent);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.today-briefing-btn:hover {
+  background: #d4ede3;
+}
+
+/* ⌘K hint in header */
+.cmdbar-trigger-hint {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: #8b8b85;
+  background: #f4f2ee;
+  border: 1px solid #dddbd7;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+.cmdbar-trigger-hint:hover {
+  border-color: #b5b3ad;
+  color: var(--ink);
 }

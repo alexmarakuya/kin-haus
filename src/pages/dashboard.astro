@@ -40,6 +40,10 @@ import '../styles/dashboard.css';
         <span id="sync-label">Loading...</span>
       </div>
       <a class="btn btn-sm" href="/accounting" title="Receipts and expenses">Accounting</a>
+      <button class="cmdbar-trigger-hint" onclick="window._openCmdbar && window._openCmdbar()" title="Open command bar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search <kbd style="background:#e4e2de;border:1px solid #ccc;border-radius:3px;padding:1px 5px;font-size:10px;">⌘K</kbd>
+      </button>
       <button class="btn btn-sm btn-currency" id="btn-currency" title="Toggle secondary currency">EUR</button>
       <button class="btn btn-sm" id="btn-present" title="Scramble guest details for screen sharing"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Present</button>
       <button class="btn btn-sm" id="btn-refresh">&#x21bb; Refresh</button>
@@ -4830,6 +4834,10 @@ import '../styles/dashboard.css';
     let html = `
       <div class="today-header">
         <div class="today-date">${dayName}</div>
+        <button class="today-briefing-btn" onclick="if(typeof openChat==='function')openChat();setTimeout(function(){if(typeof sendChatMessage==='function')sendChatMessage('Give me my morning briefing');},80);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 0 2h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1 0-2h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+          Briefing
+        </button>
       </div>
 
       <!-- ROOM STATUS ROW -->
@@ -5048,6 +5056,196 @@ import '../styles/dashboard.css';
       });
       scrollChatToBottom();
     } catch (e) { /* silent fail */ }
+  })();
+  </script>
+
+  <!-- ⌘K COMMAND BAR -->
+  <div class="cmdbar-overlay" id="cmdbar-overlay"></div>
+  <div class="cmdbar" id="cmdbar" role="dialog" aria-label="Command bar">
+    <div class="cmdbar-input-row">
+      <svg class="cmdbar-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="cmdbar-input" id="cmdbar-input" type="text" placeholder="Search or ask anything..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <span class="cmdbar-kbd">ESC</span>
+    </div>
+    <div class="cmdbar-results" id="cmdbar-results"></div>
+    <div class="cmdbar-footer">
+      <span><kbd>&uarr;&darr;</kbd> navigate</span>
+      <span><kbd>&crarr;</kbd> select</span>
+      <span><kbd>ESC</kbd> close</span>
+    </div>
+  </div>
+
+  <script is:inline>
+  (function() {
+    var overlayEl = document.getElementById('cmdbar-overlay');
+    var barEl = document.getElementById('cmdbar');
+    var inputEl = document.getElementById('cmdbar-input');
+    var resultsEl = document.getElementById('cmdbar-results');
+
+    var NAV_ITEMS = [
+      { type: 'nav', tab: 'today',     label: 'Today',     hint: 'View',     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
+      { type: 'nav', tab: 'calendar',  label: 'Calendar',  hint: 'View',     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>' },
+      { type: 'nav', tab: 'list',      label: 'Bookings',  hint: 'View',     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' },
+      { type: 'nav', tab: 'inquiries', label: 'Inquiries', hint: 'View',     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
+      { type: 'nav', tab: 'guests',    label: 'Guests',    hint: 'View',     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+    ];
+
+    var AI_ITEMS = [
+      { type: 'ai', q: 'Give me my morning briefing', label: 'Morning briefing',       hint: 'AI' },
+      { type: 'ai', q: 'Show me gap nights and revenue opportunities', label: 'Gap nights',  hint: 'AI' },
+      { type: 'ai', q: "How's our revenue looking? Give me insights.", label: 'Revenue insights', hint: 'AI' },
+      { type: 'ai', q: 'Add a booking',                               label: 'Add booking',         hint: 'AI' },
+    ];
+
+    var aiIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 0 2h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1 0-2h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>';
+
+    var selectedIdx = -1;
+    var filteredItems = [];
+
+    function openCmdbar() {
+      barEl.classList.add('open');
+      overlayEl.classList.add('open');
+      inputEl.value = '';
+      selectedIdx = -1;
+      renderResults('');
+      setTimeout(function() { inputEl.focus(); }, 30);
+    }
+
+    function closeCmdbar() {
+      barEl.classList.remove('open');
+      overlayEl.classList.remove('open');
+      inputEl.blur();
+    }
+
+    function renderResults(q) {
+      var lower = q.toLowerCase().trim();
+      var navMatches = NAV_ITEMS.filter(function(i) { return !lower || i.label.toLowerCase().includes(lower); });
+      var aiMatches  = AI_ITEMS.filter(function(i) { return !lower || i.label.toLowerCase().includes(lower) || i.q.toLowerCase().includes(lower); });
+
+      filteredItems = [];
+      var html = '';
+
+      if (navMatches.length) {
+        html += '<div class="cmdbar-group-label">Navigate</div>';
+        navMatches.forEach(function(item) {
+          filteredItems.push(item);
+          html += '<div class="cmdbar-item" data-idx="' + (filteredItems.length - 1) + '">' +
+            '<div class="cmdbar-item-icon">' + item.icon + '</div>' +
+            '<span class="cmdbar-item-label">' + item.label + '</span>' +
+            '<span class="cmdbar-item-hint">' + item.hint + '</span>' +
+            '</div>';
+        });
+      }
+
+      if (aiMatches.length) {
+        html += '<div class="cmdbar-group-label">Ask AI</div>';
+        aiMatches.forEach(function(item) {
+          filteredItems.push(item);
+          html += '<div class="cmdbar-item ai" data-idx="' + (filteredItems.length - 1) + '">' +
+            '<div class="cmdbar-item-icon">' + aiIcon + '</div>' +
+            '<span class="cmdbar-item-label">' + item.label + '</span>' +
+            '<span class="cmdbar-item-hint">' + item.hint + '</span>' +
+            '</div>';
+        });
+      }
+
+      // Free-text AI query option when something is typed and doesn't exactly match an AI item
+      if (lower && !AI_ITEMS.some(function(i) { return i.label.toLowerCase() === lower; })) {
+        var freeItem = { type: 'ai', q: q.trim(), label: '\u201c' + q.trim() + '\u201d', hint: 'Ask AI' };
+        filteredItems.push(freeItem);
+        html += '<div class="cmdbar-group-label">Search</div>' +
+          '<div class="cmdbar-item ai" data-idx="' + (filteredItems.length - 1) + '">' +
+          '<div class="cmdbar-item-icon">' + aiIcon + '</div>' +
+          '<span class="cmdbar-item-label">' + freeItem.label + '</span>' +
+          '<span class="cmdbar-item-hint">' + freeItem.hint + '</span>' +
+          '</div>';
+      }
+
+      if (!html) {
+        html = '<div class="cmdbar-empty">No results</div>';
+      }
+
+      resultsEl.innerHTML = html;
+      selectedIdx = -1;
+
+      // click handlers
+      resultsEl.querySelectorAll('.cmdbar-item').forEach(function(el) {
+        el.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          var idx = parseInt(el.getAttribute('data-idx'));
+          runItem(filteredItems[idx]);
+        });
+      });
+    }
+
+    function setSelected(idx) {
+      var items = resultsEl.querySelectorAll('.cmdbar-item');
+      items.forEach(function(el, i) { el.classList.toggle('selected', i === idx); });
+      selectedIdx = idx;
+      if (idx >= 0 && items[idx]) {
+        items[idx].scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function runItem(item) {
+      closeCmdbar();
+      if (item.type === 'nav') {
+        var tabEl = document.querySelector('[data-tab="' + item.tab + '"]');
+        if (tabEl && typeof setTab === 'function') setTab(item.tab, tabEl);
+      } else if (item.type === 'ai') {
+        if (typeof openChat === 'function') openChat();
+        setTimeout(function() {
+          if (typeof sendChatMessage === 'function') sendChatMessage(item.q);
+        }, 80);
+      }
+    }
+
+    inputEl.addEventListener('input', function() {
+      renderResults(inputEl.value);
+    });
+
+    inputEl.addEventListener('keydown', function(e) {
+      var items = resultsEl.querySelectorAll('.cmdbar-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelected(Math.min(selectedIdx + 1, items.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelected(Math.max(selectedIdx - 1, -1));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (selectedIdx >= 0 && filteredItems[selectedIdx]) {
+          runItem(filteredItems[selectedIdx]);
+        } else if (inputEl.value.trim()) {
+          // Free-text: last item is always the free-text AI option
+          runItem(filteredItems[filteredItems.length - 1]);
+        } else if (filteredItems[0]) {
+          runItem(filteredItems[0]);
+        }
+      } else if (e.key === 'Escape') {
+        closeCmdbar();
+      }
+    });
+
+    overlayEl.addEventListener('mousedown', closeCmdbar);
+
+    // Global keyboard shortcut
+    document.addEventListener('keydown', function(e) {
+      var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      var trigger = isMac ? (e.metaKey && e.key === 'k') : (e.ctrlKey && e.key === 'k');
+      if (trigger && !e.shiftKey) {
+        e.preventDefault();
+        if (barEl.classList.contains('open')) { closeCmdbar(); } else { openCmdbar(); }
+        return;
+      }
+      if (e.key === 'Escape' && barEl.classList.contains('open')) {
+        e.preventDefault();
+        closeCmdbar();
+      }
+    });
+
+    // Expose for trigger hint button
+    window._openCmdbar = openCmdbar;
   })();
   </script>
 </BaseLayout>
