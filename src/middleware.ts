@@ -13,6 +13,7 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
   const isWhatsAppWebhook = path === "/api/whatsapp/webhook";
   const isHousekeepingIcal = path === "/api/housekeeping/ical" && request.method === "GET";
   const isPublicDietary = path === "/api/dietary" && request.method === "POST";
+  const isWidgetChat = path === "/api/widget-chat" && request.method === "POST";
   const isGuestPortalPage = path.startsWith("/guest/");
   const isGuestPortalApi = path.startsWith("/api/guest-portal/");
   const isProtected =
@@ -26,6 +27,7 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect },
       !isWhatsAppWebhook &&
       !isHousekeepingIcal &&
       !isPublicDietary &&
+      !isWidgetChat &&
       !isGuestPortalApi);
   if (isGuestPortalPage || isGuestPortalApi) {
     const response = await next();
