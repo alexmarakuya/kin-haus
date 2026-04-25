@@ -6,6 +6,135 @@ import '../styles/dashboard.css';
 <BaseLayout title="Kin Haus — Accounting">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#2c6e49">
+
+  <style>
+    /* Accounting page overrides — these classes are designed for the fixed-height
+       dashboard viewport; reset them to flow normally on this standalone page. */
+    .acct-body {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 28px 64px;
+    }
+    .acct-tabs {
+      padding: 0;
+      border-bottom: 1px solid #e4e2de;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 0;
+    }
+    .acct-date-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 0;
+      border-bottom: 1px solid #eae8e5;
+      margin-bottom: 20px;
+    }
+    .acct-pane { display: block; }
+    .acct-pane-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eae8e5;
+    }
+    .acct-hint {
+      font-size: 12px;
+      color: var(--muted, #8b8b85);
+      line-height: 1.55;
+      margin: 0 0 16px;
+      padding: 12px 16px;
+      background: #f7f6f3;
+      border-radius: 8px;
+    }
+    .acct-summary {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted, #8b8b85);
+      margin-bottom: 16px;
+    }
+    .acct-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .acct-card {
+      padding: 16px;
+      border: 1px solid var(--border, #e8e8e4);
+      border-radius: 10px;
+      background: var(--card-bg, #fff);
+    }
+    .acct-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted, #8b8b85);
+      margin-bottom: 6px;
+    }
+    .acct-card-value {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .acct-card-sub {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .acct-deposit-title {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .acct-deposit-list {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted, #8b8b85);
+    }
+    .acct-row-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .acct-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border: 1px solid var(--border, #e8e8e4);
+      border-radius: 10px;
+      background: var(--card-bg, #fff);
+    }
+    .acct-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #f0f0ec;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .acct-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .acct-thumb-empty { font-size: 11px; color: #999; text-align: center; }
+    .acct-row-body { flex: 1; min-width: 0; }
+    .acct-row-title { font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .acct-row-meta { font-size: 12px; color: var(--muted, #8b8b85); line-height: 1.5; }
+    .acct-row-notes { font-size: 12px; margin-top: 5px; color: var(--ink); }
+    .acct-row-id { font-size: 10px; color: #bbb; margin-top: 5px; }
+    .acct-row-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+    @media (max-width: 600px) {
+      .acct-body { padding: 16px 16px 48px; }
+      .acct-row { flex-wrap: wrap; }
+      .acct-row-actions { flex-direction: row; }
+    }
+  </style>
+
   <div class="header">
     <div class="header-left">
       <div class="header-title">Kin Haus</div>
@@ -20,20 +149,21 @@ import '../styles/dashboard.css';
 
   <div class="alerts" id="alerts"></div>
 
-  <div class="layout" style="grid-template-columns: 1fr; max-width: 1100px; margin: 0 auto; padding: 16px 20px 48px;">
-    <p style="font-size:12px; color: var(--muted, #8b8b85); margin: 0 0 12px; line-height:1.45;">
+  <div class="acct-body">
+    <p class="acct-hint">
       Mark rows as <strong>Business</strong> for Kin Haus profitability (net = business income minus business expenses).
-      Use <strong>Personal</strong> for money you still want logged but not in that net. Deposit account tracks where cash landed (Wise, cash drawer, business bank, etc.).
+      Use <strong>Personal</strong> for money you still want logged but excluded from that net.
+      Deposit account tracks where cash landed (Wise, cash drawer, business bank, etc.).
     </p>
 
-    <div class="tab-bar" style="margin-bottom: 14px;">
+    <div class="acct-tabs tab-bar">
       <div class="tab active" data-tab="overview">Overview</div>
       <div class="tab" data-tab="expenses">Expenses</div>
       <div class="tab" data-tab="income">Income</div>
       <div class="tab-spacer"></div>
     </div>
 
-    <div class="filter-bar" style="margin-bottom: 16px; flex-wrap: wrap;">
+    <div class="acct-date-bar">
       <span class="filter-label">From</span>
       <input type="date" id="filter-from" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;" />
       <span class="filter-label">To</span>
@@ -41,14 +171,16 @@ import '../styles/dashboard.css';
       <button class="btn btn-sm" type="button" id="btn-apply">Apply</button>
     </div>
 
-    <div id="pane-overview" class="cal-pane" style="padding: 0;">
-      <div id="overview-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;"></div>
-      <div style="font-weight:600; margin-bottom:8px; font-size:13px;">Income by deposit (all scopes)</div>
-      <div id="overview-deposits" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted,#8b8b85);"></div>
+    <!-- OVERVIEW PANE -->
+    <div id="pane-overview" class="acct-pane">
+      <div id="overview-cards" class="acct-cards"></div>
+      <div class="acct-deposit-title">Income by deposit account (all scopes)</div>
+      <div id="overview-deposits" class="acct-deposit-list"></div>
     </div>
 
-    <div id="pane-expenses" class="cal-pane" style="padding: 0; display: none;">
-      <div class="filter-bar" style="margin-bottom: 12px; flex-wrap: wrap;">
+    <!-- EXPENSES PANE -->
+    <div id="pane-expenses" class="acct-pane" style="display:none;">
+      <div class="acct-pane-filters">
         <span class="filter-label">Category</span>
         <select id="filter-exp-cat" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
         <span class="filter-label">Scope</span>
@@ -58,12 +190,13 @@ import '../styles/dashboard.css';
           <option value="personal">Personal</option>
         </select>
       </div>
-      <div id="exp-summary" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted, #8b8b85); margin-bottom: 12px;"></div>
-      <div id="expense-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <div id="exp-summary" class="acct-summary"></div>
+      <div id="expense-list" class="acct-row-list"></div>
     </div>
 
-    <div id="pane-income" class="cal-pane" style="padding: 0; display: none;">
-      <div class="filter-bar" style="margin-bottom: 12px; flex-wrap: wrap;">
+    <!-- INCOME PANE -->
+    <div id="pane-income" class="acct-pane" style="display:none;">
+      <div class="acct-pane-filters">
         <span class="filter-label">Category</span>
         <select id="filter-inc-cat" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
         <span class="filter-label">Deposit</span>
@@ -75,8 +208,8 @@ import '../styles/dashboard.css';
           <option value="personal">Personal</option>
         </select>
       </div>
-      <div id="inc-summary" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted, #8b8b85); margin-bottom: 12px;"></div>
-      <div id="income-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <div id="inc-summary" class="acct-summary"></div>
+      <div id="income-list" class="acct-row-list"></div>
     </div>
   </div>
 
@@ -277,24 +410,28 @@ import '../styles/dashboard.css';
       const s = data.summary;
       const b = s.business;
       const p = s.personal;
-      const netClass = b.net >= 0 ? '#1b4332' : '#8a1010';
+      const netColor = b.net >= 0 ? '#1b4332' : '#8a1010';
       els.overviewCards.innerHTML =
-        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff);">' +
-        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Business income</div>' +
-        '<div style="font-size:20px; font-weight:600; margin-top:4px;">&#x0E3F;' + fmtMoney(b.incomeTotal) + '</div>' +
-        '<div style="font-size:11px; color:#999; margin-top:4px;">' + b.incomeCount + ' line(s)</div></div>' +
-        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff);">' +
-        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Business expenses</div>' +
-        '<div style="font-size:20px; font-weight:600; margin-top:4px;">&#x0E3F;' + fmtMoney(b.expenseTotal) + '</div>' +
-        '<div style="font-size:11px; color:#999; margin-top:4px;">' + b.expenseCount + ' line(s)</div></div>' +
-        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff); border-color:var(--accent,#2c6e49);">' +
-        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Business net</div>' +
-        '<div style="font-size:22px; font-weight:700; margin-top:4px; color:' + netClass + ';">&#x0E3F;' + fmtMoney(b.net) + '</div>' +
-        '<div style="font-size:11px; color:#999; margin-top:4px;">Income minus expenses</div></div>' +
-        '<div style="padding:14px; border:1px solid var(--border,#e8e8e4); border-radius:10px; background:var(--card-bg,#fff);">' +
-        '<div style="font-size:11px; text-transform:uppercase; color:var(--muted,#8b8b85);">Personal (tracked)</div>' +
-        '<div style="font-size:13px; margin-top:8px;">In &#x0E3F;' + fmtMoney(p.incomeTotal) + ' / Out &#x0E3F;' + fmtMoney(p.expenseTotal) + '</div>' +
-        '<div style="font-size:11px; color:#999; margin-top:4px;">Not in business net</div></div>';
+        '<div class="acct-card">' +
+          '<div class="acct-card-label">Business income</div>' +
+          '<div class="acct-card-value">&#x0E3F;' + fmtMoney(b.incomeTotal) + '</div>' +
+          '<div class="acct-card-sub">' + b.incomeCount + ' line(s)</div>' +
+        '</div>' +
+        '<div class="acct-card">' +
+          '<div class="acct-card-label">Business expenses</div>' +
+          '<div class="acct-card-value">&#x0E3F;' + fmtMoney(b.expenseTotal) + '</div>' +
+          '<div class="acct-card-sub">' + b.expenseCount + ' line(s)</div>' +
+        '</div>' +
+        '<div class="acct-card" style="border-color:var(--accent,#2c6e49);">' +
+          '<div class="acct-card-label">Business net</div>' +
+          '<div class="acct-card-value" style="font-size:22px;font-weight:700;color:' + netColor + ';">&#x0E3F;' + fmtMoney(b.net) + '</div>' +
+          '<div class="acct-card-sub">Income minus expenses</div>' +
+        '</div>' +
+        '<div class="acct-card">' +
+          '<div class="acct-card-label">Personal (tracked)</div>' +
+          '<div class="acct-card-value" style="font-size:14px;margin-top:4px;">In &#x0E3F;' + fmtMoney(p.incomeTotal) + ' / Out &#x0E3F;' + fmtMoney(p.expenseTotal) + '</div>' +
+          '<div class="acct-card-sub">Not in business net</div>' +
+        '</div>';
 
       const dep = s.incomeByDepositAccount || {};
       const keys = Object.keys(dep).sort();
@@ -326,44 +463,37 @@ import '../styles/dashboard.css';
       els.expList.innerHTML = '';
       for (let i = 0; i < data.expenses.length; i++) {
         const e = data.expenses[i];
+        const scope = e.scope || 'business';
         const card = document.createElement('div');
-        card.style.cssText = 'display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--border, #e8e8e4); border-radius:10px; background:var(--card-bg, #fff);';
+        card.className = 'acct-row';
         const thumb = document.createElement('div');
-        thumb.style.cssText = 'width:72px; height:72px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f0f0ec;';
+        thumb.className = 'acct-thumb';
         if (e.imageFilename) {
           const img = document.createElement('img');
           img.src = '/api/expenses/' + encodeURIComponent(e.id) + '/file';
           img.alt = '';
-          img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
           thumb.appendChild(img);
         } else {
-          thumb.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:#999;">No image</div>';
+          thumb.innerHTML = '<span class="acct-thumb-empty">No image</span>';
         }
         const body = document.createElement('div');
-        body.style.flex = '1';
-        const scope = e.scope || 'business';
-        body.innerHTML = '<div style="font-weight:600;">' + esc(e.vendor) + '</div>' +
-          '<div style="font-size:12px; color:var(--muted,#8b8b85); margin-top:2px;">' + esc(e.date) + ' · ' + esc(EXP_CAT_LABELS[e.category] || e.category) +
-          ' · <strong style="color:var(--text,#1a1a18)">&#x0E3F;' + fmtMoney(e.amount) + '</strong> · ' + esc(SCOPE_LABEL[scope] || scope) + '</div>' +
-          (e.notes ? '<div style="font-size:12px; margin-top:6px;">' + esc(e.notes) + '</div>' : '') +
-          '<div style="font-size:10px; color:#aaa; margin-top:6px;">' + esc(e.source || 'manual') + ' · ' + esc(e.id) + '</div>';
+        body.className = 'acct-row-body';
+        body.innerHTML =
+          '<div class="acct-row-title">' + esc(e.vendor) + '</div>' +
+          '<div class="acct-row-meta">' + esc(e.date) + ' &middot; ' + esc(EXP_CAT_LABELS[e.category] || e.category) +
+          ' &middot; <strong>&#x0E3F;' + fmtMoney(e.amount) + '</strong> &middot; ' + esc(SCOPE_LABEL[scope] || scope) + '</div>' +
+          (e.notes ? '<div class="acct-row-notes">' + esc(e.notes) + '</div>' : '') +
+          '<div class="acct-row-id">' + esc(e.source || 'manual') + ' &middot; ' + esc(e.id) + '</div>';
         const actions = document.createElement('div');
-        actions.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+        actions.className = 'acct-row-actions';
         const btnEdit = document.createElement('button');
-        btnEdit.type = 'button';
-        btnEdit.className = 'btn btn-sm';
-        btnEdit.textContent = 'Edit';
+        btnEdit.type = 'button'; btnEdit.className = 'btn btn-sm'; btnEdit.textContent = 'Edit';
         btnEdit.onclick = function () { openExpModal(e); };
         const btnDel = document.createElement('button');
-        btnDel.type = 'button';
-        btnDel.className = 'btn btn-sm';
-        btnDel.textContent = 'Delete';
+        btnDel.type = 'button'; btnDel.className = 'btn btn-sm'; btnDel.textContent = 'Delete';
         btnDel.onclick = function () { delExpense(e.id); };
-        actions.appendChild(btnEdit);
-        actions.appendChild(btnDel);
-        card.appendChild(thumb);
-        card.appendChild(body);
-        card.appendChild(actions);
+        actions.appendChild(btnEdit); actions.appendChild(btnDel);
+        card.appendChild(thumb); card.appendChild(body); card.appendChild(actions);
         els.expList.appendChild(card);
       }
     }
@@ -394,43 +524,36 @@ import '../styles/dashboard.css';
       for (let i = 0; i < data.incomes.length; i++) {
         const e = data.incomes[i];
         const card = document.createElement('div');
-        card.style.cssText = 'display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--border, #e8e8e4); border-radius:10px; background:var(--card-bg, #fff);';
+        card.className = 'acct-row';
         const thumb = document.createElement('div');
-        thumb.style.cssText = 'width:72px; height:72px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f0f0ec;';
+        thumb.className = 'acct-thumb';
         if (e.imageFilename) {
           const img = document.createElement('img');
           img.src = '/api/income/' + encodeURIComponent(e.id) + '/file';
           img.alt = '';
-          img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
           thumb.appendChild(img);
         } else {
-          thumb.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:#999;">No image</div>';
+          thumb.innerHTML = '<span class="acct-thumb-empty">No image</span>';
         }
         const body = document.createElement('div');
-        body.style.flex = '1';
-        body.innerHTML = '<div style="font-weight:600;">' + esc(e.description) + '</div>' +
-          '<div style="font-size:12px; color:var(--muted,#8b8b85); margin-top:2px;">' + esc(e.date) + ' · ' + esc(INC_CAT_LABELS[e.category] || e.category) +
-          ' · ' + esc(DEP_LABELS[e.depositAccount] || e.depositAccount) +
-          ' · <strong style="color:var(--text,#1a1a18)">&#x0E3F;' + fmtMoney(e.amount) + '</strong> · ' + esc(SCOPE_LABEL[e.scope] || e.scope) + '</div>' +
-          (e.notes ? '<div style="font-size:12px; margin-top:6px;">' + esc(e.notes) + '</div>' : '') +
-          '<div style="font-size:10px; color:#aaa; margin-top:6px;">' + esc(e.source || 'manual') + ' · ' + esc(e.id) + '</div>';
+        body.className = 'acct-row-body';
+        body.innerHTML =
+          '<div class="acct-row-title">' + esc(e.description) + '</div>' +
+          '<div class="acct-row-meta">' + esc(e.date) + ' &middot; ' + esc(INC_CAT_LABELS[e.category] || e.category) +
+          ' &middot; ' + esc(DEP_LABELS[e.depositAccount] || e.depositAccount) +
+          ' &middot; <strong>&#x0E3F;' + fmtMoney(e.amount) + '</strong> &middot; ' + esc(SCOPE_LABEL[e.scope] || e.scope) + '</div>' +
+          (e.notes ? '<div class="acct-row-notes">' + esc(e.notes) + '</div>' : '') +
+          '<div class="acct-row-id">' + esc(e.source || 'manual') + ' &middot; ' + esc(e.id) + '</div>';
         const actions = document.createElement('div');
-        actions.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+        actions.className = 'acct-row-actions';
         const btnEdit = document.createElement('button');
-        btnEdit.type = 'button';
-        btnEdit.className = 'btn btn-sm';
-        btnEdit.textContent = 'Edit';
+        btnEdit.type = 'button'; btnEdit.className = 'btn btn-sm'; btnEdit.textContent = 'Edit';
         btnEdit.onclick = function () { openIncModal(e); };
         const btnDel = document.createElement('button');
-        btnDel.type = 'button';
-        btnDel.className = 'btn btn-sm';
-        btnDel.textContent = 'Delete';
+        btnDel.type = 'button'; btnDel.className = 'btn btn-sm'; btnDel.textContent = 'Delete';
         btnDel.onclick = function () { delIncome(e.id); };
-        actions.appendChild(btnEdit);
-        actions.appendChild(btnDel);
-        card.appendChild(thumb);
-        card.appendChild(body);
-        card.appendChild(actions);
+        actions.appendChild(btnEdit); actions.appendChild(btnDel);
+        card.appendChild(thumb); card.appendChild(body); card.appendChild(actions);
         els.incList.appendChild(card);
       }
     }
