@@ -48,20 +48,8 @@ ssh $VPS "cd $APP_DIR && npm install 2>&1 | tail -1"
 echo "==> Building..."
 ssh $VPS "cd $APP_DIR && npm run build 2>&1 | tail -1"
 
-echo "==> Restarting server via PM2..."
-ssh $VPS "
-  cd $APP_DIR
-  if pm2 describe $APP_NAME > /dev/null 2>&1; then
-    pm2 reload ecosystem.config.cjs --only $APP_NAME --update-env
-    echo '  PM2 reload complete'
-  else
-    pm2 start ecosystem.config.cjs --only $APP_NAME
-    echo '  PM2 start complete (first run)'
-  fi
-  # Always save so the process list survives a PM2 daemon restart
-  pm2 save --force
-  echo '  PM2 dump saved'
-"
+echo "==> Restarting server via systemd..."
+ssh $VPS "systemctl restart $APP_NAME && echo '  systemctl restart complete'"
 
 echo "==> Verifying (up to 5 attempts)..."
 for i in 1 2 3 4 5; do
