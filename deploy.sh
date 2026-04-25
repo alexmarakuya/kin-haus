@@ -14,15 +14,15 @@ ENV="${1:-production}"
 if [ "$ENV" = "staging" ]; then
   APP_DIR="/var/www/kin-haus-staging"
   PORT=3002
-  LOG="/var/log/kin-haus-staging.log"
   BACKUP_DIR="/tmp/kin-haus-staging-backup"
   LABEL="STAGING"
+  APP_NAME="kin-haus-staging"
 else
   APP_DIR="/var/www/kin-haus"
   PORT=3004
-  LOG="/var/log/kin-haus.log"
   BACKUP_DIR="/tmp/kin-haus-backup"
   LABEL="PRODUCTION"
+  APP_NAME="kin-haus"
 fi
 
 echo "==> Deploying to $LABEL ($APP_DIR, port $PORT)"
@@ -51,23 +51,32 @@ ssh $VPS "cd $APP_DIR && npm run build 2>&1 | tail -1"
 echo "==> Restarting server via PM2..."
 ssh $VPS "
   cd $APP_DIR
-  APP_NAME=$( [ '$ENV' = 'staging' ] && echo 'kin-haus-staging' || echo 'kin-haus' )
-  if pm2 describe \$APP_NAME > /dev/null 2>&1; then
-    pm2 reload ecosystem.config.cjs --only \$APP_NAME --update-env
+  if pm2 describe $APP_NAME > /dev/null 2>&1; then
+    pm2 reload ecosystem.config.cjs --only $APP_NAME --update-env
     echo '  PM2 reload complete'
   else
-    pm2 start ecosystem.config.cjs --only \$APP_NAME
-    pm2 save
+    pm2 start ecosystem.config.cjs --only $APP_NAME
     echo '  PM2 start complete (first run)'
   fi
+  # Always save so the process list survives a PM2 daemon restart
+  pm2 save --force
+  echo '  PM2 dump saved'
 "
 
-sleep 3
+echo "==> Verifying (up to 5 attempts)..."
+for i in 1 2 3 4 5; do
+  sleep 3
+  STATUS=$(ssh $VPS "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/")
+  if [ "$STATUS" = "200" ]; then
+    echo "$LABEL deploy complete! Server responding with 200 on port $PORT."
+    exit 0
+  fi
+  echo "  Attempt $i: got $STATUS, retrying..."
+done
 
-echo "==> Verifying..."
-STATUS=$(ssh $VPS "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/")
-if [ "$STATUS" = "200" ]; then
-  echo "$LABEL deploy complete! Server responding with 200 on port $PORT."
-else
-  echo "WARNING: $LABEL server returned $STATUS (check: pm2 logs kin-haus)"
-fi
+# All attempts failed — print logs and exit non-zero so the caller knows
+echo ""
+echo "ERROR: $LABEL server did not come up after 5 attempts (last status: $STATUS)"
+echo "--- Last 30 lines of PM2 error log ---"
+ssh $VPS "pm2 logs $APP_NAME --lines 30 --nostream --err 2>/dev/null || cat /var/log/${APP_NAME}-error.log 2>/dev/null | tail -30 || echo '(no logs found)'"
+exit 1
