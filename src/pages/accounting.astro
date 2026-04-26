@@ -8,137 +8,488 @@ import '../styles/dashboard.css';
   <meta name="theme-color" content="#2c6e49">
 
   <style>
-    /* Accounting page overrides — these classes are designed for the fixed-height
-       dashboard viewport; reset them to flow normally on this standalone page. */
+    /* ─── Accounting page layout ─── */
     .acct-body {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 20px 28px 64px;
+      padding: 20px 28px 80px;
     }
-    .acct-tabs {
-      padding: 0;
+
+    /* ─── Sticky filter bar ─── */
+    .acct-filter-bar {
+      position: sticky;
+      top: 60px;
+      z-index: 30;
+      background: var(--bg, #f5f4f1);
       border-bottom: 1px solid #e4e2de;
-      display: flex;
-      align-items: center;
-      gap: 0;
+      padding: 10px 0;
       margin-bottom: 0;
-    }
-    .acct-date-bar {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      padding: 12px 0;
-      border-bottom: 1px solid #eae8e5;
+    }
+    .acct-filter-bar .filter-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .acct-date-input {
+      border: 1px solid #d8d6d0;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      padding: 6px 10px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .acct-date-input:focus { border-color: var(--accent, #2c6e49); }
+
+    /* ─── Tabs ─── */
+    .acct-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 0 0;
+      border-bottom: 2px solid #e4e2de;
+      margin-bottom: 24px;
+    }
+    .acct-tab {
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all .15s;
+      position: relative;
+      bottom: -2px;
+      background: transparent;
+    }
+    .acct-tab:hover { color: var(--ink); background: #f0ede8; }
+    .acct-tab.active {
+      color: var(--ink);
+      background: var(--bg, #f5f4f1);
+      border-color: #e4e2de;
+      font-weight: 600;
+    }
+
+    /* ─── Hero P&L card ─── */
+    .acct-hero {
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      background: var(--card-bg, #fff);
+      border: 1px solid #e8e8e4;
+      overflow: hidden;
+      position: relative;
+    }
+    .acct-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .acct-hero.profit::before { background: #22c55e; }
+    .acct-hero.loss::before { background: #ef4444; }
+    .acct-hero-left {}
+    .acct-hero-eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .acct-hero-amount {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1;
+      margin-bottom: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .acct-hero.profit .acct-hero-amount { color: #16a34a; }
+    .acct-hero.loss .acct-hero-amount { color: #dc2626; }
+    .acct-hero-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+    .acct-hero.profit .acct-hero-status { background: #dcfce7; color: #16a34a; }
+    .acct-hero.loss .acct-hero-status { background: #fee2e2; color: #dc2626; }
+    .acct-hero-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      min-width: 180px;
+    }
+    .acct-hero-stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .acct-hero-stat-label { color: var(--muted); }
+    .acct-hero-stat-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .acct-hero-stat-val.inc { color: #16a34a; }
+    .acct-hero-stat-val.exp { color: #dc2626; }
+
+    /* ─── Ratio bar ─── */
+    .acct-ratio-wrap {
+      background: var(--card-bg, #fff);
+      border: 1px solid #e8e8e4;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+    .acct-ratio-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .acct-ratio-bar {
+      height: 10px;
+      border-radius: 100px;
+      background: #f0ede8;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .acct-ratio-fill {
+      height: 100%;
+      background: #22c55e;
+      border-radius: 100px;
+      transition: width .4s ease;
+    }
+    .acct-ratio-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .acct-ratio-stats span strong { color: var(--ink); }
+
+    /* ─── KPI grid (smaller cards below hero) ─── */
+    .acct-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .acct-kpi {
+      background: var(--card-bg, #fff);
+      border: 1px solid #e8e8e4;
+      border-radius: 12px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .acct-kpi::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .acct-kpi.kpi-income::before { background: #22c55e; }
+    .acct-kpi.kpi-expense::before { background: #ef4444; }
+    .acct-kpi.kpi-personal::before { background: #a78bfa; }
+    .acct-kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .acct-kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 4px;
+    }
+    .acct-kpi.kpi-income .acct-kpi-value { color: #16a34a; }
+    .acct-kpi.kpi-expense .acct-kpi-value { color: #dc2626; }
+    .acct-kpi-sub {
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    /* ─── Deposit account pills ─── */
+    .acct-deposits-section {
+      margin-top: 16px;
+    }
+    .acct-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .acct-dep-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+    .acct-dep-card {
+      background: var(--card-bg, #fff);
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .acct-dep-name {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .acct-dep-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: #16a34a;
+      font-variant-numeric: tabular-nums;
+    }
+    .acct-dep-count {
+      font-size: 11px;
+      color: #bbb;
+      margin-top: 2px;
+    }
+
+    /* ─── Category chips ─── */
+    .acct-cat-section {
       margin-bottom: 20px;
     }
-    .acct-pane { display: block; }
+    .acct-cat-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .acct-cat-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      border-radius: 100px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all .15s;
+      background: var(--card-bg, #fff);
+      user-select: none;
+    }
+    .acct-cat-chip:hover { opacity: .8; }
+    .acct-cat-chip.selected { box-shadow: 0 0 0 2px var(--chip-color); }
+    .acct-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--chip-color);
+      flex-shrink: 0;
+    }
+    .acct-chip-label { color: var(--ink); }
+    .acct-chip-amount {
+      font-weight: 700;
+      color: var(--chip-color);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Pane filter bar ─── */
     .acct-pane-filters {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
-      padding: 10px 0;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
       border-bottom: 1px solid #eae8e5;
     }
-    .acct-hint {
+
+    /* ─── Summary bar above list ─── */
+    .acct-list-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
       font-size: 12px;
-      color: var(--muted, #8b8b85);
-      line-height: 1.55;
-      margin: 0 0 16px;
-      padding: 12px 16px;
-      background: #f7f6f3;
-      border-radius: 8px;
+      color: var(--muted);
     }
-    .acct-summary {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--muted, #8b8b85);
-      margin-bottom: 16px;
+    .acct-list-summary strong {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
     }
-    .acct-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .acct-card {
-      padding: 16px;
-      border: 1px solid var(--border, #e8e8e4);
-      border-radius: 10px;
-      background: var(--card-bg, #fff);
-    }
-    .acct-card-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted, #8b8b85);
-      margin-bottom: 6px;
-    }
-    .acct-card-value {
-      font-size: 20px;
-      font-weight: 600;
-    }
-    .acct-card-sub {
-      font-size: 11px;
-      color: #999;
-      margin-top: 4px;
-    }
-    .acct-deposit-title {
-      font-weight: 600;
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-    .acct-deposit-list {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--muted, #8b8b85);
-    }
-    .acct-row-list {
+
+    /* ─── Transaction rows ─── */
+    .acct-tx-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
-    .acct-row {
+    .acct-tx {
       display: flex;
-      gap: 12px;
       align-items: flex-start;
-      padding: 12px 14px;
-      border: 1px solid var(--border, #e8e8e4);
-      border-radius: 10px;
+      gap: 0;
       background: var(--card-bg, #fff);
-    }
-    .acct-thumb {
-      width: 72px;
-      height: 72px;
-      border-radius: 8px;
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
       overflow: hidden;
+      transition: box-shadow .12s;
+    }
+    .acct-tx:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .acct-tx-accent {
+      width: 4px;
       flex-shrink: 0;
-      background: #f0f0ec;
+      background: var(--tx-color, #9ca3af);
+      align-self: stretch;
+      min-height: 52px;
+    }
+    .acct-tx-thumb {
+      width: 54px;
+      height: 54px;
+      flex-shrink: 0;
+      background: #f5f4f1;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      align-self: center;
+      margin: 10px 0 10px 10px;
+      border-radius: 8px;
     }
-    .acct-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .acct-thumb-empty { font-size: 11px; color: #999; text-align: center; }
-    .acct-row-body { flex: 1; min-width: 0; }
-    .acct-row-title { font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .acct-row-meta { font-size: 12px; color: var(--muted, #8b8b85); line-height: 1.5; }
-    .acct-row-notes { font-size: 12px; margin-top: 5px; color: var(--ink); }
-    .acct-row-id { font-size: 10px; color: #bbb; margin-top: 5px; }
-    .acct-row-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-    @media (max-width: 600px) {
-      .acct-body { padding: 16px 16px 48px; }
-      .acct-row { flex-wrap: wrap; }
-      .acct-row-actions { flex-direction: row; }
+    .acct-tx-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .acct-tx-thumb-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .acct-tx-main {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+    }
+    .acct-tx-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .acct-tx-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .acct-tx-amount {
+      font-size: 16px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: var(--tx-color, #444);
+      flex-shrink: 0;
+    }
+    .acct-tx-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .acct-tx-cat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+    .acct-tx-date {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .acct-tx-scope {
+      font-size: 11px;
+      color: var(--muted);
+      background: #f0ede8;
+      border-radius: 100px;
+      padding: 2px 7px;
+    }
+    .acct-tx-scope.personal { background: #f3f0ff; color: #7c3aed; }
+    .acct-tx-notes {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-style: italic;
+    }
+    .acct-tx-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 10px 12px 10px 4px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    /* ─── Empty state ─── */
+    .acct-empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+    }
+    .acct-empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: .5;
+    }
+    .acct-empty-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .acct-empty-sub {
+      font-size: 13px;
+    }
+
+    /* ─── Hint box ─── */
+    .acct-hint {
+      font-size: 12px;
+      color: var(--muted, #8b8b85);
+      line-height: 1.6;
+      margin: 0 0 20px;
+      padding: 12px 16px;
+      background: #f7f6f3;
+      border-radius: 8px;
+      border-left: 3px solid #d4d0c8;
+    }
+
+    @media (max-width: 640px) {
+      .acct-body { padding: 14px 14px 60px; }
+      .acct-hero-amount { font-size: 36px; }
+      .acct-hero-right { align-items: flex-start; }
+      .acct-tx-actions { flex-direction: row; padding: 8px; }
+      .acct-filter-bar { top: 54px; }
     }
   </style>
 
   <div class="header">
     <div class="header-left">
       <div class="header-title">Kin Haus</div>
-      <div class="header-sub">Income, expenses &amp; P&amp;L</div>
+      <div class="header-sub">Income, Expenses &amp; P&amp;L</div>
     </div>
     <div class="header-right">
       <a class="btn btn-sm" href="/dashboard">&#x2190; Hub</a>
@@ -150,91 +501,97 @@ import '../styles/dashboard.css';
   <div class="alerts" id="alerts"></div>
 
   <div class="acct-body">
-    <p class="acct-hint">
-      Mark rows as <strong>Business</strong> for Kin Haus profitability (net = business income minus business expenses).
-      Use <strong>Personal</strong> for money you still want logged but excluded from that net.
-      Deposit account tracks where cash landed (Wise, cash drawer, business bank, etc.).
-    </p>
 
-    <div class="acct-tabs tab-bar">
-      <div class="tab active" data-tab="overview">Overview</div>
-      <div class="tab" data-tab="expenses">Expenses</div>
-      <div class="tab" data-tab="income">Income</div>
-      <div class="tab-spacer"></div>
+    <!-- sticky date filter bar -->
+    <div class="acct-filter-bar">
+      <span class="filter-label">From</span>
+      <input type="date" id="filter-from" class="acct-date-input" />
+      <span class="filter-label">To</span>
+      <input type="date" id="filter-to" class="acct-date-input" />
+      <button class="btn btn-sm" type="button" id="btn-apply">Apply</button>
+      <button class="btn btn-sm" type="button" id="btn-clear-range" title="Clear date filter">Clear</button>
     </div>
 
-    <div class="acct-date-bar">
-      <span class="filter-label">From</span>
-      <input type="date" id="filter-from" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;" />
-      <span class="filter-label">To</span>
-      <input type="date" id="filter-to" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;" />
-      <button class="btn btn-sm" type="button" id="btn-apply">Apply</button>
+    <!-- tabs -->
+    <div class="acct-tabs" id="acct-tabs">
+      <div class="acct-tab active" data-tab="overview">Overview</div>
+      <div class="acct-tab" data-tab="expenses">Expenses</div>
+      <div class="acct-tab" data-tab="income">Income</div>
     </div>
 
     <!-- OVERVIEW PANE -->
-    <div id="pane-overview" class="acct-pane">
-      <div id="overview-cards" class="acct-cards"></div>
-      <div class="acct-deposit-title">Income by deposit account (all scopes)</div>
-      <div id="overview-deposits" class="acct-deposit-list"></div>
+    <div id="pane-overview">
+      <p class="acct-hint">
+        <strong>Business</strong> rows count toward Kin Haus profitability (net = business income minus business expenses).
+        <strong>Personal</strong> rows are logged but excluded from that net.
+      </p>
+      <div id="overview-hero"></div>
+      <div id="overview-kpi" class="acct-kpi-grid"></div>
+      <div id="overview-ratio"></div>
+      <div id="overview-deposits" class="acct-deposits-section"></div>
     </div>
 
     <!-- EXPENSES PANE -->
-    <div id="pane-expenses" class="acct-pane" style="display:none;">
+    <div id="pane-expenses" style="display:none;">
       <div class="acct-pane-filters">
         <span class="filter-label">Category</span>
-        <select id="filter-exp-cat" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
+        <select id="filter-exp-cat" class="login-input" style="width:auto;min-width:140px;padding:6px 10px;font-size:13px;"></select>
         <span class="filter-label">Scope</span>
-        <select id="filter-exp-scope" class="login-input" style="width: auto; min-width: 120px; padding: 8px 10px;">
+        <select id="filter-exp-scope" class="login-input" style="width:auto;min-width:110px;padding:6px 10px;font-size:13px;">
           <option value="">All</option>
           <option value="business">Business</option>
           <option value="personal">Personal</option>
         </select>
       </div>
-      <div id="exp-summary" class="acct-summary"></div>
-      <div id="expense-list" class="acct-row-list"></div>
+      <div id="exp-cats" class="acct-cat-section"></div>
+      <div id="exp-summary-bar" class="acct-list-summary"></div>
+      <div id="expense-list" class="acct-tx-list"></div>
     </div>
 
     <!-- INCOME PANE -->
-    <div id="pane-income" class="acct-pane" style="display:none;">
+    <div id="pane-income" style="display:none;">
       <div class="acct-pane-filters">
         <span class="filter-label">Category</span>
-        <select id="filter-inc-cat" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
+        <select id="filter-inc-cat" class="login-input" style="width:auto;min-width:140px;padding:6px 10px;font-size:13px;"></select>
         <span class="filter-label">Deposit</span>
-        <select id="filter-inc-dep" class="login-input" style="width: auto; min-width: 140px; padding: 8px 10px;"><option value="">All</option></select>
+        <select id="filter-inc-dep" class="login-input" style="width:auto;min-width:140px;padding:6px 10px;font-size:13px;"></select>
         <span class="filter-label">Scope</span>
-        <select id="filter-inc-scope" class="login-input" style="width: auto; min-width: 120px; padding: 8px 10px;">
+        <select id="filter-inc-scope" class="login-input" style="width:auto;min-width:110px;padding:6px 10px;font-size:13px;">
           <option value="">All</option>
           <option value="business">Business</option>
           <option value="personal">Personal</option>
         </select>
       </div>
-      <div id="inc-summary" class="acct-summary"></div>
-      <div id="income-list" class="acct-row-list"></div>
+      <div id="inc-cats" class="acct-cat-section"></div>
+      <div id="inc-summary-bar" class="acct-list-summary"></div>
+      <div id="income-list" class="acct-tx-list"></div>
     </div>
-  </div>
 
+  </div><!-- /acct-body -->
+
+  <!-- EXPENSE MODAL -->
   <div id="modal-exp-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:16px;">
-    <div style="background:var(--card-bg, #fff); border-radius:12px; max-width:420px; width:100%; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.2); max-height:90vh; overflow:auto;">
-      <div style="font-weight:600; margin-bottom:14px;" id="modal-exp-title">Add expense</div>
+    <div style="background:var(--card-bg, #fff); border-radius:14px; max-width:420px; width:100%; padding:24px; box-shadow:0 16px 48px rgba(0,0,0,.22); max-height:90vh; overflow:auto;">
+      <div style="font-weight:700; font-size:16px; margin-bottom:16px;" id="modal-exp-title">Add expense</div>
       <form id="form-expense">
         <input type="hidden" id="f-exp-id" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Date</label>
-        <input type="date" id="f-exp-date" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <input type="date" id="f-exp-date" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Amount (THB)</label>
-        <input type="number" id="f-exp-amount" min="0" step="0.01" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <input type="number" id="f-exp-amount" min="0" step="0.01" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Vendor</label>
-        <input type="text" id="f-exp-vendor" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <input type="text" id="f-exp-vendor" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Category</label>
-        <select id="f-exp-category" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;"></select>
+        <select id="f-exp-category" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;"></select>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Scope</label>
-        <select id="f-exp-scope" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;">
+        <select id="f-exp-scope" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;">
           <option value="business">Business (Kin Haus P&amp;L)</option>
           <option value="personal">Personal</option>
         </select>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Notes</label>
-        <textarea id="f-exp-notes" rows="2" class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px; resize:vertical;"></textarea>
+        <textarea id="f-exp-notes" rows="2" class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px; resize:vertical;"></textarea>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Receipt image (optional)</label>
-        <input type="file" id="f-exp-file" accept="image/jpeg,image/png,image/webp" class="login-input" style="width:100%; margin-bottom:14px; padding:8px 0;" />
+        <input type="file" id="f-exp-file" accept="image/jpeg,image/png,image/webp" class="login-input" style="width:100%; margin-bottom:16px; padding:8px 0;" />
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <button type="button" class="btn btn-sm" id="btn-exp-cancel">Cancel</button>
           <button type="submit" class="btn btn-primary btn-sm">Save</button>
@@ -243,30 +600,31 @@ import '../styles/dashboard.css';
     </div>
   </div>
 
+  <!-- INCOME MODAL -->
   <div id="modal-inc-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:16px;">
-    <div style="background:var(--card-bg, #fff); border-radius:12px; max-width:420px; width:100%; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.2); max-height:90vh; overflow:auto;">
-      <div style="font-weight:600; margin-bottom:14px;" id="modal-inc-title">Add income</div>
+    <div style="background:var(--card-bg, #fff); border-radius:14px; max-width:420px; width:100%; padding:24px; box-shadow:0 16px 48px rgba(0,0,0,.22); max-height:90vh; overflow:auto;">
+      <div style="font-weight:700; font-size:16px; margin-bottom:16px;" id="modal-inc-title">Add income</div>
       <form id="form-income">
         <input type="hidden" id="f-inc-id" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Date</label>
-        <input type="date" id="f-inc-date" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <input type="date" id="f-inc-date" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Amount (THB)</label>
-        <input type="number" id="f-inc-amount" min="0" step="0.01" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <input type="number" id="f-inc-amount" min="0" step="0.01" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Description</label>
-        <input type="text" id="f-inc-desc" required placeholder="e.g. Airbnb payout March" class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;" />
+        <input type="text" id="f-inc-desc" required placeholder="e.g. Airbnb payout March" class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;" />
         <label class="filter-label" style="display:block; margin-bottom:4px;">Category</label>
-        <select id="f-inc-category" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;"></select>
+        <select id="f-inc-category" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;"></select>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Deposit account</label>
-        <select id="f-inc-deposit" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;"></select>
+        <select id="f-inc-deposit" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;"></select>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Scope</label>
-        <select id="f-inc-scope" required class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px;">
+        <select id="f-inc-scope" required class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px;">
           <option value="business">Business (Kin Haus P&amp;L)</option>
           <option value="personal">Personal</option>
         </select>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Notes</label>
-        <textarea id="f-inc-notes" rows="2" class="login-input" style="width:100%; margin-bottom:10px; padding:10px 12px; resize:vertical;"></textarea>
+        <textarea id="f-inc-notes" rows="2" class="login-input" style="width:100%; margin-bottom:12px; padding:10px 12px; resize:vertical;"></textarea>
         <label class="filter-label" style="display:block; margin-bottom:4px;">Attachment (optional)</label>
-        <input type="file" id="f-inc-file" accept="image/jpeg,image/png,image/webp" class="login-input" style="width:100%; margin-bottom:14px; padding:8px 0;" />
+        <input type="file" id="f-inc-file" accept="image/jpeg,image/png,image/webp" class="login-input" style="width:100%; margin-bottom:16px; padding:8px 0;" />
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <button type="button" class="btn btn-sm" id="btn-inc-cancel">Cancel</button>
           <button type="submit" class="btn btn-primary btn-sm">Save</button>
@@ -276,121 +634,160 @@ import '../styles/dashboard.css';
   </div>
 
   <script is:inline>
+    /* ─── Labels & colours ─── */
     const EXP_CAT_LABELS = {
-      supplies: 'Supplies',
-      food: 'Food & groceries',
-      utilities: 'Utilities',
+      supplies:    'Supplies',
+      food:        'Food & groceries',
+      utilities:   'Utilities',
       maintenance: 'Maintenance',
-      travel: 'Travel',
-      fees: 'Fees & subscriptions',
-      other: 'Other',
+      travel:      'Travel',
+      fees:        'Fees & subscriptions',
+      other:       'Other',
     };
     const INC_CAT_LABELS = {
-      airbnb: 'Airbnb / OTA',
+      airbnb:         'Airbnb / OTA',
       direct_booking: 'Direct booking',
-      coworking: 'Coworking / desks',
+      coworking:      'Coworking',
       monitor_rental: 'Monitor rental',
-      transfer: 'Transfer / other inflow',
-      other: 'Other income',
+      transfer:       'Transfer / other',
+      other:          'Other income',
     };
     const DEP_LABELS = {
-      wise: 'Wise',
-      cash: 'Cash',
-      business: 'Business bank',
-      personal_other: 'Personal account / other',
-      other: 'Other',
+      wise:           'Wise',
+      cash:           'Cash',
+      business:       'Business bank',
+      personal_other: 'Personal / other',
+      other:          'Other',
     };
+    const DEP_ICONS = { wise: '💳', cash: '💵', business: '🏦', personal_other: '👤', other: '📦' };
     const SCOPE_LABEL = { business: 'Business', personal: 'Personal' };
 
+    /* Category colour palettes */
+    const EXP_CAT_COLORS = {
+      supplies:    '#f97316',
+      food:        '#ca8a04',
+      utilities:   '#3b82f6',
+      maintenance: '#ef4444',
+      travel:      '#8b5cf6',
+      fees:        '#6366f1',
+      other:       '#9ca3af',
+    };
+    const INC_CAT_COLORS = {
+      airbnb:         '#ec4899',
+      direct_booking: '#22c55e',
+      coworking:      '#14b8a6',
+      monitor_rental: '#06b6d4',
+      transfer:       '#3b82f6',
+      other:          '#9ca3af',
+    };
+
+    function catColor(key, isInc) {
+      return isInc ? (INC_CAT_COLORS[key] || '#9ca3af') : (EXP_CAT_COLORS[key] || '#9ca3af');
+    }
+
+    /* ─── Helpers ─── */
     function esc(s) {
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     }
-
     function fmtMoney(n) {
-      return new Intl.NumberFormat('en-TH', { maximumFractionDigits: 2 }).format(n);
+      return new Intl.NumberFormat('en-TH', { maximumFractionDigits: 0 }).format(Math.round(n || 0));
+    }
+    function fmtDate(s) {
+      if (!s) return '';
+      const parts = s.split('-');
+      if (parts.length < 3) return s;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const d = parseInt(parts[2], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const y = parts[0];
+      return months[m] + ' ' + d + ', ' + y;
+    }
+    function hexAlpha(hex, pct) {
+      /* pct 0–100, returns hex with 2-digit alpha */
+      const a = Math.round(pct / 100 * 255).toString(16).padStart(2, '0');
+      return hex + a;
     }
 
+    /* ─── DOM refs ─── */
     const els = {
-      alerts: document.getElementById('alerts'),
-      filterFrom: document.getElementById('filter-from'),
-      filterTo: document.getElementById('filter-to'),
-      btnApply: document.getElementById('btn-apply'),
-      btnAddExp: document.getElementById('btn-add-expense'),
-      btnAddInc: document.getElementById('btn-add-income'),
-      paneOverview: document.getElementById('pane-overview'),
-      paneExp: document.getElementById('pane-expenses'),
-      paneInc: document.getElementById('pane-income'),
-      overviewCards: document.getElementById('overview-cards'),
-      overviewDeposits: document.getElementById('overview-deposits'),
-      expList: document.getElementById('expense-list'),
-      expSummary: document.getElementById('exp-summary'),
-      incList: document.getElementById('income-list'),
-      incSummary: document.getElementById('inc-summary'),
-      filterExpCat: document.getElementById('filter-exp-cat'),
-      filterExpScope: document.getElementById('filter-exp-scope'),
-      filterIncCat: document.getElementById('filter-inc-cat'),
-      filterIncDep: document.getElementById('filter-inc-dep'),
-      filterIncScope: document.getElementById('filter-inc-scope'),
-      modalExp: document.getElementById('modal-exp-backdrop'),
-      modalInc: document.getElementById('modal-inc-backdrop'),
-      modalExpTitle: document.getElementById('modal-exp-title'),
-      modalIncTitle: document.getElementById('modal-inc-title'),
-      formExp: document.getElementById('form-expense'),
-      formInc: document.getElementById('form-income'),
-      fExpId: document.getElementById('f-exp-id'),
-      fExpDate: document.getElementById('f-exp-date'),
-      fExpAmount: document.getElementById('f-exp-amount'),
-      fExpVendor: document.getElementById('f-exp-vendor'),
-      fExpCategory: document.getElementById('f-exp-category'),
-      fExpScope: document.getElementById('f-exp-scope'),
-      fExpNotes: document.getElementById('f-exp-notes'),
-      fExpFile: document.getElementById('f-exp-file'),
-      fIncId: document.getElementById('f-inc-id'),
-      fIncDate: document.getElementById('f-inc-date'),
-      fIncAmount: document.getElementById('f-inc-amount'),
-      fIncDesc: document.getElementById('f-inc-desc'),
-      fIncCategory: document.getElementById('f-inc-category'),
-      fIncDeposit: document.getElementById('f-inc-deposit'),
-      fIncScope: document.getElementById('f-inc-scope'),
-      fIncNotes: document.getElementById('f-inc-notes'),
-      fIncFile: document.getElementById('f-inc-file'),
-      btnExpCancel: document.getElementById('btn-exp-cancel'),
-      btnIncCancel: document.getElementById('btn-inc-cancel'),
+      alerts:          document.getElementById('alerts'),
+      filterFrom:      document.getElementById('filter-from'),
+      filterTo:        document.getElementById('filter-to'),
+      btnApply:        document.getElementById('btn-apply'),
+      btnClear:        document.getElementById('btn-clear-range'),
+      btnAddExp:       document.getElementById('btn-add-expense'),
+      btnAddInc:       document.getElementById('btn-add-income'),
+      paneOverview:    document.getElementById('pane-overview'),
+      paneExp:         document.getElementById('pane-expenses'),
+      paneInc:         document.getElementById('pane-income'),
+      overviewHero:    document.getElementById('overview-hero'),
+      overviewKpi:     document.getElementById('overview-kpi'),
+      overviewRatio:   document.getElementById('overview-ratio'),
+      overviewDep:     document.getElementById('overview-deposits'),
+      expList:         document.getElementById('expense-list'),
+      expSummaryBar:   document.getElementById('exp-summary-bar'),
+      expCats:         document.getElementById('exp-cats'),
+      incList:         document.getElementById('income-list'),
+      incSummaryBar:   document.getElementById('inc-summary-bar'),
+      incCats:         document.getElementById('inc-cats'),
+      filterExpCat:    document.getElementById('filter-exp-cat'),
+      filterExpScope:  document.getElementById('filter-exp-scope'),
+      filterIncCat:    document.getElementById('filter-inc-cat'),
+      filterIncDep:    document.getElementById('filter-inc-dep'),
+      filterIncScope:  document.getElementById('filter-inc-scope'),
+      modalExp:        document.getElementById('modal-exp-backdrop'),
+      modalInc:        document.getElementById('modal-inc-backdrop'),
+      modalExpTitle:   document.getElementById('modal-exp-title'),
+      modalIncTitle:   document.getElementById('modal-inc-title'),
+      formExp:         document.getElementById('form-expense'),
+      formInc:         document.getElementById('form-income'),
+      fExpId:          document.getElementById('f-exp-id'),
+      fExpDate:        document.getElementById('f-exp-date'),
+      fExpAmount:      document.getElementById('f-exp-amount'),
+      fExpVendor:      document.getElementById('f-exp-vendor'),
+      fExpCategory:    document.getElementById('f-exp-category'),
+      fExpScope:       document.getElementById('f-exp-scope'),
+      fExpNotes:       document.getElementById('f-exp-notes'),
+      fExpFile:        document.getElementById('f-exp-file'),
+      fIncId:          document.getElementById('f-inc-id'),
+      fIncDate:        document.getElementById('f-inc-date'),
+      fIncAmount:      document.getElementById('f-inc-amount'),
+      fIncDesc:        document.getElementById('f-inc-desc'),
+      fIncCategory:    document.getElementById('f-inc-category'),
+      fIncDeposit:     document.getElementById('f-inc-deposit'),
+      fIncScope:       document.getElementById('f-inc-scope'),
+      fIncNotes:       document.getElementById('f-inc-notes'),
+      fIncFile:        document.getElementById('f-inc-file'),
+      btnExpCancel:    document.getElementById('btn-exp-cancel'),
+      btnIncCancel:    document.getElementById('btn-inc-cancel'),
     };
 
     let activeTab = 'overview';
 
     function showAlert(msg, isErr) {
       els.alerts.innerHTML = '<div class="alert ' + (isErr ? 'alert-error' : 'alert-success') + '" style="margin:12px 20px;">' + esc(msg) + '</div>';
-      setTimeout(function () { els.alerts.innerHTML = ''; }, 5000);
+      setTimeout(function () { els.alerts.innerHTML = ''; }, 4000);
     }
 
     function fillSelect(sel, keys, labels) {
-      const keepFirst = sel.querySelector('option[value=""]');
-      sel.innerHTML = '';
-      if (keepFirst) sel.appendChild(keepFirst);
-      else {
-        const o0 = document.createElement('option');
-        o0.value = '';
-        o0.textContent = 'All';
-        sel.appendChild(o0);
-      }
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">All</option>';
       for (const k of keys) {
         const o = document.createElement('option');
-        o.value = k;
-        o.textContent = labels[k] || k;
+        o.value = k; o.textContent = labels[k] || k;
         sel.appendChild(o);
       }
+      if (cur) sel.value = cur;
     }
-
     function fillSelectRequired(sel, keys, labels) {
+      const cur = sel.value;
       sel.innerHTML = '';
       for (const k of keys) {
         const o = document.createElement('option');
-        o.value = k;
-        o.textContent = labels[k] || k;
+        o.value = k; o.textContent = labels[k] || k;
         sel.appendChild(o);
       }
+      if (cur) sel.value = cur;
     }
 
     function queryRange() {
@@ -400,104 +797,248 @@ import '../styles/dashboard.css';
       return p;
     }
 
+    /* ─── Render category chips ─── */
+    function renderCatChips(container, byCategory, labels, colors, onSelect) {
+      if (!byCategory || !Object.keys(byCategory).length) {
+        container.innerHTML = '';
+        return;
+      }
+      const total = Object.values(byCategory).reduce(function (s, v) { return s + (v.total || 0); }, 0);
+      const sorted = Object.entries(byCategory).sort(function (a, b) { return b[1].total - a[1].total; });
+      container.innerHTML = '<div class="acct-section-title">By category</div>';
+      const wrap = document.createElement('div');
+      wrap.className = 'acct-cat-chips';
+      sorted.forEach(function ([k, v]) {
+        const color = colors[k] || '#9ca3af';
+        const chip = document.createElement('div');
+        chip.className = 'acct-cat-chip';
+        chip.style.setProperty('--chip-color', color);
+        chip.style.borderColor = hexAlpha(color, 25);
+        chip.style.background = hexAlpha(color, 8);
+        chip.innerHTML =
+          '<span class="acct-chip-dot"></span>' +
+          '<span class="acct-chip-label">' + esc(labels[k] || k) + '</span>' +
+          '<span class="acct-chip-amount">฿' + fmtMoney(v.total) + '</span>';
+        chip.title = v.count + ' item' + (v.count !== 1 ? 's' : '');
+        chip.addEventListener('click', function () {
+          onSelect(chip.classList.contains('selected') ? '' : k);
+          container.querySelectorAll('.acct-cat-chip').forEach(function (c) { c.classList.remove('selected'); });
+          if (!chip.classList.contains('selected')) chip.classList.add('selected');
+          else chip.classList.remove('selected');
+        });
+        wrap.appendChild(chip);
+      });
+      container.appendChild(wrap);
+    }
+
+    /* ─── Empty state helper ─── */
+    function emptyState(icon, title, sub) {
+      return '<div class="acct-empty"><div class="acct-empty-icon">' + icon + '</div>' +
+        '<div class="acct-empty-title">' + esc(title) + '</div>' +
+        '<div class="acct-empty-sub">' + esc(sub) + '</div></div>';
+    }
+
+    /* ─── Load overview ─── */
     async function loadSummary() {
       const res = await fetch('/api/accounting/summary?' + queryRange().toString());
       const data = await res.json();
-      if (!res.ok) {
-        showAlert(data.error || 'Summary failed', true);
-        return;
-      }
+      if (!res.ok) { showAlert(data.error || 'Summary failed', true); return; }
+
       const s = data.summary;
       const b = s.business;
       const p = s.personal;
-      const netColor = b.net >= 0 ? '#1b4332' : '#8a1010';
-      els.overviewCards.innerHTML =
-        '<div class="acct-card">' +
-          '<div class="acct-card-label">Business income</div>' +
-          '<div class="acct-card-value">&#x0E3F;' + fmtMoney(b.incomeTotal) + '</div>' +
-          '<div class="acct-card-sub">' + b.incomeCount + ' line(s)</div>' +
-        '</div>' +
-        '<div class="acct-card">' +
-          '<div class="acct-card-label">Business expenses</div>' +
-          '<div class="acct-card-value">&#x0E3F;' + fmtMoney(b.expenseTotal) + '</div>' +
-          '<div class="acct-card-sub">' + b.expenseCount + ' line(s)</div>' +
-        '</div>' +
-        '<div class="acct-card" style="border-color:var(--accent,#2c6e49);">' +
-          '<div class="acct-card-label">Business net</div>' +
-          '<div class="acct-card-value" style="font-size:22px;font-weight:700;color:' + netColor + ';">&#x0E3F;' + fmtMoney(b.net) + '</div>' +
-          '<div class="acct-card-sub">Income minus expenses</div>' +
-        '</div>' +
-        '<div class="acct-card">' +
-          '<div class="acct-card-label">Personal (tracked)</div>' +
-          '<div class="acct-card-value" style="font-size:14px;margin-top:4px;">In &#x0E3F;' + fmtMoney(p.incomeTotal) + ' / Out &#x0E3F;' + fmtMoney(p.expenseTotal) + '</div>' +
-          '<div class="acct-card-sub">Not in business net</div>' +
+      const isProfit = b.net >= 0;
+
+      /* Hero P&L card */
+      els.overviewHero.innerHTML =
+        '<div class="acct-hero ' + (isProfit ? 'profit' : 'loss') + '">' +
+          '<div class="acct-hero-left">' +
+            '<div class="acct-hero-eyebrow">Business net P&amp;L</div>' +
+            '<div class="acct-hero-amount">฿' + fmtMoney(b.net) + '</div>' +
+            '<div class="acct-hero-status">' +
+              (isProfit
+                ? '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 17a7 7 0 100-14 7 7 0 000 14zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> Profitable'
+                : '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg> In the red') +
+            '</div>' +
+          '</div>' +
+          '<div class="acct-hero-right">' +
+            '<div class="acct-hero-stat"><span class="acct-hero-stat-label">Income</span><span class="acct-hero-stat-val inc">฿' + fmtMoney(b.incomeTotal) + '</span></div>' +
+            '<div class="acct-hero-stat"><span class="acct-hero-stat-label">Expenses</span><span class="acct-hero-stat-val exp">฿' + fmtMoney(b.expenseTotal) + '</span></div>' +
+            '<div class="acct-hero-stat"><span class="acct-hero-stat-label">Items</span><span class="acct-hero-stat-val">' + b.incomeCount + ' in / ' + b.expenseCount + ' out</span></div>' +
+          '</div>' +
         '</div>';
 
+      /* KPI grid */
+      const persLabel = p.incomeTotal > 0 || p.expenseTotal > 0
+        ? '฿' + fmtMoney(p.incomeTotal) + ' in / ฿' + fmtMoney(p.expenseTotal) + ' out'
+        : 'Nothing logged yet';
+      els.overviewKpi.innerHTML =
+        '<div class="acct-kpi kpi-income">' +
+          '<div class="acct-kpi-label">Business income</div>' +
+          '<div class="acct-kpi-value">฿' + fmtMoney(b.incomeTotal) + '</div>' +
+          '<div class="acct-kpi-sub">' + b.incomeCount + ' line' + (b.incomeCount !== 1 ? 's' : '') + '</div>' +
+        '</div>' +
+        '<div class="acct-kpi kpi-expense">' +
+          '<div class="acct-kpi-label">Business expenses</div>' +
+          '<div class="acct-kpi-value">฿' + fmtMoney(b.expenseTotal) + '</div>' +
+          '<div class="acct-kpi-sub">' + b.expenseCount + ' line' + (b.expenseCount !== 1 ? 's' : '') + '</div>' +
+        '</div>' +
+        '<div class="acct-kpi kpi-personal">' +
+          '<div class="acct-kpi-label">Personal (tracked)</div>' +
+          '<div class="acct-kpi-value" style="font-size:15px;margin-top:4px;color:var(--ink);">' + persLabel + '</div>' +
+          '<div class="acct-kpi-sub">Not in business P&amp;L</div>' +
+        '</div>';
+
+      /* Ratio bar */
+      const tot = b.incomeTotal + b.expenseTotal;
+      const incPct = tot > 0 ? Math.round(b.incomeTotal / tot * 100) : 0;
+      els.overviewRatio.innerHTML = tot > 0
+        ? '<div class="acct-ratio-wrap">' +
+            '<div class="acct-ratio-label">Income vs Expenses</div>' +
+            '<div class="acct-ratio-bar"><div class="acct-ratio-fill" style="width:' + incPct + '%; background:' + (isProfit ? '#22c55e' : '#ef4444') + ';"></div></div>' +
+            '<div class="acct-ratio-stats">' +
+              '<span><strong>' + incPct + '%</strong> income (฿' + fmtMoney(b.incomeTotal) + ')</span>' +
+              '<span><strong>' + (100 - incPct) + '%</strong> expenses (฿' + fmtMoney(b.expenseTotal) + ')</span>' +
+            '</div>' +
+          '</div>'
+        : '';
+
+      /* Deposit accounts */
       const dep = s.incomeByDepositAccount || {};
-      const keys = Object.keys(dep).sort();
-      if (!keys.length) {
-        els.overviewDeposits.textContent = 'No income in this range.';
+      const depKeys = Object.keys(dep).sort();
+      if (!depKeys.length) {
+        els.overviewDep.innerHTML = '';
       } else {
-        els.overviewDeposits.innerHTML = keys.map(function (k) {
+        let html = '<div class="acct-section-title">Income by deposit account</div><div class="acct-dep-grid">';
+        depKeys.forEach(function (k) {
           const row = dep[k];
-          return '<div style="margin-bottom:6px;">' + esc(DEP_LABELS[k] || k) + ': &#x0E3F;' + fmtMoney(row.total) + ' (' + row.count + ')</div>';
-        }).join('');
+          html +=
+            '<div class="acct-dep-card">' +
+              '<div class="acct-dep-name">' + esc(DEP_ICONS[k] || '📦') + ' ' + esc(DEP_LABELS[k] || k) + '</div>' +
+              '<div class="acct-dep-amount">฿' + fmtMoney(row.total) + '</div>' +
+              '<div class="acct-dep-count">' + row.count + ' transaction' + (row.count !== 1 ? 's' : '') + '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+        els.overviewDep.innerHTML = html;
       }
     }
 
+    /* ─── Render a transaction row ─── */
+    function makeTxRow(item, isInc, onEdit, onDel) {
+      const cat = item.category || 'other';
+      const color = catColor(cat, isInc);
+      const labels = isInc ? INC_CAT_LABELS : EXP_CAT_LABELS;
+      const title = isInc ? item.description : item.vendor;
+      const scope = item.scope || 'business';
+
+      const row = document.createElement('div');
+      row.className = 'acct-tx';
+      row.style.setProperty('--tx-color', color);
+
+      /* accent bar */
+      const accent = document.createElement('div');
+      accent.className = 'acct-tx-accent';
+
+      /* thumbnail */
+      const thumb = document.createElement('div');
+      thumb.className = 'acct-tx-thumb';
+      if (item.imageFilename) {
+        const img = document.createElement('img');
+        img.src = '/api/' + (isInc ? 'income' : 'expenses') + '/' + encodeURIComponent(item.id) + '/file';
+        img.alt = '';
+        thumb.appendChild(img);
+      } else {
+        const icon = document.createElement('span');
+        icon.className = 'acct-tx-thumb-icon';
+        icon.textContent = isInc ? '💰' : '🧾';
+        thumb.appendChild(icon);
+      }
+
+      /* main content */
+      const main = document.createElement('div');
+      main.className = 'acct-tx-main';
+
+      const catLabel = labels[cat] || cat;
+      /* pill uses hex + 18% alpha bg */
+      const pillBg = hexAlpha(color, 18);
+
+      let html =
+        '<div class="acct-tx-top">' +
+          '<span class="acct-tx-title">' + esc(title) + '</span>' +
+          '<span class="acct-tx-amount">฿' + fmtMoney(item.amount) + '</span>' +
+        '</div>' +
+        '<div class="acct-tx-meta">' +
+          '<span class="acct-tx-cat-pill" style="background:' + pillBg + ';color:' + color + ';">' + esc(catLabel) + '</span>' +
+          '<span class="acct-tx-date">' + fmtDate(item.date) + '</span>' +
+          '<span class="acct-tx-scope' + (scope === 'personal' ? ' personal' : '') + '">' + esc(SCOPE_LABEL[scope] || scope) + '</span>';
+      if (isInc && item.depositAccount) {
+        html += '<span class="acct-tx-scope">' + esc(DEP_LABELS[item.depositAccount] || item.depositAccount) + '</span>';
+      }
+      html += '</div>';
+      if (item.notes) {
+        html += '<div class="acct-tx-notes">' + esc(item.notes) + '</div>';
+      }
+      main.innerHTML = html;
+
+      /* actions */
+      const actions = document.createElement('div');
+      actions.className = 'acct-tx-actions';
+      const btnEdit = document.createElement('button');
+      btnEdit.type = 'button'; btnEdit.className = 'btn btn-sm'; btnEdit.textContent = 'Edit';
+      btnEdit.onclick = onEdit;
+      const btnDel = document.createElement('button');
+      btnDel.type = 'button'; btnDel.className = 'btn btn-sm'; btnDel.textContent = 'Del';
+      btnDel.onclick = onDel;
+      actions.appendChild(btnEdit);
+      actions.appendChild(btnDel);
+
+      row.appendChild(accent);
+      row.appendChild(thumb);
+      row.appendChild(main);
+      row.appendChild(actions);
+      return row;
+    }
+
+    /* ─── Load expenses ─── */
     async function loadExpenses() {
       const p = queryRange();
       if (els.filterExpCat.value) p.set('category', els.filterExpCat.value);
       if (els.filterExpScope.value) p.set('scope', els.filterExpScope.value);
       const res = await fetch('/api/expenses?' + p.toString());
       const data = await res.json();
-      if (!res.ok) {
-        showAlert(data.error || 'Failed to load expenses', true);
-        return;
-      }
+      if (!res.ok) { showAlert(data.error || 'Failed to load expenses', true); return; }
       if (data.meta && data.meta.categories) {
         fillSelect(els.filterExpCat, data.meta.categories, EXP_CAT_LABELS);
         fillSelectRequired(els.fExpCategory, data.meta.categories, EXP_CAT_LABELS);
       }
-      els.expSummary.textContent = data.meta.total + ' expenses · Total ' + fmtMoney(data.meta.totalAmount) + ' THB';
+      /* category chips */
+      renderCatChips(els.expCats, data.meta && data.meta.byCategory, EXP_CAT_LABELS, EXP_CAT_COLORS, function (k) {
+        els.filterExpCat.value = k;
+        loadExpenses();
+      });
+      /* summary bar */
+      const tot = data.meta && data.meta.total ? data.meta.total : 0;
+      const sum = data.meta && data.meta.totalAmount ? data.meta.totalAmount : 0;
+      els.expSummaryBar.innerHTML = tot
+        ? '<span>' + tot + ' expense' + (tot !== 1 ? 's' : '') + '</span><strong>฿' + fmtMoney(sum) + ' total</strong>'
+        : '';
+      /* list */
       els.expList.innerHTML = '';
-      for (let i = 0; i < data.expenses.length; i++) {
-        const e = data.expenses[i];
-        const scope = e.scope || 'business';
-        const card = document.createElement('div');
-        card.className = 'acct-row';
-        const thumb = document.createElement('div');
-        thumb.className = 'acct-thumb';
-        if (e.imageFilename) {
-          const img = document.createElement('img');
-          img.src = '/api/expenses/' + encodeURIComponent(e.id) + '/file';
-          img.alt = '';
-          thumb.appendChild(img);
-        } else {
-          thumb.innerHTML = '<span class="acct-thumb-empty">No image</span>';
-        }
-        const body = document.createElement('div');
-        body.className = 'acct-row-body';
-        body.innerHTML =
-          '<div class="acct-row-title">' + esc(e.vendor) + '</div>' +
-          '<div class="acct-row-meta">' + esc(e.date) + ' &middot; ' + esc(EXP_CAT_LABELS[e.category] || e.category) +
-          ' &middot; <strong>&#x0E3F;' + fmtMoney(e.amount) + '</strong> &middot; ' + esc(SCOPE_LABEL[scope] || scope) + '</div>' +
-          (e.notes ? '<div class="acct-row-notes">' + esc(e.notes) + '</div>' : '') +
-          '<div class="acct-row-id">' + esc(e.source || 'manual') + ' &middot; ' + esc(e.id) + '</div>';
-        const actions = document.createElement('div');
-        actions.className = 'acct-row-actions';
-        const btnEdit = document.createElement('button');
-        btnEdit.type = 'button'; btnEdit.className = 'btn btn-sm'; btnEdit.textContent = 'Edit';
-        btnEdit.onclick = function () { openExpModal(e); };
-        const btnDel = document.createElement('button');
-        btnDel.type = 'button'; btnDel.className = 'btn btn-sm'; btnDel.textContent = 'Delete';
-        btnDel.onclick = function () { delExpense(e.id); };
-        actions.appendChild(btnEdit); actions.appendChild(btnDel);
-        card.appendChild(thumb); card.appendChild(body); card.appendChild(actions);
-        els.expList.appendChild(card);
+      const items = data.expenses || [];
+      if (!items.length) {
+        els.expList.innerHTML = emptyState('🧾', 'No expenses', 'Add your first expense with the button above.');
+        return;
       }
+      items.forEach(function (e) {
+        els.expList.appendChild(makeTxRow(e, false,
+          function () { openExpModal(e); },
+          function () { delExpense(e.id); }
+        ));
+      });
     }
 
+    /* ─── Load income ─── */
     async function loadIncomes() {
       const p = queryRange();
       if (els.filterIncCat.value) p.set('category', els.filterIncCat.value);
@@ -505,10 +1046,7 @@ import '../styles/dashboard.css';
       if (els.filterIncScope.value) p.set('scope', els.filterIncScope.value);
       const res = await fetch('/api/income?' + p.toString());
       const data = await res.json();
-      if (!res.ok) {
-        showAlert(data.error || 'Failed to load income', true);
-        return;
-      }
+      if (!res.ok) { showAlert(data.error || 'Failed to load income', true); return; }
       if (data.meta) {
         if (data.meta.categories) {
           fillSelect(els.filterIncCat, data.meta.categories, INC_CAT_LABELS);
@@ -519,67 +1057,49 @@ import '../styles/dashboard.css';
           fillSelectRequired(els.fIncDeposit, data.meta.depositAccounts, DEP_LABELS);
         }
       }
-      els.incSummary.textContent = data.meta.total + ' income line(s) · Total ' + fmtMoney(data.meta.totalAmount) + ' THB';
+      /* category chips */
+      renderCatChips(els.incCats, data.meta && data.meta.byCategory, INC_CAT_LABELS, INC_CAT_COLORS, function (k) {
+        els.filterIncCat.value = k;
+        loadIncomes();
+      });
+      /* summary bar */
+      const tot = data.meta && data.meta.total ? data.meta.total : 0;
+      const sum = data.meta && data.meta.totalAmount ? data.meta.totalAmount : 0;
+      els.incSummaryBar.innerHTML = tot
+        ? '<span>' + tot + ' income line' + (tot !== 1 ? 's' : '') + '</span><strong>฿' + fmtMoney(sum) + ' total</strong>'
+        : '';
+      /* list */
       els.incList.innerHTML = '';
-      for (let i = 0; i < data.incomes.length; i++) {
-        const e = data.incomes[i];
-        const card = document.createElement('div');
-        card.className = 'acct-row';
-        const thumb = document.createElement('div');
-        thumb.className = 'acct-thumb';
-        if (e.imageFilename) {
-          const img = document.createElement('img');
-          img.src = '/api/income/' + encodeURIComponent(e.id) + '/file';
-          img.alt = '';
-          thumb.appendChild(img);
-        } else {
-          thumb.innerHTML = '<span class="acct-thumb-empty">No image</span>';
-        }
-        const body = document.createElement('div');
-        body.className = 'acct-row-body';
-        body.innerHTML =
-          '<div class="acct-row-title">' + esc(e.description) + '</div>' +
-          '<div class="acct-row-meta">' + esc(e.date) + ' &middot; ' + esc(INC_CAT_LABELS[e.category] || e.category) +
-          ' &middot; ' + esc(DEP_LABELS[e.depositAccount] || e.depositAccount) +
-          ' &middot; <strong>&#x0E3F;' + fmtMoney(e.amount) + '</strong> &middot; ' + esc(SCOPE_LABEL[e.scope] || e.scope) + '</div>' +
-          (e.notes ? '<div class="acct-row-notes">' + esc(e.notes) + '</div>' : '') +
-          '<div class="acct-row-id">' + esc(e.source || 'manual') + ' &middot; ' + esc(e.id) + '</div>';
-        const actions = document.createElement('div');
-        actions.className = 'acct-row-actions';
-        const btnEdit = document.createElement('button');
-        btnEdit.type = 'button'; btnEdit.className = 'btn btn-sm'; btnEdit.textContent = 'Edit';
-        btnEdit.onclick = function () { openIncModal(e); };
-        const btnDel = document.createElement('button');
-        btnDel.type = 'button'; btnDel.className = 'btn btn-sm'; btnDel.textContent = 'Delete';
-        btnDel.onclick = function () { delIncome(e.id); };
-        actions.appendChild(btnEdit); actions.appendChild(btnDel);
-        card.appendChild(thumb); card.appendChild(body); card.appendChild(actions);
-        els.incList.appendChild(card);
+      const items = data.incomes || [];
+      if (!items.length) {
+        els.incList.innerHTML = emptyState('💰', 'No income', 'Add your first income line with the button above.');
+        return;
       }
+      items.forEach(function (e) {
+        els.incList.appendChild(makeTxRow(e, true,
+          function () { openIncModal(e); },
+          function () { delIncome(e.id); }
+        ));
+      });
     }
 
-    function refreshAll() {
-      loadSummary();
-      loadExpenses();
-      loadIncomes();
-    }
+    function refreshAll() { loadSummary(); loadExpenses(); loadIncomes(); }
 
+    /* ─── Tabs ─── */
     function setTab(name) {
       activeTab = name;
-      document.querySelectorAll('.tab-bar .tab').forEach(function (t) {
+      document.querySelectorAll('.acct-tab').forEach(function (t) {
         t.classList.toggle('active', t.getAttribute('data-tab') === name);
       });
       els.paneOverview.style.display = name === 'overview' ? 'block' : 'none';
-      els.paneExp.style.display = name === 'expenses' ? 'block' : 'none';
-      els.paneInc.style.display = name === 'income' ? 'block' : 'none';
+      els.paneExp.style.display      = name === 'expenses' ? 'block' : 'none';
+      els.paneInc.style.display      = name === 'income'   ? 'block' : 'none';
     }
-
-    document.querySelectorAll('.tab-bar .tab').forEach(function (t) {
-      t.addEventListener('click', function () {
-        setTab(t.getAttribute('data-tab'));
-      });
+    document.querySelectorAll('.acct-tab').forEach(function (t) {
+      t.addEventListener('click', function () { setTab(t.getAttribute('data-tab')); });
     });
 
+    /* ─── Modals ─── */
     function openExpModal(edit) {
       els.modalExp.style.display = 'flex';
       els.fExpFile.value = '';
@@ -595,8 +1115,7 @@ import '../styles/dashboard.css';
       } else {
         els.modalExpTitle.textContent = 'Add expense';
         els.fExpId.value = '';
-        var t = new Date();
-        els.fExpDate.value = t.toISOString().slice(0, 10);
+        els.fExpDate.value = new Date().toISOString().slice(0, 10);
         els.fExpAmount.value = '';
         els.fExpVendor.value = '';
         els.fExpCategory.selectedIndex = 0;
@@ -604,10 +1123,7 @@ import '../styles/dashboard.css';
         els.fExpNotes.value = '';
       }
     }
-
-    function closeExpModal() {
-      els.modalExp.style.display = 'none';
-    }
+    function closeExpModal() { els.modalExp.style.display = 'none'; }
 
     function openIncModal(edit) {
       els.modalInc.style.display = 'flex';
@@ -625,8 +1141,7 @@ import '../styles/dashboard.css';
       } else {
         els.modalIncTitle.textContent = 'Add income';
         els.fIncId.value = '';
-        var t2 = new Date();
-        els.fIncDate.value = t2.toISOString().slice(0, 10);
+        els.fIncDate.value = new Date().toISOString().slice(0, 10);
         els.fIncAmount.value = '';
         els.fIncDesc.value = '';
         els.fIncCategory.selectedIndex = 0;
@@ -635,35 +1150,25 @@ import '../styles/dashboard.css';
         els.fIncNotes.value = '';
       }
     }
+    function closeIncModal() { els.modalInc.style.display = 'none'; }
 
-    function closeIncModal() {
-      els.modalInc.style.display = 'none';
-    }
-
+    /* ─── Delete ─── */
     async function delExpense(id) {
       if (!confirm('Delete this expense?')) return;
       const res = await fetch('/api/expenses/' + encodeURIComponent(id), { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) {
-        showAlert(data.error || 'Delete failed', true);
-        return;
-      }
-      showAlert('Deleted');
-      refreshAll();
+      if (!res.ok) { showAlert(data.error || 'Delete failed', true); return; }
+      showAlert('Deleted'); refreshAll();
     }
-
     async function delIncome(id) {
       if (!confirm('Delete this income line?')) return;
       const res = await fetch('/api/income/' + encodeURIComponent(id), { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) {
-        showAlert(data.error || 'Delete failed', true);
-        return;
-      }
-      showAlert('Deleted');
-      refreshAll();
+      if (!res.ok) { showAlert(data.error || 'Delete failed', true); return; }
+      showAlert('Deleted'); refreshAll();
     }
 
+    /* ─── File helper ─── */
     function readFileAsDataUrl(file) {
       return new Promise(function (resolve, reject) {
         var r = new FileReader();
@@ -673,7 +1178,9 @@ import '../styles/dashboard.css';
       });
     }
 
+    /* ─── Event wiring ─── */
     els.btnApply.onclick = refreshAll;
+    els.btnClear.onclick = function () { els.filterFrom.value = ''; els.filterTo.value = ''; refreshAll(); };
     els.btnAddExp.onclick = function () { openExpModal(null); };
     els.btnAddInc.onclick = function () { openIncModal(null); };
     els.btnExpCancel.onclick = closeExpModal;
@@ -681,22 +1188,20 @@ import '../styles/dashboard.css';
     els.modalExp.onclick = function (ev) { if (ev.target === els.modalExp) closeExpModal(); };
     els.modalInc.onclick = function (ev) { if (ev.target === els.modalInc) closeIncModal(); };
 
-    els.filterExpCat.onchange = loadExpenses;
+    els.filterExpCat.onchange   = loadExpenses;
     els.filterExpScope.onchange = loadExpenses;
-    els.filterIncCat.onchange = loadIncomes;
-    els.filterIncDep.onchange = loadIncomes;
+    els.filterIncCat.onchange   = loadIncomes;
+    els.filterIncDep.onchange   = loadIncomes;
     els.filterIncScope.onchange = loadIncomes;
 
+    /* ─── Form: expense ─── */
     els.formExp.onsubmit = async function (ev) {
       ev.preventDefault();
       var id = els.fExpId.value;
       var imageBase64;
       var file = els.fExpFile.files && els.fExpFile.files[0];
       if (file) {
-        if (file.size > 6 * 1024 * 1024) {
-          showAlert('Image must be under 6 MB', true);
-          return;
-        }
+        if (file.size > 6 * 1024 * 1024) { showAlert('Image must be under 6 MB', true); return; }
         imageBase64 = await readFileAsDataUrl(file);
       }
       var payload = {
@@ -709,43 +1214,27 @@ import '../styles/dashboard.css';
         source: 'dashboard',
       };
       if (imageBase64) payload.imageBase64 = imageBase64;
-
       var res;
       if (id) {
         var patch = Object.assign({}, payload);
         if (!file) delete patch.imageBase64;
-        res = await fetch('/api/expenses/' + encodeURIComponent(id), {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patch),
-        });
+        res = await fetch('/api/expenses/' + encodeURIComponent(id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
       } else {
-        res = await fetch('/api/expenses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        res = await fetch('/api/expenses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       }
       var data = await res.json();
-      if (!res.ok) {
-        showAlert(data.error || 'Save failed', true);
-        return;
-      }
-      closeExpModal();
-      showAlert('Saved');
-      refreshAll();
+      if (!res.ok) { showAlert(data.error || 'Save failed', true); return; }
+      closeExpModal(); showAlert('Saved'); refreshAll();
     };
 
+    /* ─── Form: income ─── */
     els.formInc.onsubmit = async function (ev) {
       ev.preventDefault();
       var id = els.fIncId.value;
       var imageBase64;
       var file2 = els.fIncFile.files && els.fIncFile.files[0];
       if (file2) {
-        if (file2.size > 6 * 1024 * 1024) {
-          showAlert('Image must be under 6 MB', true);
-          return;
-        }
+        if (file2.size > 6 * 1024 * 1024) { showAlert('Image must be under 6 MB', true); return; }
         imageBase64 = await readFileAsDataUrl(file2);
       }
       var payload2 = {
@@ -759,33 +1248,20 @@ import '../styles/dashboard.css';
         source: 'dashboard',
       };
       if (imageBase64) payload2.imageBase64 = imageBase64;
-
       var res2;
       if (id) {
         var patch2 = Object.assign({}, payload2);
         if (!file2) delete patch2.imageBase64;
-        res2 = await fetch('/api/income/' + encodeURIComponent(id), {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patch2),
-        });
+        res2 = await fetch('/api/income/' + encodeURIComponent(id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch2) });
       } else {
-        res2 = await fetch('/api/income', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload2),
-        });
+        res2 = await fetch('/api/income', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload2) });
       }
       var data2 = await res2.json();
-      if (!res2.ok) {
-        showAlert(data2.error || 'Save failed', true);
-        return;
-      }
-      closeIncModal();
-      showAlert('Saved');
-      refreshAll();
+      if (!res2.ok) { showAlert(data2.error || 'Save failed', true); return; }
+      closeIncModal(); showAlert('Saved'); refreshAll();
     };
 
+    /* ─── Boot ─── */
     refreshAll();
   </script>
 </BaseLayout>

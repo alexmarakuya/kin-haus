@@ -29,11 +29,20 @@ export const GET: APIRoute = async ({ request }) => {
   const incomes = filterIncomes(all, { from, to, category, depositAccount, scope });
   const totalAmount = incomes.reduce((s, i) => s + i.amount, 0);
 
+  const byCategory: Record<string, { total: number; count: number }> = {};
+  for (const i of incomes) {
+    const k = i.category;
+    if (!byCategory[k]) byCategory[k] = { total: 0, count: 0 };
+    byCategory[k].total += i.amount;
+    byCategory[k].count += 1;
+  }
+
   return json({
     incomes,
     meta: {
       total: incomes.length,
       totalAmount,
+      byCategory,
       categories: [...VALID_INCOME_CATEGORIES],
       depositAccounts: [...VALID_INCOME_DEPOSIT_ACCOUNTS],
       scopes: [...VALID_ACCOUNTING_SCOPES],

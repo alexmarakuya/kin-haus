@@ -23,11 +23,20 @@ export const GET: APIRoute = async ({ request }) => {
   const expenses = filterExpenses(all, { from, to, category, scope });
   const totalAmount = expenses.reduce((s, e) => s + e.amount, 0);
 
+  const byCategory: Record<string, { total: number; count: number }> = {};
+  for (const e of expenses) {
+    const k = e.category;
+    if (!byCategory[k]) byCategory[k] = { total: 0, count: 0 };
+    byCategory[k].total += e.amount;
+    byCategory[k].count += 1;
+  }
+
   return json({
     expenses,
     meta: {
       total: expenses.length,
       totalAmount,
+      byCategory,
       categories: [...VALID_EXPENSE_CATEGORIES],
       scopes: [...VALID_ACCOUNTING_SCOPES],
     },
