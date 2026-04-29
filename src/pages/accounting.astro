@@ -477,12 +477,302 @@ import '../styles/dashboard.css';
       border-left: 3px solid #d4d0c8;
     }
 
+    /* ─── AI Chat FAB ─── */
+    .acct-ai-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2c6e49, #1b4332);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 18px rgba(44,110,73,.45);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .acct-ai-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(44,110,73,.55); }
+    .acct-ai-fab svg { width: 22px; height: 22px; }
+
+    /* ─── AI chat panel ─── */
+    .acct-chat-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 400px;
+      max-width: 100vw;
+      background: var(--bg, #f5f4f1);
+      border-left: 1px solid #e4e2de;
+      box-shadow: -6px 0 30px rgba(0,0,0,.12);
+      z-index: 110;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .25s cubic-bezier(.4,0,.2,1);
+    }
+    .acct-chat-panel.open { transform: translateX(0); }
+
+    .acct-chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e4e2de;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .acct-chat-header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .acct-chat-header-title svg { width: 18px; height: 18px; color: #2c6e49; }
+    .acct-chat-header-actions { display: flex; gap: 6px; }
+    .acct-chat-hdr-btn {
+      background: none;
+      border: 1px solid #e4e2de;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .12s;
+    }
+    .acct-chat-hdr-btn:hover { background: #f0ede8; color: var(--ink); }
+
+    /* ─── Welcome splash ─── */
+    .acct-chat-welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .acct-chat-welcome-icon { font-size: 44px; margin-bottom: 14px; }
+    .acct-chat-welcome-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .acct-chat-welcome-sub { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 24px; max-width: 280px; }
+    .acct-chat-quick-btns { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 260px; }
+    .acct-chat-quick-btn {
+      background: #fff;
+      border: 1px solid #e4e2de;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      transition: all .12s;
+    }
+    .acct-chat-quick-btn:hover { background: #f0ede8; border-color: #2c6e49; }
+
+    /* ─── Messages ─── */
+    .acct-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .acct-chat-msg {
+      max-width: 88%;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .acct-chat-msg.user {
+      align-self: flex-end;
+      background: #2c6e49;
+      color: #fff;
+      padding: 9px 13px;
+      border-radius: 14px 14px 3px 14px;
+    }
+    .acct-chat-msg.ai {
+      align-self: flex-start;
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      padding: 10px 13px;
+      border-radius: 3px 14px 14px 14px;
+      color: var(--ink);
+    }
+    .acct-chat-msg.ai strong { font-weight: 700; }
+    .acct-chat-msg.ai code {
+      background: #f0ede8;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .acct-chat-msg-img {
+      max-width: 200px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .acct-chat-tool-badge {
+      align-self: flex-start;
+      font-size: 11px;
+      color: #2c6e49;
+      background: #dcfce7;
+      border-radius: 100px;
+      padding: 3px 9px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .acct-chat-thinking {
+      align-self: flex-start;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .acct-chat-thinking-dots span {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: chatDot 1.2s infinite;
+    }
+    .acct-chat-thinking-dots span:nth-child(2) { animation-delay: .2s; }
+    .acct-chat-thinking-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes chatDot {
+      0%,80%,100% { opacity: .25; transform: scale(.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ─── Success card (after AI logs entry) ─── */
+    .acct-chat-success {
+      align-self: flex-start;
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #166534;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 88%;
+    }
+
+    /* ─── Image preview in input bar ─── */
+    .acct-chat-img-preview {
+      padding: 8px 12px 0;
+      flex-shrink: 0;
+    }
+    .acct-chat-img-thumb-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .acct-chat-img-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid #2c6e49;
+    }
+    .acct-chat-img-remove {
+      position: absolute;
+      top: -6px; right: -6px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ─── Input bar ─── */
+    .acct-chat-input-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px 14px;
+      border-top: 1px solid #e4e2de;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .acct-chat-attach-btn {
+      background: none;
+      border: 1px solid #d8d6d0;
+      border-radius: 8px;
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      color: var(--muted);
+      transition: all .12s;
+    }
+    .acct-chat-attach-btn:hover { background: #f0ede8; color: var(--ink); border-color: #2c6e49; }
+    .acct-chat-attach-btn svg { width: 16px; height: 16px; }
+    .acct-chat-textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid #d8d6d0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--bg, #f5f4f1);
+      outline: none;
+      min-height: 36px;
+      max-height: 100px;
+      line-height: 1.4;
+      transition: border-color .15s;
+    }
+    .acct-chat-textarea:focus { border-color: #2c6e49; background: #fff; }
+    .acct-chat-send-btn {
+      background: #2c6e49;
+      border: none;
+      border-radius: 8px;
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      color: #fff;
+      transition: all .12s;
+    }
+    .acct-chat-send-btn:disabled { background: #c8c4bc; cursor: not-allowed; }
+    .acct-chat-send-btn:not(:disabled):hover { background: #1b4332; }
+    .acct-chat-send-btn svg { width: 16px; height: 16px; }
+
+    /* ─── Backdrop ─── */
+    .acct-chat-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.25);
+      z-index: 105;
+      display: none;
+    }
+    .acct-chat-backdrop.visible { display: block; }
+
     @media (max-width: 640px) {
       .acct-body { padding: 14px 14px 60px; }
       .acct-hero-amount { font-size: 36px; }
       .acct-hero-right { align-items: flex-start; }
       .acct-tx-actions { flex-direction: row; padding: 8px; }
       .acct-filter-bar { top: 54px; }
+      .acct-chat-panel { width: 100vw; }
+      .acct-ai-fab { bottom: 16px; right: 16px; }
     }
   </style>
 
@@ -493,6 +783,10 @@ import '../styles/dashboard.css';
     </div>
     <div class="header-right">
       <a class="btn btn-sm" href="/dashboard">&#x2190; Hub</a>
+      <button class="btn btn-sm" type="button" id="btn-ai-open" title="AI Assistant — scan receipts &amp; ask questions" style="display:flex;align-items:center;gap:5px;">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2l1.5 4.5H16l-3.6 2.6 1.4 4.4L10 11l-3.8 2.5 1.4-4.4L4 6.5h4.5L10 2z"/></svg>
+        AI
+      </button>
       <button class="btn btn-sm" type="button" id="btn-add-expense">+ Expense</button>
       <button class="btn btn-sm btn-primary" type="button" id="btn-add-income">+ Income</button>
     </div>
@@ -1263,5 +1557,376 @@ import '../styles/dashboard.css';
 
     /* ─── Boot ─── */
     refreshAll();
+  </script>
+
+  <!-- ═══════════ AI CHAT PANEL ═══════════ -->
+
+  <!-- FAB -->
+  <button class="acct-ai-fab" id="acct-ai-fab" title="AI Assistant — scan receipts &amp; ask questions">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M10 2l1.5 4.5H16l-3.6 2.6 1.4 4.4L10 11l-3.8 2.5 1.4-4.4L4 6.5h4.5L10 2z" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <!-- Backdrop -->
+  <div class="acct-chat-backdrop" id="acct-chat-backdrop"></div>
+
+  <!-- Chat panel -->
+  <div class="acct-chat-panel" id="acct-chat-panel">
+    <div class="acct-chat-header">
+      <div class="acct-chat-header-title">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M10 2l1.5 4.5H16l-3.6 2.6 1.4 4.4L10 11l-3.8 2.5 1.4-4.4L4 6.5h4.5L10 2z" stroke-linejoin="round"/>
+        </svg>
+        Accounting AI
+      </div>
+      <div class="acct-chat-header-actions">
+        <button class="acct-chat-hdr-btn" id="acct-chat-clear-btn">Clear</button>
+        <button class="acct-chat-hdr-btn" id="acct-chat-close-btn">&#x2715;</button>
+      </div>
+    </div>
+
+    <!-- Welcome (shown only when no messages) -->
+    <div id="acct-chat-welcome" class="acct-chat-welcome">
+      <div class="acct-chat-welcome-icon">🧾</div>
+      <div class="acct-chat-welcome-title">Receipt scanning &amp; P&amp;L</div>
+      <div class="acct-chat-welcome-sub">Upload a receipt, bank notification or Wise screenshot and I'll log it. Or ask anything about your finances.</div>
+      <div class="acct-chat-quick-btns">
+        <button class="acct-chat-quick-btn" data-prompt="I have a receipt to scan">📷 Scan a receipt</button>
+        <button class="acct-chat-quick-btn" data-prompt="I want to log an Airbnb payout">💳 Log Airbnb payout</button>
+        <button class="acct-chat-quick-btn" data-prompt="Show me a P&amp;L summary for this month">📊 P&amp;L this month</button>
+        <button class="acct-chat-quick-btn" data-prompt="What were my biggest expenses recently?">🔍 Biggest expenses</button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="acct-chat-messages" id="acct-chat-messages" style="display:none;"></div>
+
+    <!-- Pending image preview -->
+    <div class="acct-chat-img-preview" id="acct-chat-img-preview" style="display:none;">
+      <div class="acct-chat-img-thumb-wrap">
+        <img class="acct-chat-img-thumb" id="acct-chat-img-thumb" src="" alt="Receipt" />
+        <button class="acct-chat-img-remove" id="acct-chat-img-remove" title="Remove image">&#x2715;</button>
+      </div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="acct-chat-input-bar">
+      <button class="acct-chat-attach-btn" id="acct-chat-attach-btn" title="Upload receipt / screenshot">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M14.5 11.5l-5 5a4.24 4.24 0 01-6-6l7-7a2.83 2.83 0 014 4l-7 7a1.41 1.41 0 01-2-2l5-5"/>
+        </svg>
+      </button>
+      <input type="file" id="acct-chat-file-input" accept="image/*" style="display:none;" />
+      <textarea
+        class="acct-chat-textarea"
+        id="acct-chat-textarea"
+        placeholder="Ask a question or describe an expense…"
+        rows="1"
+      ></textarea>
+      <button class="acct-chat-send-btn" id="acct-chat-send-btn" disabled title="Send">
+        <svg viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script is:inline>
+  (function () {
+    /* ─── State ─── */
+    var chatHistory = [];     // [{role, content}]
+    var pendingImage = null;  // { dataUrl, mimeType }
+    var isStreaming = false;
+    var needsRefresh = false; // set when AI calls create_expense / create_income
+
+    /* ─── DOM ─── */
+    var panel     = document.getElementById('acct-chat-panel');
+    var backdrop  = document.getElementById('acct-chat-backdrop');
+    var welcome   = document.getElementById('acct-chat-welcome');
+    var msgList   = document.getElementById('acct-chat-messages');
+    var imgPrev   = document.getElementById('acct-chat-img-preview');
+    var imgThumb  = document.getElementById('acct-chat-img-thumb');
+    var fileInput = document.getElementById('acct-chat-file-input');
+    var textarea  = document.getElementById('acct-chat-textarea');
+    var sendBtn   = document.getElementById('acct-chat-send-btn');
+
+    /* ─── Open / Close ─── */
+    function openChat() {
+      panel.classList.add('open');
+      backdrop.classList.add('visible');
+      textarea.focus();
+    }
+    function closeChat() {
+      panel.classList.remove('open');
+      backdrop.classList.remove('visible');
+      if (needsRefresh && typeof refreshAll === 'function') {
+        refreshAll();
+        needsRefresh = false;
+      }
+    }
+
+    document.getElementById('acct-ai-fab').onclick = openChat;
+    document.getElementById('btn-ai-open').onclick  = openChat;
+    document.getElementById('acct-chat-close-btn').onclick = closeChat;
+    backdrop.onclick = closeChat;
+
+    document.getElementById('acct-chat-clear-btn').onclick = function () {
+      chatHistory = [];
+      pendingImage = null;
+      imgPrev.style.display = 'none';
+      showWelcome();
+    };
+
+    /* ─── Welcome helpers ─── */
+    function showWelcome() {
+      welcome.style.display = 'flex';
+      msgList.style.display = 'none';
+    }
+    function hideWelcome() {
+      welcome.style.display = 'none';
+      msgList.style.display = 'flex';
+    }
+
+    /* ─── Quick-action buttons ─── */
+    document.querySelectorAll('.acct-chat-quick-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var prompt = btn.getAttribute('data-prompt');
+        if (prompt) sendMessage(prompt, null);
+      });
+    });
+
+    /* ─── Image attach ─── */
+    document.getElementById('acct-chat-attach-btn').onclick = function () {
+      fileInput.click();
+    };
+    fileInput.onchange = function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      if (file.size > 8 * 1024 * 1024) {
+        alert('Image must be under 8 MB');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        pendingImage = { dataUrl: reader.result, mimeType: file.type };
+        imgThumb.src = reader.result;
+        imgPrev.style.display = 'block';
+        updateSendBtn();
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = '';
+    };
+    document.getElementById('acct-chat-img-remove').onclick = function () {
+      pendingImage = null;
+      imgPrev.style.display = 'none';
+      updateSendBtn();
+    };
+
+    /* ─── Drag & drop receipt onto panel ─── */
+    panel.addEventListener('dragover', function (e) { e.preventDefault(); });
+    panel.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        pendingImage = { dataUrl: reader.result, mimeType: file.type };
+        imgThumb.src = reader.result;
+        imgPrev.style.display = 'block';
+        updateSendBtn();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    /* ─── Textarea auto-resize + send on Enter ─── */
+    textarea.addEventListener('input', function () {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+      updateSendBtn();
+    });
+    textarea.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!sendBtn.disabled) doSend();
+      }
+    });
+
+    sendBtn.onclick = doSend;
+
+    function updateSendBtn() {
+      sendBtn.disabled = isStreaming || (!textarea.value.trim() && !pendingImage);
+    }
+
+    /* ─── Simple markdown renderer ─── */
+    function renderMd(text) {
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    /* ─── Append a message bubble ─── */
+    function appendMsg(role, html, imgDataUrl) {
+      var div = document.createElement('div');
+      div.className = 'acct-chat-msg ' + role;
+      if (imgDataUrl) {
+        var img = document.createElement('img');
+        img.src = imgDataUrl;
+        img.className = 'acct-chat-msg-img';
+        div.appendChild(img);
+      }
+      var span = document.createElement('span');
+      span.innerHTML = html;
+      div.appendChild(span);
+      msgList.appendChild(div);
+      msgList.scrollTop = msgList.scrollHeight;
+      return div;
+    }
+
+    function appendToolBadge(toolName) {
+      var LABELS = {
+        create_expense: '✓ Logged expense',
+        create_income:  '✓ Logged income',
+        get_accounting_summary: '📊 Fetched P&L',
+        list_recent_accounting: '📋 Fetched recent entries',
+      };
+      var div = document.createElement('div');
+      div.className = 'acct-chat-tool-badge';
+      div.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2l1.5 4.5H16l-3.6 2.6 1.4 4.4L10 11l-3.8 2.5 1.4-4.4L4 6.5h4.5L10 2z"/></svg>' + (LABELS[toolName] || toolName);
+      msgList.appendChild(div);
+      msgList.scrollTop = msgList.scrollHeight;
+    }
+
+    function appendThinking() {
+      var div = document.createElement('div');
+      div.className = 'acct-chat-thinking';
+      div.innerHTML = '<div class="acct-chat-thinking-dots"><span></span><span></span><span></span></div>';
+      msgList.appendChild(div);
+      msgList.scrollTop = msgList.scrollHeight;
+      return div;
+    }
+
+    /* ─── Send ─── */
+    function doSend() {
+      var text = textarea.value.trim();
+      if (!text && !pendingImage) return;
+      sendMessage(text, pendingImage);
+      textarea.value = '';
+      textarea.style.height = 'auto';
+      pendingImage = null;
+      imgPrev.style.display = 'none';
+    }
+
+    async function sendMessage(text, image) {
+      hideWelcome();
+      isStreaming = true;
+      updateSendBtn();
+
+      /* Build user message content */
+      var imgDataUrl = image ? image.dataUrl : null;
+      if (image) {
+        /* multi-part */
+        appendMsg('user', text ? renderMd(text) : 'Here is a receipt:', imgDataUrl);
+        var content = [];
+        if (text) content.push({ type: 'text', text: text });
+        content.push({ type: 'image_url', image_url: { url: image.dataUrl, detail: 'high' } });
+        chatHistory.push({ role: 'user', content: content });
+      } else {
+        appendMsg('user', renderMd(text));
+        chatHistory.push({ role: 'user', content: text });
+      }
+
+      /* Thinking indicator */
+      var thinkDiv = appendThinking();
+
+      /* AI bubble we'll stream into */
+      var aiBubble = null;
+      var aiText = '';
+
+      try {
+        var res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: chatHistory }),
+        });
+
+        if (!res.ok) {
+          thinkDiv.remove();
+          appendMsg('ai', 'Sorry, something went wrong. Please try again.');
+          isStreaming = false;
+          updateSendBtn();
+          return;
+        }
+
+        var reader = res.body.getReader();
+        var decoder = new TextDecoder();
+        var buf = '';
+
+        while (true) {
+          var chunk = await reader.read();
+          if (chunk.done) break;
+          buf += decoder.decode(chunk.value, { stream: true });
+          var lines = buf.split('\n');
+          buf = lines.pop();
+
+          for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line.startsWith('data:')) continue;
+            var raw = line.slice(5).trim();
+            if (raw === '[DONE]') break;
+            var evt;
+            try { evt = JSON.parse(raw); } catch { continue; }
+
+            if (evt.type === 'delta') {
+              thinkDiv.remove(); thinkDiv = null;
+              if (!aiBubble) {
+                aiBubble = document.createElement('div');
+                aiBubble.className = 'acct-chat-msg ai';
+                var span = document.createElement('span');
+                aiBubble.appendChild(span);
+                msgList.appendChild(aiBubble);
+              }
+              aiText += evt.content;
+              aiBubble.querySelector('span').innerHTML = renderMd(aiText);
+              msgList.scrollTop = msgList.scrollHeight;
+            } else if (evt.type === 'tool') {
+              if (thinkDiv) { thinkDiv.remove(); thinkDiv = null; }
+              appendToolBadge(evt.name);
+              if (evt.name === 'create_expense' || evt.name === 'create_income') {
+                needsRefresh = true;
+              }
+              /* New thinking indicator for continued processing */
+              thinkDiv = appendThinking();
+            } else if (evt.type === 'done') {
+              if (thinkDiv) { thinkDiv.remove(); thinkDiv = null; }
+            } else if (evt.type === 'error') {
+              if (thinkDiv) { thinkDiv.remove(); thinkDiv = null; }
+              appendMsg('ai', evt.content || 'Something went wrong.');
+            }
+          }
+        }
+
+        if (thinkDiv) thinkDiv.remove();
+        if (aiText) chatHistory.push({ role: 'assistant', content: aiText });
+
+        /* If AI logged data, show a refresh notice */
+        if (needsRefresh && aiBubble) {
+          var notice = document.createElement('div');
+          notice.className = 'acct-chat-success';
+          notice.innerHTML = '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> Entry saved — ledger will refresh when you close this panel.';
+          msgList.appendChild(notice);
+          msgList.scrollTop = msgList.scrollHeight;
+        }
+      } catch (err) {
+        if (thinkDiv) thinkDiv.remove();
+        appendMsg('ai', 'Network error. Please check your connection.');
+      }
+
+      isStreaming = false;
+      updateSendBtn();
+    }
+  }());
   </script>
 </BaseLayout>
