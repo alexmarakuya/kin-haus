@@ -88,8 +88,8 @@ import '../styles/dashboard.css';
         <div class="tab" data-tab="inquiries">Inquiries <span class="inquiry-badge" id="inquiry-badge"></span></div>
         <div class="tab" data-tab="guests">Guests</div>
         <div class="tab" data-tab="staff">Staff</div>
-        <div class="tab" data-tab="monitors">Monitors</div>
-        <div class="tab" data-tab="desks">Desks</div>
+        <!-- hidden: <div class="tab" data-tab="monitors">Monitors</div> -->
+        <!-- hidden: <div class="tab" data-tab="desks">Desks</div> -->
         <div class="tab-spacer"></div>
       </div>
 
@@ -1148,6 +1148,8 @@ import '../styles/dashboard.css';
     // Always update the tab-bar badge
     updateConflictBadge(allConflicts.length);
 
+    // Conflict banner hidden — uncomment below to re-enable
+    alerts.innerHTML = ''; return;
     if (conflicts.length === 0) { alerts.innerHTML = ''; return; }
     const details = conflicts.map(b => {
       const room = ROOM_LABELS[b.room] || b.room;
