@@ -302,3 +302,81 @@ export interface Income {
   createdAt: string;
   updatedAt: string;
 }
+
+// ─── Admin Tasks ──────────────────────────────────────────────────────────────
+
+export type AdminTaskCategory =
+  | "payment"
+  | "payroll"
+  | "accounting"
+  | "housekeeping"
+  | "maintenance"
+  | "procurement"
+  | "guest-admin"
+  | "other";
+
+export type AdminTaskRecurrence =
+  | "none"
+  | "daily"
+  | "weekly"
+  | "biweekly"
+  | "monthly"
+  | "quarterly"
+  | "yearly";
+
+export type AdminTaskAssignee = "alex" | "mia" | "both";
+export type AdminTaskPriority = "urgent" | "high" | "normal" | "low";
+export type AdminTaskStatus = "todo" | "in_progress" | "done";
+
+export interface AdminTaskSubtask {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+export interface AdminTask {
+  id: string;
+  title: string;
+  description?: string;
+  category: AdminTaskCategory;
+  priority: AdminTaskPriority;
+  status: AdminTaskStatus;
+  assignee: AdminTaskAssignee;
+  dueDate?: string; // YYYY-MM-DD
+  recurrence: AdminTaskRecurrence;
+  /** "interval" = spawn next task N days/months after dueDate (default).
+   *  "calendar-day" = spawn next task on recurrenceDay of next month (payroll). */
+  recurrenceAnchor?: "interval" | "calendar-day";
+  /** For calendar-day anchor: 1–28 = exact day of month; 31 = last day of month. */
+  recurrenceDay?: number;
+  subtasks?: AdminTaskSubtask[];
+  vendorId?: string;
+  amount?: number; // expected cost / payment
+  actualAmount?: number; // what was actually paid (set at completion)
+  room?: string; // nest | master | nomad | theater
+  notes?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Vendors ──────────────────────────────────────────────────────────────────
+
+export type VendorType = "staff" | "utility" | "supplier" | "contractor";
+export type VendorPaymentMethod = "bank_transfer" | "cash" | "promptpay";
+
+export interface Vendor {
+  id: string;
+  name: string;
+  type: VendorType;
+  role?: string; // "pool", "cleaner", "housekeeper", "electrician", etc.
+  phone?: string;
+  paymentMethod?: VendorPaymentMethod;
+  bankAccount?: string;
+  defaultAmount?: number;
+  currency?: string; // defaults to "THB"
+  notes?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
