@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AppNav from '../components/AppNav.astro';
 import '../styles/dashboard.css';
 ---
 
@@ -39,7 +40,6 @@ import '../styles/dashboard.css';
         <div class="sync-dot" id="sync-dot"></div>
         <span id="sync-label">Loading...</span>
       </div>
-      <a class="btn btn-sm" href="/accounting" title="Receipts and expenses">Accounting</a>
       <button class="cmdbar-trigger-hint" onclick="window._openCmdbar && window._openCmdbar()" title="Open command bar">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Search <kbd style="background:#e4e2de;border:1px solid #ccc;border-radius:3px;padding:1px 5px;font-size:10px;">⌘K</kbd>
@@ -54,7 +54,8 @@ import '../styles/dashboard.css';
   <div class="alerts" id="alerts"></div>
 
   <div class="layout">
-    <div class="sidebar">
+    <AppNav active="bookings" />
+    <div class="sidebar" id="main-sidebar">
       <div>
         <div class="sidebar-title">Rooms</div>
         <div class="room-item" data-room="nest"><div class="room-dot" style="background:var(--nest)"></div><div><div class="room-name">The Nest</div><div class="room-rate" id="sidebar-rate-nest">&#x0E3F;5,000 / night</div></div></div>
@@ -90,7 +91,6 @@ import '../styles/dashboard.css';
         <!-- hidden: <div class="tab" data-tab="monitors">Monitors</div> -->
         <!-- hidden: <div class="tab" data-tab="desks">Desks</div> -->
         <div class="tab-spacer"></div>
-        <a class="tab tab-link" href="/admin-tasks">Tasks</a>
       </div>
 
       <!-- FILTER BAR -->
@@ -2373,6 +2373,8 @@ import '../styles/dashboard.css';
     render();
   }
 
+  const SIDEBAR_TABS = ['today', 'calendar', 'list'];
+
   function setTab(tab, el) {
     currentTab = tab;
     localStorage.setItem('kin-active-tab', tab);
@@ -2387,6 +2389,8 @@ import '../styles/dashboard.css';
     document.getElementById('tab-monitors').style.display = tab === 'monitors' ? 'block' : 'none';
     document.getElementById('tab-desks').style.display = tab === 'desks' ? 'block' : 'none';
     document.getElementById('filter-bar').style.display = tab === 'calendar' ? '' : 'none';
+    const sidebar = document.getElementById('main-sidebar');
+    if (sidebar) sidebar.style.display = SIDEBAR_TABS.includes(tab) ? '' : 'none';
     if (tab === 'today') renderTodayView();
     if (tab === 'inquiries') fetchInquiries();
     if (tab === 'guests') loadGuests();

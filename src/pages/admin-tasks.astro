@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AppNav from '../components/AppNav.astro';
 import '../styles/dashboard.css';
 ---
 
@@ -25,7 +26,7 @@ import '../styles/dashboard.css';
     }
 
     /* ── Page shell ── */
-    .tasks-page { display: flex; flex-direction: column; min-height: 100vh; background: var(--bg, #f5f4f1); }
+    .tasks-page { display: flex; flex-direction: column; flex: 1; background: var(--bg, #f5f4f1); }
 
     /* ── Header ── */
     .tasks-header {
@@ -343,10 +344,13 @@ import '../styles/dashboard.css';
     .actual-modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
   </style>
 
+  <div class="app-layout">
+    <AppNav active="tasks" />
+    <div class="app-content">
+
   <div class="tasks-page">
     <!-- HEADER -->
     <div class="tasks-header">
-      <a href="/dashboard" class="btn btn-sm" style="padding:5px 10px;font-size:12px;">← Dashboard</a>
       <div class="tasks-header-title">Tasks</div>
       <div class="tasks-header-chips">
         <span class="tasks-header-chip overdue" id="hdr-overdue" style="display:none"></span>
@@ -387,6 +391,9 @@ import '../styles/dashboard.css';
       <div id="tasks-container"></div>
     </div>
   </div>
+
+    </div><!-- /.app-content -->
+  </div><!-- /.app-layout -->
 
   <!-- VENDOR DRAWER -->
   <div class="vendor-drawer" id="vendor-drawer">

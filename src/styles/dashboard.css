@@ -3969,6 +3969,7 @@ a.tab-link {
   /* Hide ALL dashboard elements */
   .header,
   .layout,
+  .app-nav,
   .sidebar,
   .main,
   .tab-bar,
@@ -4230,4 +4231,66 @@ a.tab-link {
 .cmdbar-trigger-hint:hover {
   border-color: #b5b3ad;
   color: var(--ink);
+}
+
+/* APP NAV RAIL */
+.app-nav {
+  width: 60px;
+  flex-shrink: 0;
+  border-right: 1px solid #e4e2de;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 4px;
+  background: var(--bg, #f5f4f1);
+}
+
+.app-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 48px;
+  padding: 9px 0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #9b9993;
+  transition:
+    background 0.13s,
+    color 0.13s;
+}
+
+.app-nav-item:hover {
+  background: #ece9e4;
+  color: var(--ink, #2a2825);
+}
+
+.app-nav-item.app-nav-active {
+  background: #e8f4ec;
+  color: var(--accent, #2c6e49);
+}
+
+.app-nav-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+/* APP LAYOUT (used by Tasks + Accounting standalone pages) */
+.app-layout {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
