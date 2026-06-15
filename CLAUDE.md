@@ -508,7 +508,7 @@ Domain: `kinhaus.space` (production), `staging.kinhaus.space` (staging).
 ## Key People
 
 - **Alex** - co-owner, operator, runs this app
-- **Paulo** - co-owner, co-operator
+- **Mia** - co-owner, co-operator
 
 ---
 

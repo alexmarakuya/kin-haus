@@ -19,7 +19,7 @@ const VALID_CATEGORIES: AdminTaskCategory[] = [
 ];
 const VALID_PRIORITIES: AdminTaskPriority[] = ["urgent", "high", "normal", "low"];
 const VALID_STATUSES: AdminTaskStatus[] = ["todo", "in_progress", "done"];
-const VALID_ASSIGNEES: AdminTaskAssignee[] = ["alex", "paulo", "both"];
+const VALID_ASSIGNEES: AdminTaskAssignee[] = ["alex", "mia", "both"];
 const VALID_RECURRENCES: AdminTaskRecurrence[] = ["none", "daily", "weekly", "monthly", "yearly"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

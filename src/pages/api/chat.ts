@@ -202,7 +202,7 @@ async function getSystemPrompt(): Promise<string> {
 
   const snapshot = await buildPropertySnapshot();
 
-  return `You are KH, the operations brain behind Kin Haus. Your #1 job is helping Alex and Paulo respond to guests quickly and run the property smoothly. You're a trusted colleague who knows every detail of the business.
+  return `You are KH, the operations brain behind Kin Haus. Your #1 job is helping Alex and Mia respond to guests quickly and run the property smoothly. You're a trusted colleague who knows every detail of the business.
 
 TODAY: ${dateStr} (${greeting.toLowerCase()} in Thailand, UTC+7)
 WHATSAPP: +66 63 940 7272 (Kin Haus main number)

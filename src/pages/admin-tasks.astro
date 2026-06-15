@@ -452,7 +452,7 @@ import '../styles/dashboard.css';
       <span class="filter-label">Who:</span>
       <button class="tasks-filter-assignee active" data-assignee="all">All</button>
       <button class="tasks-filter-assignee" data-assignee="alex">Alex</button>
-      <button class="tasks-filter-assignee" data-assignee="paulo">Paulo</button>
+      <button class="tasks-filter-assignee" data-assignee="mia">Mia</button>
       <button class="tasks-filter-assignee" data-assignee="both">Both</button>
     </div>
 
@@ -523,7 +523,7 @@ import '../styles/dashboard.css';
         <div class="tasks-assignee-group" id="modal-assignee-group">
           <button class="tasks-assignee-btn active" data-assignee="">Unassigned</button>
           <button class="tasks-assignee-btn" data-assignee="alex">Alex</button>
-          <button class="tasks-assignee-btn" data-assignee="paulo">Paulo</button>
+          <button class="tasks-assignee-btn" data-assignee="mia">Mia</button>
           <button class="tasks-assignee-btn" data-assignee="both">Both</button>
         </div>
       </div>
@@ -546,7 +546,7 @@ import '../styles/dashboard.css';
     const PRI_COLORS = { urgent: '#ef4444', high: '#f97316', normal: '#3b82f6', low: '#9ca3af' };
     const PRI_LABELS = { urgent: 'Urgent', high: 'High', normal: 'Normal', low: 'Low' };
     const RECUR_LABELS = { none: '', daily: '↺ Daily', weekly: '↺ Weekly', monthly: '↺ Monthly', yearly: '↺ Yearly' };
-    const ASSIGNEE_LABELS = { alex: 'Alex', paulo: 'Paulo', both: 'Both' };
+    const ASSIGNEE_LABELS = { alex: 'Alex', mia: 'Mia', both: 'Both' };
 
     let allTasks = [];
     let filterCat = 'all';
@@ -652,7 +652,7 @@ import '../styles/dashboard.css';
         if (filterCat !== 'all' && t.category !== filterCat) return false;
         if (filterAssignee !== 'all') {
           if (filterAssignee === 'alex' && t.assignee !== 'alex') return false;
-          if (filterAssignee === 'paulo' && t.assignee !== 'paulo') return false;
+          if (filterAssignee === 'mia' && t.assignee !== 'mia') return false;
           if (filterAssignee === 'both' && t.assignee !== 'both') return false;
         }
         return true;

@@ -5,7 +5,7 @@ import { DATA_DIR } from "./paths.ts";
 export type AdminTaskCategory = "bills" | "shopping" | "admin" | "maintenance" | "other";
 export type AdminTaskPriority = "urgent" | "high" | "normal" | "low";
 export type AdminTaskStatus = "todo" | "in_progress" | "done";
-export type AdminTaskAssignee = "alex" | "paulo" | "both";
+export type AdminTaskAssignee = "alex" | "mia" | "both";
 export type AdminTaskRecurrence = "none" | "daily" | "weekly" | "monthly" | "yearly";
 
 export interface AdminTask {
