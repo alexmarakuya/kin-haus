@@ -324,7 +324,7 @@ const currentPath = Astro.url.pathname;
       <div class="footer-col">
         <h4 class="footer-heading">Connect</h4>
         <ul class="footer-nav">
-          <li><a href="https://wa.me/66638034860" target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="https://wa.me/66639407272" target="_blank" rel="noopener">WhatsApp</a></li>
           <li><a href="https://www.instagram.com/kinhauskpg" target="_blank" rel="noopener">Instagram</a></li>
           <li><a href="https://www.airbnb.com/rooms/1511809226602265595" target="_blank" rel="noopener">Airbnb</a></li>
         </ul>
@@ -1231,7 +1231,7 @@ const currentPath = Astro.url.pathname;
       }).catch(function() {});
       if (window.posthog) posthog.capture('inquiry_submitted', { room: inquiry.room, nights: info.nights, amount: info.amount });
       var encoded = encodeURIComponent(text);
-      window.open('https://wa.me/66638034860?text=' + encoded, '_blank');
+      window.open('https://wa.me/66639407272?text=' + encoded, '_blank');
     });
 
     function openModal(roomSlug) {
@@ -1619,7 +1619,7 @@ const currentPath = Astro.url.pathname;
         <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
       </button>
     </div>
-    <div class="chat-footer">Powered by AI &middot; <a href="https://wa.me/66638034860" target="_blank" rel="noopener" style="color:inherit">WhatsApp us</a></div>
+    <div class="chat-footer">Powered by AI &middot; <a href="https://wa.me/66639407272" target="_blank" rel="noopener" style="color:inherit">WhatsApp us</a></div>
   </div>
 
   <script is:inline>
@@ -1700,13 +1700,13 @@ const currentPath = Astro.url.pathname;
         });
         removeTyping();
         var data = await res.json();
-        var reply = data.reply || 'Sorry, I ran into a problem. Please message us on WhatsApp: +66 63 803 4860';
+        var reply = data.reply || 'Sorry, I ran into a problem. Please message us on WhatsApp: +66 63 940 7272';
         appendMessage('bot', reply);
         history.push({ role: 'assistant', content: reply });
         saveHistory();
       } catch(err) {
         removeTyping();
-        appendMessage('bot', 'Sorry, something went wrong. You can reach us on WhatsApp: +66 63 803 4860');
+        appendMessage('bot', 'Sorry, something went wrong. You can reach us on WhatsApp: +66 63 940 7272');
       }
 
       busy = false;

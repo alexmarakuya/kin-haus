@@ -441,7 +441,7 @@ if (!portal) {
         html += '<div class="info-card"><div class="info-icon">&#x1F4F6;</div><div><div class="info-label">WiFi</div><div class="info-value">KinHaus_5G</div><div class="info-detail">Password: available on arrival. 500+ Mbps fibre with mesh coverage.</div></div></div>';
         html += '<div class="info-card"><div class="info-icon">&#x1F55B;</div><div><div class="info-label">Check-in / Check-out</div><div class="info-value">3:00 PM / 12:00 PM</div><div class="info-detail">Early check-in or late check-out may be possible. Just ask via WhatsApp.</div></div></div>';
         html += '<div class="info-card"><div class="info-icon">&#x1F4CD;</div><div><div class="info-label">Location</div><div class="info-value"><a href="https://maps.app.goo.gl/KinHausKPG" target="_blank" rel="noopener">Open in Google Maps</a></div><div class="info-detail">Thongsala, Koh Phangan. 5 minutes from the pier by scooter.</div></div></div>';
-        html += '<div class="info-card"><div class="info-icon">&#x1F4AC;</div><div><div class="info-label">WhatsApp</div><div class="info-value"><a href="https://wa.me/66638034860" target="_blank" rel="noopener">Message us anytime</a></div><div class="info-detail">Fastest way to reach us for questions or requests.</div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4AC;</div><div><div class="info-label">WhatsApp</div><div class="info-value"><a href="https://wa.me/66639407272" target="_blank" rel="noopener">Message us anytime</a></div><div class="info-detail">Fastest way to reach us for questions or requests.</div></div></div>';
         html += '<div class="info-card"><div class="info-icon">&#x1F3CA;</div><div><div class="info-label">Pool & Shared Spaces</div><div class="info-value">Open daily, all hours</div><div class="info-detail">Infinity pool, shared kitchen, living area, and outdoor terrace are all yours.</div></div></div>';
 
         html += '<button class="btn-next" id="practical-done">All set!</button></div>';
@@ -460,11 +460,11 @@ if (!portal) {
         html += '<div class="hub-section-title">Quick Reference</div>';
         html += '<div class="info-card"><div class="info-icon">&#x1F4F6;</div><div><div class="info-label">WiFi</div><div class="info-value">KinHaus_5G</div><div class="info-detail">500+ Mbps fibre with mesh coverage.</div></div></div>';
         html += '<div class="info-card"><div class="info-icon">&#x1F55B;</div><div><div class="info-label">Check-out</div><div class="info-value">12:00 PM on ' + fmtDate(p.checkout) + '</div></div></div>';
-        html += '<div class="info-card"><div class="info-icon">&#x1F4AC;</div><div><div class="info-label">WhatsApp</div><div class="info-value"><a href="https://wa.me/66638034860" target="_blank" rel="noopener">Message us</a></div></div></div>';
+        html += '<div class="info-card"><div class="info-icon">&#x1F4AC;</div><div><div class="info-label">WhatsApp</div><div class="info-value"><a href="https://wa.me/66639407272" target="_blank" rel="noopener">Message us</a></div></div></div>';
         html += '<div class="info-card"><div class="info-icon">&#x1F4CD;</div><div><div class="info-label">Location</div><div class="info-value"><a href="https://maps.app.goo.gl/KinHausKPG" target="_blank" rel="noopener">Google Maps</a></div></div></div>';
 
         html += '<div class="hub-section-title">Need anything?</div>';
-        html += '<a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Message us on WhatsApp</a>';
+        html += '<a class="hub-action" href="https://wa.me/66639407272" target="_blank" rel="noopener">&#x1F4AC; Message us on WhatsApp</a>';
 
         portalEl.innerHTML = html;
       }
@@ -473,7 +473,7 @@ if (!portal) {
       function renderFeedback() {
         var p = data.portal;
         if (p.feedback) {
-          portalEl.innerHTML = '<div class="thanks-screen"><h2>Thanks for staying with us!</h2><p>We loved having you at Kin Haus. Hope to see you again on Koh Phangan.</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Stay in touch on WhatsApp</a></div></div>';
+          portalEl.innerHTML = '<div class="thanks-screen"><h2>Thanks for staying with us!</h2><p>We loved having you at Kin Haus. Hope to see you again on Koh Phangan.</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66639407272" target="_blank" rel="noopener">&#x1F4AC; Stay in touch on WhatsApp</a></div></div>';
           return;
         }
 
@@ -696,7 +696,7 @@ if (!portal) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: TOKEN, step: 'practical' })
           }).catch(function(){});
-          portalEl.innerHTML = '<div class="thanks-screen"><h2>You\'re all set!</h2><p>We can\'t wait to welcome you to Kin Haus. If you need anything before your arrival, just message us on WhatsApp.</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Message us on WhatsApp</a></div></div>';
+          portalEl.innerHTML = '<div class="thanks-screen"><h2>You\'re all set!</h2><p>We can\'t wait to welcome you to Kin Haus. If you need anything before your arrival, just message us on WhatsApp.</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66639407272" target="_blank" rel="noopener">&#x1F4AC; Message us on WhatsApp</a></div></div>';
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
       }
@@ -739,7 +739,7 @@ if (!portal) {
             comment: (document.getElementById('feedback-comment') || {}).value || ''
           }).then(function(r) {
             if (r.ok) {
-              portalEl.innerHTML = '<div class="thanks-screen"><h2>Thank you!</h2><p>We appreciate your feedback. Hope to see you again at Kin Haus!</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66638034860" target="_blank" rel="noopener">&#x1F4AC; Stay in touch on WhatsApp</a></div></div>';
+              portalEl.innerHTML = '<div class="thanks-screen"><h2>Thank you!</h2><p>We appreciate your feedback. Hope to see you again at Kin Haus!</p><div style="margin-top:24px"><a class="hub-action" href="https://wa.me/66639407272" target="_blank" rel="noopener">&#x1F4AC; Stay in touch on WhatsApp</a></div></div>';
             } else {
               submitBtn.disabled = false; submitBtn.textContent = 'Submit Feedback';
             }

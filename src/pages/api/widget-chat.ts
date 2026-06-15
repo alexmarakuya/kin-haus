@@ -85,13 +85,13 @@ Early check-in and late check-out may be possible depending on availability.
 BOOKING:
 Direct bookings via WhatsApp get the best rate (no Airbnb platform fees).
 Payment: bank transfer or cash.
-WhatsApp: +66 63 803 4860
+WhatsApp: +66 63 940 7272
 Website: kinhaus.space
 
 When a guest wants to book or check availability:
 1. Use check_availability to see if their dates are free
 2. Use calculate_price to give an accurate total
-3. Invite them to use the "Check Availability" button on the room page, or message Alex directly on WhatsApp: +66 63 803 4860`;
+3. Invite them to use the "Check Availability" button on the room page, or message Alex directly on WhatsApp: +66 63 940 7272`;
 
 // ─── Tools (availability + pricing only -- no internal data access) ──────────
 const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
@@ -332,7 +332,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     return json({
       reply:
-        "Sorry, I ran into a problem. Please try again or message us on WhatsApp: +66 63 803 4860",
+        "Sorry, I ran into a problem. Please try again or message us on WhatsApp: +66 63 940 7272",
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
