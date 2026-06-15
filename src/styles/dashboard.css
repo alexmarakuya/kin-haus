@@ -4235,25 +4235,24 @@ a.tab-link {
 
 /* APP NAV RAIL */
 .app-nav {
-  width: 60px;
+  width: 56px;
   flex-shrink: 0;
   border-right: 1px solid #e4e2de;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 12px 0;
-  gap: 4px;
+  gap: 2px;
   background: var(--bg, #f5f4f1);
 }
 
 .app-nav-item {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  width: 48px;
-  padding: 9px 0;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   text-decoration: none;
   color: #9b9993;
@@ -4272,12 +4271,53 @@ a.tab-link {
   color: var(--accent, #2c6e49);
 }
 
-.app-nav-label {
+/* Tooltip */
+.app-nav-item::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #2a2825;
+  color: #f5f4f1;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s 0.3s;
+  z-index: 999;
+}
+.app-nav-item:hover::after {
+  opacity: 1;
+}
+
+/* Inquiry count badge on nav item */
+.app-nav-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Hide inquiries from tab bar — accessed via nav rail */
+.tab[data-tab="inquiries"] {
+  display: none;
 }
 
 /* APP LAYOUT (used by Tasks + Accounting standalone pages) */

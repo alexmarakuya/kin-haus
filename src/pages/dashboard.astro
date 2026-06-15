@@ -806,7 +806,9 @@ import '../styles/dashboard.css';
   let showHousekeeping = JSON.parse(localStorage.getItem('kin-show-housekeeping') || 'true');
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
-  let currentTab = localStorage.getItem('kin-active-tab') || 'calendar';
+  // Allow ?tab=inquiries (and similar) from nav rail links on other pages
+  const _urlTab = new URLSearchParams(location.search).get('tab');
+  let currentTab = _urlTab || localStorage.getItem('kin-active-tab') || 'calendar';
   if (currentTab === 'codes') currentTab = 'calendar'; // tab removed
   let activeFilters = { airbnb: true, direct: true, friend: true, blocked: false, owner: false, hold: false, waitlist: false };
   let presentMode = false;
@@ -939,11 +941,32 @@ import '../styles/dashboard.css';
     });
   });
 
-  // Restore saved tab on load
+  // Restore saved tab on load (handles ?tab= param from nav rail links)
   if (currentTab !== 'calendar') {
     const savedTabEl = document.querySelector(`.tab[data-tab="${currentTab}"]`);
-    if (savedTabEl) setTab(currentTab, savedTabEl);
+    setTab(currentTab, savedTabEl || null);
+  } else {
+    updateNavActive('calendar');
   }
+
+  // Nav rail: intercept Bookings + Inquiries clicks to switch tabs without reload
+  document.querySelectorAll('.app-nav-item[data-nav]').forEach(navItem => {
+    navItem.addEventListener('click', (e) => {
+      const nav = navItem.dataset.nav;
+      if (nav === 'bookings') {
+        e.preventDefault();
+        const lastBookingTab = localStorage.getItem('kin-active-tab') || 'calendar';
+        const tab = BOOKING_TABS.includes(lastBookingTab) ? lastBookingTab : 'calendar';
+        const el = document.querySelector(`.tab[data-tab="${tab}"]`);
+        if (el) setTab(tab, el);
+      } else if (nav === 'inquiries') {
+        e.preventDefault();
+        const el = document.querySelector('.tab[data-tab="inquiries"]');
+        setTab('inquiries', el || null);
+      }
+      // tasks / accounting: navigate normally
+    });
+  });
 
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', function() {
@@ -2374,12 +2397,23 @@ import '../styles/dashboard.css';
   }
 
   const SIDEBAR_TABS = ['today', 'calendar', 'list'];
+  const BOOKING_TABS = ['today', 'calendar', 'list', 'guests', 'staff'];
+
+  function updateNavActive(tab) {
+    document.querySelectorAll('.app-nav-item').forEach(n => n.classList.remove('app-nav-active'));
+    if (tab === 'inquiries') {
+      document.querySelector('.app-nav-item[data-nav="inquiries"]')?.classList.add('app-nav-active');
+    } else if (BOOKING_TABS.includes(tab)) {
+      document.querySelector('.app-nav-item[data-nav="bookings"]')?.classList.add('app-nav-active');
+    }
+  }
 
   function setTab(tab, el) {
     currentTab = tab;
     localStorage.setItem('kin-active-tab', tab);
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
+    if (el) el.classList.add('active');
+    updateNavActive(tab);
     document.getElementById('tab-today').style.display = tab === 'today' ? 'block' : 'none';
     document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'flex' : 'none';
     document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
@@ -2417,12 +2451,14 @@ import '../styles/dashboard.css';
 
   function updateInquiryBadge() {
     const badge = document.getElementById('inquiry-badge');
+    const navBadge = document.getElementById('nav-inq-badge');
     const newCount = allInquiries.filter(i => i.status === 'new').length;
     if (newCount > 0) {
-      badge.textContent = newCount;
-      badge.style.display = 'inline-flex';
+      if (badge) { badge.textContent = newCount; badge.style.display = 'inline-flex'; }
+      if (navBadge) { navBadge.textContent = newCount; navBadge.style.display = 'flex'; }
     } else {
-      badge.style.display = 'none';
+      if (badge) badge.style.display = 'none';
+      if (navBadge) navBadge.style.display = 'none';
     }
   }
 
