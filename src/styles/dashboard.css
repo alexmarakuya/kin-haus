@@ -386,6 +386,11 @@ body.present-mode .present-banner {
 .tab-spacer {
   flex: 1;
 }
+a.tab-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
 
 /* FILTER BAR */
 .filter-bar {
