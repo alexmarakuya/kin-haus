@@ -6,32 +6,50 @@ const WA_NUMBER = '66639407272';
 const rooms = [
   {
     name: 'The Nest',
-    slug: 'the-nest',
-    image: '/images/rooms/kinhaus-nest-1.jpg',
+    images: [
+      '/images/rooms/kinhaus-nest-1.jpg',
+      '/images/rooms/kinhaus-nest-2.jpg',
+      '/images/rooms/kinhaus-nest-3.jpg',
+      '/images/rooms/kinhaus-nest-bathroom-1.jpg',
+      '/images/rooms/kinhaus-nest-bathroom-2.jpg',
+    ],
     description: 'A private retreat at the top of the house with panoramic views and its own bathroom.',
     features: ['King bed', 'Ensuite bathroom', 'Panoramic views', 'Private balcony'],
     was: 105000,
     monthly: 35000,
+    threeMonth: 28000,
     save: 67,
   },
   {
     name: 'The Explorer',
-    slug: 'the-explorer',
-    image: '/images/rooms/kinhaus-master-teak-headboard.jpg',
+    images: [
+      '/images/rooms/kinhaus-master-teak-headboard.jpg',
+      '/images/rooms/kinhaus-master-desk-and-windows.jpg',
+      '/images/rooms/kinhaus-master-walk-in-closet-mirrored-wardrobes.jpg',
+      '/images/rooms/kinhaus-master-headboard-detail.jpg',
+      '/images/rooms/kinhaus-master-bathroom-entrance.jpg',
+    ],
     description: 'Spacious lower-floor suite with a king-size bed, full-size wardrobe, and sunrise views.',
     features: ['King bed', 'Walk-in wardrobe', 'Sunrise views', 'Desk'],
     was: 72000,
     monthly: 28000,
+    threeMonth: 22400,
     save: 61,
   },
   {
     name: 'The Nomad',
-    slug: 'nomad-room',
-    image: '/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg',
+    images: [
+      '/images/rooms/kinhaus-nomad-bedroom-wide-angle.jpg',
+      '/images/rooms/kinhaus-nomad-bedroom-bed-and-desk.jpg',
+      '/images/rooms/kinhaus-nomad-desk-monitor-and-speakers.jpg',
+      '/images/rooms/kinhaus-nomad-bedroom-desk-setup.jpg',
+      '/images/rooms/kinhaus-nomad-desk-closeup.jpg',
+    ],
     description: 'A cozy, workspace-ready room built for remote work with a dedicated desk setup.',
     features: ['King bed', 'Dedicated desk', 'Monitor setup', 'Shared balcony'],
     was: 50400,
     monthly: 25000,
+    threeMonth: 20000,
     save: 50,
   },
 ];
@@ -125,8 +143,21 @@ function waLink(room: string) {
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .m-room:hover { border-color: #ccc; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-    .m-room-img { height: 210px; background: var(--warm); overflow: hidden; }
-    .m-room-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .m-gallery-main { height: 210px; background: var(--warm); overflow: hidden; }
+    .m-gallery-main img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .m-gallery-thumbs {
+      display: flex; gap: 5px; padding: 8px 10px 0;
+    }
+    .m-thumb {
+      flex: 1; height: 44px; padding: 0;
+      border: 2px solid transparent; border-radius: 6px;
+      overflow: hidden; cursor: pointer; background: var(--warm);
+      transition: border-color 0.12s, opacity 0.12s;
+      opacity: 0.75;
+    }
+    .m-thumb:hover { opacity: 1; }
+    .m-thumb.active { border-color: var(--accent); opacity: 1; }
+    .m-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .m-room-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
     .m-room-name { font-weight: 600; font-size: 19px; margin-bottom: 6px; }
     .m-room-desc { font-size: 13px; color: #64645f; line-height: 1.5; margin-bottom: 14px; }
@@ -150,6 +181,17 @@ function waLink(room: string) {
       line-height: 1.15; margin-top: 4px;
     }
     .m-price-now small { font-size: 14px; font-weight: 500; color: #52524e; }
+    .m-price-3mo {
+      display: inline-block;
+      margin-top: 8px;
+      background: #e8f4ec;
+      color: var(--accent);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 4px 9px;
+      border-radius: 5px;
+      line-height: 1.4;
+    }
     .m-room-cta {
       display: block; text-align: center;
       background: var(--accent); color: white;
@@ -213,13 +255,22 @@ function waLink(room: string) {
 
   <div class="monthly-page">
     <p class="monthly-intro">
-      Stay a month and settle in properly. Monthly guests get our best rates of the year: up to 67% off low season prices from April through October. Wake up to jungle views, swim before your first call, and work on 500+ Mbps WiFi. One home, three rooms, and people worth sharing a table with.
+      Stay a month and settle in properly. Monthly guests get our best rates of the year: up to 67% off low season prices from April through October. Wake up to jungle views, swim before your first call, and work on 500+ Mbps WiFi. One home, three rooms, and people worth sharing a table with. Staying three months or longer? Take an extra 20% off on top.
     </p>
 
     <div class="monthly-grid">
       {rooms.map((room) => (
         <div class="m-room">
-          <a href={`/rooms/${room.slug}`} class="m-room-img"><img src={room.image} alt={room.name} loading="lazy"></a>
+          <div class="m-gallery">
+            <div class="m-gallery-main"><img src={room.images[0]} alt={room.name} loading="lazy"></div>
+            <div class="m-gallery-thumbs">
+              {room.images.map((img, i) => (
+                <button type="button" class={`m-thumb${i === 0 ? ' active' : ''}`} data-src={img} aria-label={`${room.name} photo ${i + 1}`}>
+                  <img src={img} alt="" loading="lazy">
+                </button>
+              ))}
+            </div>
+          </div>
           <div class="m-room-body">
             <div class="m-room-name">{room.name}</div>
             <p class="m-room-desc">{room.description}</p>
@@ -230,6 +281,7 @@ function waLink(room: string) {
               <span class="m-price-was" data-thb={room.was} data-price-tpl="{price}">&#x0E3F;{room.was.toLocaleString()}</span>
               <span class="m-price-save">-{room.save}%</span>
               <div class="m-price-now"><span data-thb={room.monthly} data-price-tpl="{price}">&#x0E3F;{room.monthly.toLocaleString()}</span> <small>/ month</small></div>
+              <div class="m-price-3mo">3+ months: <span data-thb={room.threeMonth} data-price-tpl="{price}">&#x0E3F;{room.threeMonth.toLocaleString()}</span>/mo (extra 20% off)</div>
             </div>
             <a href={waLink(room.name)} target="_blank" rel="noopener" class="m-room-cta">Reserve on WhatsApp</a>
           </div>
@@ -253,4 +305,16 @@ function waLink(room: string) {
       </a>
     </div>
   </div>
+
+  <script>
+    document.querySelectorAll('.m-thumb').forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const gallery = thumb.closest('.m-gallery');
+        if (!gallery) return;
+        const main = gallery.querySelector('.m-gallery-main img');
+        if (main) main.src = thumb.dataset.src;
+        gallery.querySelectorAll('.m-thumb').forEach((t) => t.classList.toggle('active', t === thumb));
+      });
+    });
+  </script>
 </MarketingLayout>
