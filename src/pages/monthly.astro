@@ -57,7 +57,16 @@ const rooms = [
   },
 ];
 
-const included = ['Infinity pool', '500+ Mbps WiFi', 'Shared kitchen & living', 'Air conditioning'];
+const included = ['Infinity pool', '500+ Mbps WiFi', 'Fully equipped kitchen', 'Open living & dining', 'Workspace-ready desks', 'Air conditioning'];
+
+const commonAreas = [
+  { src: '/images/property/kinhaus-infinity-pool-jungle-view.jpg', alt: 'Infinity pool with jungle view' },
+  { src: '/images/property/kinhaus-living-room-glass-walls.jpg', alt: 'Living room with glass walls' },
+  { src: '/images/property/kinhaus-kitchen-and-dining.jpg', alt: 'Kitchen and dining area' },
+  { src: '/images/property/kinhaus-workspace-and-living-room.jpg', alt: 'Workspace and living room' },
+  { src: '/images/property/kinhaus-dining-area-pool-view.jpg', alt: 'Dining area with pool view' },
+  { src: '/images/property/kinhaus-pool-deck-and-facade.jpg', alt: 'Pool deck and villa facade' },
+];
 
 function waLink(room: string) {
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hi! I'm interested in a monthly stay in ${room} at Kin Haus.`)}`;
@@ -153,7 +162,7 @@ function waLink(room: string) {
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .m-room:hover { border-color: #ccc; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-    .m-gallery-main { height: 210px; background: var(--warm); overflow: hidden; }
+    .m-gallery-main { height: 210px; background: var(--warm); overflow: hidden; cursor: zoom-in; }
     .m-gallery-main img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .m-gallery-thumbs {
       display: flex; gap: 5px; padding: 8px 10px 0;
@@ -216,6 +225,51 @@ function waLink(room: string) {
     }
     .m-room-cta:hover { opacity: 0.9; }
 
+    .ca-title {
+      font-size: 26px; font-weight: 600; margin-bottom: 6px;
+    }
+    .ca-sub { font-size: 14px; color: #64645f; margin-bottom: 20px; line-height: 1.5; }
+    .ca-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+      margin-bottom: 48px;
+    }
+    .ca-photo {
+      height: 200px; padding: 0; border: none; border-radius: 10px;
+      overflow: hidden; cursor: zoom-in; background: var(--warm);
+    }
+    .ca-photo img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.2s;
+    }
+    .ca-photo:hover img { transform: scale(1.04); }
+
+    .monthly-note {
+      font-size: 12.5px; color: #8b8b85; margin: -34px 0 48px;
+      line-height: 1.5;
+    }
+
+    .lb {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(10, 14, 11, 0.93);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lb[hidden] { display: none; }
+    .lb-img {
+      max-width: 88vw; max-height: 86vh;
+      object-fit: contain; border-radius: 8px;
+    }
+    .lb-btn {
+      position: absolute; background: rgba(255,255,255,0.1); border: none;
+      color: white; cursor: pointer; border-radius: 100px;
+      width: 44px; height: 44px; font-size: 22px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .lb-btn:hover { background: rgba(255,255,255,0.22); }
+    .lb-close { top: 20px; right: 20px; }
+    .lb-prev { left: 20px; top: 50%; transform: translateY(-50%); }
+    .lb-next { right: 20px; top: 50%; transform: translateY(-50%); }
+
     .monthly-included {
       background: var(--warm); border-radius: 12px;
       padding: 24px 32px; margin-bottom: 48px;
@@ -253,6 +307,8 @@ function waLink(room: string) {
       .monthly-hero-content { padding: 48px 24px 36px; }
       .monthly-page { padding: 36px 24px 56px; }
       .monthly-grid { grid-template-columns: 1fr; }
+      .ca-grid { grid-template-columns: 1fr 1fr; }
+      .ca-photo { height: 140px; }
       .monthly-cta { padding: 32px 28px; }
     }
   </style>
@@ -309,10 +365,19 @@ function waLink(room: string) {
       ))}
     </div>
 
+    <h2 class="ca-title">The shared home</h2>
+    <p class="ca-sub">Everything beyond your door: an infinity pool, a full kitchen, open living and dining spaces, and workspaces you share with just two other rooms.</p>
+    <div class="ca-grid">
+      {commonAreas.map((photo) => (
+        <button type="button" class="ca-photo"><img src={photo.src} alt={photo.alt} loading="lazy"></button>
+      ))}
+    </div>
+
     <div class="monthly-included">
       <span class="monthly-included-label">Every stay includes</span>
       {included.map((item) => <span class="monthly-included-item">{item}</span>)}
     </div>
+    <p class="monthly-note">Note: electricity and cleaning are not included in the monthly price and are billed separately.</p>
 
     <div class="monthly-cta">
       <div>
@@ -326,6 +391,13 @@ function waLink(room: string) {
     </div>
   </div>
 
+  <div class="lb" id="lightbox" hidden>
+    <button type="button" class="lb-btn lb-close" aria-label="Close">&#x2715;</button>
+    <button type="button" class="lb-btn lb-prev" aria-label="Previous photo">&#x2039;</button>
+    <img class="lb-img" src="" alt="">
+    <button type="button" class="lb-btn lb-next" aria-label="Next photo">&#x203A;</button>
+  </div>
+
   <script>
     document.querySelectorAll('.m-thumb').forEach((thumb) => {
       thumb.addEventListener('click', () => {
@@ -335,6 +407,60 @@ function waLink(room: string) {
         if (main) main.src = thumb.dataset.src;
         gallery.querySelectorAll('.m-thumb').forEach((t) => t.classList.toggle('active', t === thumb));
       });
+    });
+
+    // Lightbox
+    const lb = document.getElementById('lightbox');
+    const lbImg = lb.querySelector('.lb-img');
+    let lbImages = [];
+    let lbIndex = 0;
+
+    function lbOpen(images, index) {
+      lbImages = images;
+      lbIndex = index;
+      lbShow();
+      lb.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+    function lbShow() {
+      lbImg.src = lbImages[lbIndex];
+    }
+    function lbClose() {
+      lb.hidden = true;
+      document.body.style.overflow = '';
+    }
+    function lbStep(dir) {
+      lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
+      lbShow();
+    }
+
+    // Room gallery main image opens lightbox at the active photo
+    document.querySelectorAll('.m-gallery').forEach((gallery) => {
+      const main = gallery.querySelector('.m-gallery-main');
+      main.addEventListener('click', () => {
+        const thumbs = [...gallery.querySelectorAll('.m-thumb')];
+        const images = thumbs.map((t) => t.dataset.src);
+        const active = thumbs.findIndex((t) => t.classList.contains('active'));
+        lbOpen(images, active >= 0 ? active : 0);
+      });
+    });
+
+    // Common area photos open lightbox as one set
+    const caPhotos = [...document.querySelectorAll('.ca-photo img')];
+    const caImages = caPhotos.map((img) => img.getAttribute('src'));
+    caPhotos.forEach((img, i) => {
+      img.closest('.ca-photo').addEventListener('click', () => lbOpen(caImages, i));
+    });
+
+    lb.querySelector('.lb-close').addEventListener('click', lbClose);
+    lb.querySelector('.lb-prev').addEventListener('click', (e) => { e.stopPropagation(); lbStep(-1); });
+    lb.querySelector('.lb-next').addEventListener('click', (e) => { e.stopPropagation(); lbStep(1); });
+    lb.addEventListener('click', (e) => { if (e.target === lb) lbClose(); });
+    document.addEventListener('keydown', (e) => {
+      if (lb.hidden) return;
+      if (e.key === 'Escape') lbClose();
+      if (e.key === 'ArrowLeft') lbStep(-1);
+      if (e.key === 'ArrowRight') lbStep(1);
     });
   </script>
 </BaseLayout>
