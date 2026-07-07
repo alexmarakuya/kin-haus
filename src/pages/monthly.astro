@@ -330,7 +330,7 @@ function waLink(room: string) {
 
   <div class="monthly-page">
     <p class="monthly-intro">
-      Stay a month and settle in properly. Monthly guests get our best rates of the year: up to 67% off low season prices from April through October. Wake up to jungle views, swim before your first call, and work on 500+ Mbps WiFi. One home, four rooms, and people worth sharing a table with. Your host stays in one of the rooms, so the house is always looked after. Staying three months or longer? Take an extra 20% off on top.
+      Stay a month and settle in properly. Monthly guests get our best rates of the year: up to 67% off low season prices from April through October. Wake up to jungle views, swim before your first call, and work on 500+ Mbps WiFi. One home, four rooms, and people worth sharing a table with. Your host stays in one of the rooms, so the house is always looked after. Rooms are available for three months until November. Take the full stretch and get an extra 20% off on top.
     </p>
 
     <div class="monthly-grid">
@@ -357,7 +357,7 @@ function waLink(room: string) {
               <span class="m-price-save">-{room.save}%</span>
               <div class="m-price-now"><span data-thb={room.monthly} data-price-tpl="{price}">&#x0E3F;{room.monthly.toLocaleString()}</span> <small>/ month</small></div>
               <div class="m-price-approx">{room.approx}</div>
-              <div class="m-price-3mo">3+ months: <span data-thb={room.threeMonth} data-price-tpl="{price}">&#x0E3F;{room.threeMonth.toLocaleString()}</span>/mo (extra 20% off)</div>
+              <div class="m-price-3mo">3 months until November: <span data-thb={room.threeMonth} data-price-tpl="{price}">&#x0E3F;{room.threeMonth.toLocaleString()}</span>/mo (extra 20% off)</div>
             </div>
             <a href={waLink(room.name)} target="_blank" rel="noopener" class="m-room-cta">Reserve on WhatsApp</a>
           </div>
