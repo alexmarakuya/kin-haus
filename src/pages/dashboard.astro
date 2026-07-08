@@ -443,7 +443,10 @@ import '../styles/dashboard.css';
             <option value="full">Full House</option>
           </select>
         </div>
-        <div class="fg"><label>Check-in → Check-out</label><input id="f-dates" type="text" placeholder="Select dates" readonly></div>
+        <div class="fg-row">
+          <div class="fg"><label>Check-in</label><input id="f-checkin" type="text" placeholder="Select date" readonly></div>
+          <div class="fg"><label>Check-out</label><input id="f-checkout" type="text" placeholder="Select date" readonly></div>
+        </div>
         <div id="f-nights-row" style="padding:2px 0 8px;font-size:13px;color:#8b8b85;display:none"><span id="f-nights-label"></span></div>
         <div class="fg" id="f-rate-row"><label>Rate / night (THB)</label><input id="f-rate" type="number" placeholder="e.g. 2400"></div>
         <div class="fg" id="f-total-row" style="padding:10px 0 0"><span id="f-total" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#52524e">Select dates to see total</span></div>
@@ -493,9 +496,11 @@ import '../styles/dashboard.css';
 
       <!-- Dates: read-only for iCal, flatpickr for manual -->
       <div class="detail-row" id="dm-dates-readonly"><span class="detail-label">Check-in → Check-out</span><span class="detail-value" id="dm-dates"></span></div>
-      <div class="fg" id="dm-dates-edit" style="display:none">
-        <label>Check-in → Check-out</label>
-        <input id="dm-dates-input" type="text" placeholder="Select dates" readonly>
+      <div id="dm-dates-edit" style="display:none">
+        <div class="fg-row">
+          <div class="fg"><label>Check-in</label><input id="dm-checkin-input" type="text" placeholder="Select date" readonly></div>
+          <div class="fg"><label>Check-out</label><input id="dm-checkout-input" type="text" placeholder="Select date" readonly></div>
+        </div>
       </div>
 
       <!-- Nights (always read-only, auto-calculated) -->
@@ -829,6 +834,65 @@ import '../styles/dashboard.css';
   function parseDateLocal(str) {
     const [y, m, d] = str.split('-').map(Number);
     return new Date(y, m - 1, d, 12, 0, 0);
+  }
+
+  // Two independent single-date flatpickr fields (check-in + check-out) that
+  // behave like the old range picker for callers: exposes selectedDates,
+  // setDate([ci, co]), clear() and destroy(). Editing check-out no longer
+  // resets check-in. Check-out is constrained to at least the day after
+  // check-in, and moving check-in forward past check-out auto-bumps it.
+  function createDateRangePair(checkinSel, checkoutSel, opts = {}) {
+    const onRangeChange = opts.onChange || (() => {});
+    const base = {
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'j M Y',
+      parseDate: (str) => parseDateLocal(str),
+    };
+    let checkoutFp;
+    const checkinFp = flatpickr(checkinSel, Object.assign({}, base, {
+      onChange: (dates) => {
+        if (dates.length) {
+          const ci = dates[0];
+          const minCheckout = new Date(ci);
+          minCheckout.setDate(minCheckout.getDate() + 1);
+          checkoutFp.set('minDate', minCheckout);
+          const co = checkoutFp.selectedDates[0];
+          if (!co || co <= ci) checkoutFp.setDate(minCheckout, false);
+        }
+        onRangeChange();
+      },
+    }));
+    checkoutFp = flatpickr(checkoutSel, Object.assign({}, base, {
+      onChange: () => onRangeChange(),
+    }));
+    return {
+      get selectedDates() {
+        const ci = checkinFp.selectedDates[0];
+        const co = checkoutFp.selectedDates[0];
+        if (ci && co) return [ci, co];
+        return ci ? [ci] : [];
+      },
+      setDate([ci, co]) {
+        checkinFp.setDate(ci || null, false);
+        const ciDate = checkinFp.selectedDates[0];
+        if (ciDate) {
+          const minCheckout = new Date(ciDate);
+          minCheckout.setDate(minCheckout.getDate() + 1);
+          checkoutFp.set('minDate', minCheckout);
+        }
+        checkoutFp.setDate(co || null, false);
+      },
+      clear() {
+        checkinFp.clear();
+        checkoutFp.clear();
+        checkoutFp.set('minDate', null);
+      },
+      destroy() {
+        checkinFp.destroy();
+        checkoutFp.destroy();
+      },
+    };
   }
 
   // ─── PRESENT MODE ─────────────────────────────────────────────────────────
@@ -1976,21 +2040,16 @@ import '../styles/dashboard.css';
     document.getElementById('dm-dates-edit').style.display = isManual && !presentMode ? '' : 'none';
     if (isManual && !presentMode) {
       if (detailDatePicker) detailDatePicker.destroy();
-      detailDatePicker = flatpickr('#dm-dates-input', {
-        mode: 'range',
-        dateFormat: 'Y-m-d',
-        altInput: true,
-        altFormat: 'j M Y',
-        locale: { rangeSeparator: '  \u2192  ' },
-        parseDate: (str) => parseDateLocal(str),
-        defaultDate: [b.checkin, b.checkout],
-        onChange: function(dates) {
+      detailDatePicker = createDateRangePair('#dm-checkin-input', '#dm-checkout-input', {
+        onChange: function() {
+          const dates = detailDatePicker.selectedDates;
           if (dates.length === 2) {
             const nn = Math.round((dates[1] - dates[0]) / 86400000);
             document.getElementById('dm-nights').textContent = `${nn} night${nn !== 1 ? 's' : ''}`;
           }
         }
       });
+      detailDatePicker.setDate([b.checkin, b.checkout]);
     } else {
       document.getElementById('dm-dates').textContent = `${fmtDate(b.checkin)} \u2192 ${fmtDate(b.checkout)}`;
     }
@@ -2272,14 +2331,9 @@ import '../styles/dashboard.css';
   function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
 
   // ─── DATE RANGE PICKER ──────────────────────────────────────────────────────
-  const datePicker = flatpickr('#f-dates', {
-    mode: 'range',
-    dateFormat: 'Y-m-d',
-    altInput: true,
-    altFormat: 'j M Y',
-    locale: { rangeSeparator: '  \u2192  ' },
-    parseDate: (str) => parseDateLocal(str),
-    onChange: (dates) => {
+  const datePicker = createDateRangePair('#f-checkin', '#f-checkout', {
+    onChange: () => {
+      const dates = datePicker.selectedDates;
       if (dates.length === 2) {
         const nn = Math.round((dates[1] - dates[0]) / 86400000);
         document.getElementById('f-nights-label').textContent = `${nn} night${nn !== 1 ? 's' : ''}`;
