@@ -17,7 +17,6 @@ const rooms = [
     features: ['King bed', 'Ensuite bathroom', 'Panoramic views', 'Private balcony'],
     was: 105000,
     monthly: 35000,
-    threeMonth: 28000,
     save: 67,
     approx: '≈ €950 · $1,030',
     availability: 'Available October only',
@@ -35,7 +34,6 @@ const rooms = [
     features: ['King bed', 'Walk-in wardrobe', 'Sunrise views', 'Desk'],
     was: 72000,
     monthly: 28000,
-    threeMonth: 22400,
     save: 61,
     approx: '≈ €760 · $820',
     availability: 'Available September & October',
@@ -53,7 +51,6 @@ const rooms = [
     features: ['King bed', 'Dedicated desk', 'Monitor setup', 'Shared balcony'],
     was: 50400,
     monthly: 25000,
-    threeMonth: 20000,
     save: 50,
     approx: '≈ €680 · $740',
     availability: 'Available August, September & October',
@@ -220,17 +217,6 @@ function waLink(room: string) {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px; color: #8b8b85; margin-top: 4px;
     }
-    .m-price-3mo {
-      display: inline-block;
-      margin-top: 8px;
-      background: #e8f4ec;
-      color: var(--accent);
-      font-size: 11.5px;
-      font-weight: 500;
-      padding: 4px 9px;
-      border-radius: 5px;
-      line-height: 1.4;
-    }
     .m-room-cta {
       display: block; text-align: center;
       background: var(--accent); color: white;
@@ -260,9 +246,13 @@ function waLink(room: string) {
     .ca-photo:hover img { transform: scale(1.04); }
 
     .monthly-note {
-      font-size: 12.5px; color: #8b8b85; margin: -34px 0 48px;
-      line-height: 1.5;
+      display: flex; align-items: center; gap: 12px;
+      background: #fdf2e3; border: 1px solid #f0d49b;
+      border-radius: 10px; padding: 15px 18px; margin: 0 0 48px;
+      font-size: 14.5px; color: #8a5a00; line-height: 1.45;
     }
+    .monthly-note svg { flex-shrink: 0; color: #d0891b; }
+    .monthly-note strong { font-weight: 600; }
 
     .lb {
       position: fixed; inset: 0; z-index: 1000;
@@ -346,7 +336,7 @@ function waLink(room: string) {
 
   <div class="monthly-page">
     <p class="monthly-intro">
-      Stay a month and settle in properly. Monthly guests get our best rates of the year: up to 67% off low season prices from April through October. Wake up to jungle views, swim before your first call, and work on 500+ Mbps WiFi. One home, four rooms, and people worth sharing a table with. Your host stays in one of the rooms, so the house is always looked after. Rooms are available for three months until November. Take the full stretch and get an extra 20% off on top.
+      Stay a month and settle in properly. Monthly guests get our best rates of the year: up to 67% off low season prices from April through October. Wake up to jungle views, swim before your first call, and work on 500+ Mbps WiFi. One home, four rooms, and people worth sharing a table with. Your host stays in one of the rooms, so the house is always looked after. Rooms are available for three months until November.
     </p>
 
     <div class="monthly-grid">
@@ -374,7 +364,6 @@ function waLink(room: string) {
               <span class="m-price-save">-{room.save}%</span>
               <div class="m-price-now"><span data-thb={room.monthly} data-price-tpl="{price}">&#x0E3F;{room.monthly.toLocaleString()}</span> <small>/ month</small></div>
               <div class="m-price-approx">{room.approx}</div>
-              <div class="m-price-3mo">3 months until November: <span data-thb={room.threeMonth} data-price-tpl="{price}">&#x0E3F;{room.threeMonth.toLocaleString()}</span>/mo (extra 20% off)</div>
             </div>
             <a href={waLink(room.name)} target="_blank" rel="noopener" class="m-room-cta">Reserve on WhatsApp</a>
           </div>
@@ -394,7 +383,14 @@ function waLink(room: string) {
       <span class="monthly-included-label">Every stay includes</span>
       {included.map((item) => <span class="monthly-included-item">{item}</span>)}
     </div>
-    <p class="monthly-note">Note: electricity and cleaning are not included in the monthly price and are billed separately.</p>
+    <div class="monthly-note">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span><strong>Please note:</strong> electricity and cleaning are not included in the monthly price and are billed separately.</span>
+    </div>
 
     <div class="monthly-cta">
       <div>
