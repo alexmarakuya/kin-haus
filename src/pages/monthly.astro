@@ -20,6 +20,7 @@ const rooms = [
     threeMonth: 28000,
     save: 67,
     approx: '≈ €950 · $1,030',
+    availability: 'Available October only',
   },
   {
     name: 'The Explorer',
@@ -37,6 +38,7 @@ const rooms = [
     threeMonth: 22400,
     save: 61,
     approx: '≈ €760 · $820',
+    availability: 'Available September & October',
   },
   {
     name: 'The Nomad',
@@ -54,6 +56,7 @@ const rooms = [
     threeMonth: 20000,
     save: 50,
     approx: '≈ €680 · $740',
+    availability: 'Available August, September & October',
   },
 ];
 
@@ -178,7 +181,20 @@ function waLink(room: string) {
     .m-thumb.active { border-color: var(--accent); opacity: 1; }
     .m-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .m-room-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-    .m-room-name { font-weight: 600; font-size: 19px; margin-bottom: 6px; }
+    .m-room-name { font-weight: 600; font-size: 19px; margin-bottom: 8px; }
+    .m-room-avail {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #fdf2e3; color: #b26a00;
+      border: 1px solid #f5dcb3;
+      border-radius: 100px; padding: 3px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-weight: 500; letter-spacing: 0.02em;
+      margin-bottom: 12px;
+    }
+    .m-room-avail::before {
+      content: ''; width: 6px; height: 6px; border-radius: 100px;
+      background: #e0891b; flex-shrink: 0;
+    }
     .m-room-desc { font-size: 13px; color: #64645f; line-height: 1.5; margin-bottom: 14px; }
     .m-room-feats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
     .m-feat {
@@ -348,6 +364,7 @@ function waLink(room: string) {
           </div>
           <div class="m-room-body">
             <div class="m-room-name">{room.name}</div>
+            <div class="m-room-avail">{room.availability}</div>
             <p class="m-room-desc">{room.description}</p>
             <div class="m-room-feats">
               {room.features.map((f) => <span class="m-feat">{f}</span>)}
