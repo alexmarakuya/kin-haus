@@ -16,6 +16,7 @@ export interface Booking {
   conflict?: boolean;
   conflictWith?: string | null;
   paymentStatus?: PaymentStatus;
+  depositAmount?: number;
   tm30Status?: Tm30Status;
 }
 
@@ -25,6 +26,7 @@ export interface BookingOverrides {
     guest?: string;
     notes?: string;
     paymentStatus?: PaymentStatus;
+    depositAmount?: number;
     tm30Status?: Tm30Status;
   };
 }

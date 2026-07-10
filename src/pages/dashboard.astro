@@ -8,6 +8,7 @@ import '../styles/dashboard.css';
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr" is:inline></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" is:inline></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -539,6 +540,13 @@ import '../styles/dashboard.css';
         </div>
       </div>
 
+      <!-- Deposit amount: shown only when payment status = deposit -->
+      <div class="fg" id="dm-deposit-row" style="margin-top:12px;display:none">
+        <label>Deposit Received (THB)</label>
+        <input id="dm-deposit" type="number" min="0" placeholder="e.g. 5000">
+        <div class="detail-amount-info" id="dm-balance-info"></div>
+      </div>
+
       <!-- TM30 Status -->
       <div class="fg" id="dm-tm30-row" style="margin-top:12px">
         <label>TM30 Registration</label>
@@ -559,10 +567,79 @@ import '../styles/dashboard.css';
     </div>
     <div class="detail-panel-footer">
       <button class="btn btn-danger" id="dm-delete" style="display:none">Delete Booking</button>
+      <button class="btn" id="dm-confirm" style="display:none">Confirmation</button>
       <button class="btn" id="dm-promote" style="display:none;background:var(--waitlist);color:white;border-color:var(--waitlist)">Promote to Booking</button>
       <div class="detail-panel-footer-right">
         <button class="btn" id="dm-cancel">Cancel</button>
         <button class="btn btn-primary" id="dm-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING CONFIRMATION MODAL -->
+  <div class="overlay" id="confirm-modal">
+    <div class="confirm-shell">
+      <div class="confirm-card-wrap">
+        <div class="confirm-card" id="confirm-card">
+          <div class="cc-top">
+            <div class="cc-brand">KIN <span>HAUS</span></div>
+            <div class="cc-pill" id="cc-pill">Confirmed</div>
+          </div>
+          <div class="cc-heading">Booking Confirmation</div>
+          <div class="cc-guest" id="cc-guest">Guest Name</div>
+
+          <div class="cc-grid">
+            <div class="cc-field cc-field-full">
+              <div class="cc-label">Room</div>
+              <div class="cc-value" id="cc-room">The Nest</div>
+            </div>
+            <div class="cc-field">
+              <div class="cc-label">Check-in</div>
+              <div class="cc-value" id="cc-checkin">—</div>
+              <div class="cc-sub">from 3:00 PM</div>
+            </div>
+            <div class="cc-field">
+              <div class="cc-label">Check-out</div>
+              <div class="cc-value" id="cc-checkout">—</div>
+              <div class="cc-sub">by 12:00 PM</div>
+            </div>
+            <div class="cc-field">
+              <div class="cc-label">Nights</div>
+              <div class="cc-value" id="cc-nights">—</div>
+            </div>
+            <div class="cc-field" id="cc-total-field">
+              <div class="cc-label">Total</div>
+              <div class="cc-value" id="cc-total">—</div>
+              <div class="cc-sub" id="cc-total-sub"></div>
+            </div>
+          </div>
+
+          <div class="cc-divider"></div>
+
+          <div class="cc-addr">
+            <div class="cc-label">Where you'll stay</div>
+            <div class="cc-addr-name">Kin Haus, Koh Phangan</div>
+            <div class="cc-addr-line">47/28, Moo 3, Ban Tai, Koh Phangan 84280, Thailand</div>
+            <div class="cc-addr-line">Pin: 9.7092811, 100.0180681</div>
+            <div class="cc-addr-line cc-addr-link">maps.google.com/?q=9.7092811,100.0180681</div>
+          </div>
+
+          <div class="cc-foot">
+            <div class="cc-foot-col">
+              <div class="cc-label">Questions? WhatsApp</div>
+              <div class="cc-foot-val">+66 63 940 7272</div>
+            </div>
+            <div class="cc-foot-col cc-foot-right">
+              <div class="cc-label">Reference</div>
+              <div class="cc-foot-val" id="cc-ref">—</div>
+            </div>
+          </div>
+          <div class="cc-signoff">We can't wait to host you at kinhaus.space</div>
+        </div>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn" id="cc-close">Close</button>
+        <button class="btn btn-primary" id="cc-download">Download Image</button>
       </div>
     </div>
   </div>
@@ -991,6 +1068,10 @@ import '../styles/dashboard.css';
   document.getElementById('dm-save').addEventListener('click', saveBookingDetail);
   document.getElementById('dm-delete').addEventListener('click', deleteBookingFromModal);
   document.getElementById('dm-promote').addEventListener('click', promoteWaitlist);
+  document.getElementById('dm-confirm').addEventListener('click', openConfirmation);
+  document.getElementById('cc-close').addEventListener('click', () => document.getElementById('confirm-modal').classList.remove('open'));
+  document.getElementById('confirm-modal').addEventListener('click', (e) => { if (e.target.id === 'confirm-modal') e.currentTarget.classList.remove('open'); });
+  document.getElementById('cc-download').addEventListener('click', downloadConfirmation);
   document.getElementById('dm-amount').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBookingDetail(); });
   document.getElementById('month-prev').addEventListener('click', () => changeMonth(-1));
   document.getElementById('month-next').addEventListener('click', () => changeMonth(1));
@@ -2087,6 +2168,10 @@ import '../styles/dashboard.css';
     // Promote button: only for waitlist bookings
     document.getElementById('dm-promote').style.display = b.type === 'waitlist' && isManual && !presentMode ? '' : 'none';
 
+    // Confirmation button: only for guest-stay bookings (not blocks/owner/waitlist), not present mode
+    const confirmTypes = ['direct', 'friend', 'hold', 'airbnb'];
+    document.getElementById('dm-confirm').style.display = confirmTypes.includes(b.type) && !presentMode ? '' : 'none';
+
     // Save button
     document.getElementById('dm-save').style.display = presentMode ? 'none' : '';
 
@@ -2098,6 +2183,8 @@ import '../styles/dashboard.css';
     if (showStatus) {
       setSegActive('dm-payment-seg', b.paymentStatus || 'unpaid');
       setSegActive('dm-tm30-seg', b.tm30Status || 'pending');
+      document.getElementById('dm-deposit').value = b.depositAmount > 0 ? b.depositAmount : '';
+      updateDepositRow();
       // Show TM30 hint if guest profile is missing details
       const tm30Hint = document.getElementById('dm-tm30-hint');
       const guestProfile = allGuests.find(g => g.fullName && b.guest && g.fullName.toLowerCase() === b.guest.toLowerCase());
@@ -2118,6 +2205,8 @@ import '../styles/dashboard.css';
       } else {
         tm30Hint.style.display = 'none';
       }
+    } else {
+      document.getElementById('dm-deposit-row').style.display = 'none';
     }
 
     // Guest Portal status
@@ -2206,6 +2295,7 @@ import '../styles/dashboard.css';
     const total = parseFloat(document.getElementById('dm-amount').value) || 0;
     document.getElementById('dm-rate').value = (total && n) ? Math.round(total / n) : '';
     updateDetailAmountInfo(n);
+    updateBalanceInfo();
   });
 
   // Bidirectional: rate -> total
@@ -2215,6 +2305,7 @@ import '../styles/dashboard.css';
     const rate = parseFloat(document.getElementById('dm-rate').value) || 0;
     document.getElementById('dm-amount').value = (rate && n) ? Math.round(rate * n) : '';
     updateDetailAmountInfo(n);
+    updateBalanceInfo();
   });
 
   // Segmented button helper
@@ -2236,8 +2327,30 @@ import '../styles/dashboard.css';
       if (!btn) return;
       container.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      if (container.id === 'dm-payment-seg') updateDepositRow();
     });
   });
+
+  // Deposit row: visible only when payment status = deposit; shows balance due
+  function updateDepositRow() {
+    const status = getSegValue('dm-payment-seg');
+    const row = document.getElementById('dm-deposit-row');
+    const show = status === 'deposit' && !presentMode;
+    row.style.display = show ? '' : 'none';
+    if (show) updateBalanceInfo();
+  }
+  function updateBalanceInfo() {
+    const total = parseFloat(document.getElementById('dm-amount').value) || 0;
+    const dep = parseFloat(document.getElementById('dm-deposit').value) || 0;
+    const el = document.getElementById('dm-balance-info');
+    if (total > 0) {
+      const bal = Math.max(0, total - dep);
+      el.textContent = `Balance due: ฿${bal.toLocaleString()} of ฿${total.toLocaleString()}`;
+    } else {
+      el.textContent = 'Set the total above to see the balance due.';
+    }
+  }
+  document.getElementById('dm-deposit').addEventListener('input', updateBalanceInfo);
 
   function closeDetailModal() {
     document.getElementById('detail-panel').classList.remove('open');
@@ -2245,6 +2358,109 @@ import '../styles/dashboard.css';
     if (detailDatePicker) { detailDatePicker.destroy(); detailDatePicker = null; }
     detailBookingId = null;
     detailBookingSource = null;
+  }
+
+  // ─── BOOKING CONFIRMATION ────────────────────────────────────────────────────
+  function fmtDateLong(str) {
+    if (!str) return '—';
+    return new Date(str + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function bookingRef(id) {
+    const clean = (id || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    return 'KH-' + clean.slice(-6);
+  }
+
+  function openConfirmation() {
+    if (!detailBookingId) return;
+    const b = allBookings.find(x => x.id === detailBookingId);
+    if (!b) return;
+    const isManual = detailBookingSource === 'manual';
+
+    // Reflect any unsaved edits in the panel
+    const guest = (document.getElementById('dm-guest').value || '').trim() || b.guest || 'Guest';
+    const room = isManual ? document.getElementById('dm-room-select').value : b.room;
+    let checkin = b.checkin, checkout = b.checkout;
+    if (isManual && detailDatePicker && detailDatePicker.selectedDates.length === 2) {
+      checkin = detailDatePicker.selectedDates[0].toLocalDateStr();
+      checkout = detailDatePicker.selectedDates[1].toLocalDateStr();
+    }
+    const amount = parseFloat(document.getElementById('dm-amount').value) || b.amount || 0;
+    const payment = getSegValue('dm-payment-seg') || b.paymentStatus || 'unpaid';
+    const nights = Math.max(0, Math.round((new Date(checkout + 'T12:00:00') - new Date(checkin + 'T12:00:00')) / 86400000));
+
+    document.getElementById('cc-guest').textContent = guest;
+    document.getElementById('cc-room').textContent = ROOM_LABELS[room] || room;
+    document.getElementById('cc-checkin').textContent = fmtDateLong(checkin);
+    document.getElementById('cc-checkout').textContent = fmtDateLong(checkout);
+    document.getElementById('cc-nights').textContent = nights + (nights === 1 ? ' night' : ' nights');
+    document.getElementById('cc-ref').textContent = bookingRef(b.id);
+
+    // Total + payment sub-line (deposit shows amount received + balance due)
+    const totalField = document.getElementById('cc-total-field');
+    let paymentLabel = { paid: 'Paid in full', unpaid: 'Payable on arrival' }[payment] || '';
+    if (payment === 'deposit') {
+      const dep = parseFloat(document.getElementById('dm-deposit').value) || b.depositAmount || 0;
+      if (dep > 0 && amount > 0) {
+        const bal = Math.max(0, amount - dep);
+        paymentLabel = `฿${dep.toLocaleString()} deposit received · ฿${bal.toLocaleString()} balance due on arrival`;
+      } else {
+        paymentLabel = 'Deposit received, balance due on arrival';
+      }
+    }
+    if (amount > 0) {
+      totalField.style.display = '';
+      document.getElementById('cc-total').textContent = '฿' + amount.toLocaleString();
+      document.getElementById('cc-total-sub').textContent = paymentLabel;
+    } else {
+      totalField.style.display = 'none';
+    }
+
+    // Status pill reflects payment
+    const pill = document.getElementById('cc-pill');
+    pill.classList.remove('cc-pill-unpaid', 'cc-pill-deposit');
+    if (payment === 'paid') { pill.textContent = 'Confirmed · Paid'; }
+    else if (payment === 'deposit') { pill.textContent = 'Confirmed · Deposit'; pill.classList.add('cc-pill-deposit'); }
+    else { pill.textContent = 'Confirmed'; }
+
+    document.getElementById('confirm-modal').classList.add('open');
+  }
+
+  async function downloadConfirmation() {
+    if (typeof html2canvas === 'undefined') {
+      showError('Image library failed to load. Check your connection and try again.');
+      return;
+    }
+    const card = document.getElementById('confirm-card');
+    const btn = document.getElementById('cc-download');
+    const orig = btn.textContent;
+    btn.textContent = 'Rendering...';
+    btn.disabled = true;
+    try {
+      const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#fafaf8', useCORS: true, logging: false });
+      const guest = (document.getElementById('cc-guest').textContent || 'guest').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const ref = document.getElementById('cc-ref').textContent.toLowerCase();
+      const name = `kinhaus-booking-${guest}-${ref}.png`;
+      await new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          resolve();
+        }, 'image/png');
+      });
+    } catch (err) {
+      console.error('[confirmation] render error:', err);
+      showError('Could not generate the image.');
+    } finally {
+      btn.textContent = orig;
+      btn.disabled = false;
+    }
   }
 
   async function saveBookingDetail() {
@@ -2256,7 +2472,9 @@ import '../styles/dashboard.css';
     const notes = document.getElementById('dm-notes-input').value.trim();
     const paymentStatus = getSegValue('dm-payment-seg');
     const tm30Status = getSegValue('dm-tm30-seg');
-    const payload = { amount, guest, notes, paymentStatus, tm30Status };
+    // Only store a deposit amount when the status is actually "deposit"
+    const depositAmount = paymentStatus === 'deposit' ? (parseFloat(document.getElementById('dm-deposit').value) || 0) : 0;
+    const payload = { amount, guest, notes, paymentStatus, depositAmount, tm30Status };
 
     if (isManual) {
       // Include all editable fields for manual bookings

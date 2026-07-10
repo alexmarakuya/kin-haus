@@ -43,6 +43,7 @@ export const GET: APIRoute = async ({ request }) => {
         guest: ov.guest !== undefined ? ov.guest : b.guest,
         notes: ov.notes !== undefined ? ov.notes : b.notes,
         paymentStatus: ov.paymentStatus !== undefined ? ov.paymentStatus : b.paymentStatus,
+        depositAmount: ov.depositAmount !== undefined ? ov.depositAmount : (b as any).depositAmount,
         tm30Status: ov.tm30Status !== undefined ? ov.tm30Status : b.tm30Status,
       };
     });

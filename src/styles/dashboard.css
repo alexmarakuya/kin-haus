@@ -1209,6 +1209,164 @@ a.tab-link {
   justify-content: space-between;
   gap: 10px;
 }
+
+/* BOOKING CONFIRMATION CARD */
+.confirm-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-height: 92vh;
+}
+.confirm-card-wrap {
+  overflow-y: auto;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(15, 20, 25, 0.25);
+}
+.confirm-card {
+  width: 460px;
+  box-sizing: border-box;
+  padding: 40px 40px 32px;
+  background: #fafaf8;
+  color: #0f1419;
+  font-family: "Inter", sans-serif;
+  position: relative;
+}
+.confirm-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: #2c6e49;
+}
+.cc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.cc-brand {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: #0f1419;
+}
+.cc-brand span {
+  color: #2c6e49;
+}
+.cc-pill {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 100px;
+  background: #e8f4ec;
+  color: #2c6e49;
+}
+.cc-pill.cc-pill-unpaid {
+  background: #fdecec;
+  color: #c0392b;
+}
+.cc-pill.cc-pill-deposit {
+  background: #fdf2e3;
+  color: #b26a00;
+}
+.cc-heading {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8b8b85;
+  margin-bottom: 6px;
+}
+.cc-guest {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.15;
+  margin-bottom: 26px;
+}
+.cc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 24px;
+}
+.cc-field-full {
+  grid-column: 1 / -1;
+}
+.cc-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a0a09a;
+  margin-bottom: 5px;
+}
+.cc-value {
+  font-size: 17px;
+  font-weight: 600;
+  color: #0f1419;
+  line-height: 1.25;
+}
+.cc-sub {
+  font-size: 12px;
+  color: #8b8b85;
+  margin-top: 2px;
+}
+.cc-divider {
+  height: 1px;
+  background: #e4e2de;
+  margin: 26px 0;
+}
+.cc-addr-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 4px 0 6px;
+}
+.cc-addr-line {
+  font-size: 13px;
+  color: #52524e;
+  line-height: 1.5;
+}
+.cc-addr-link {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: #2c6e49;
+  margin-top: 3px;
+}
+.cc-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #e4e2de;
+}
+.cc-foot-right {
+  text-align: right;
+}
+.cc-foot-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f1419;
+  margin-top: 3px;
+}
+.cc-signoff {
+  margin-top: 22px;
+  font-size: 12.5px;
+  color: #8b8b85;
+  text-align: center;
+  font-style: italic;
+}
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+}
 .detail-panel-footer-right {
   display: flex;
   gap: 10px;
